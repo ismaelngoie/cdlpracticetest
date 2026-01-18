@@ -7,40 +7,50 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 // --- CONFIG ---
 type PlanKey = "monthly" | "lifetime";
+type AccessType = "subscription" | "lifetime";
 
+const APP_NAME = "CDL PreTest";
+const SUPPORT_EMAIL = "contact@cdlpretest.com";
+const PASSING_SCORE = 80;
+
+// Optional: keep in sync with your sim page config key
+const CONFIG_KEY = "haulOS.config.v1";
+
+// ✅ Stripe Payment Links (set via env in prod)
+// NEXT_PUBLIC_STRIPE_LINK_MONTHLY=https://buy.stripe.com/xxxx
+// NEXT_PUBLIC_STRIPE_LINK_LIFETIME=https://buy.stripe.com/yyyy
 const STRIPE_LINKS: Record<PlanKey, string> = {
-  // ⚠️ Replace with your real Stripe payment links
-  monthly: "https://buy.stripe.com/test_monthly",
-  lifetime: "https://buy.stripe.com/test_lifetime",
+  monthly: process.env.NEXT_PUBLIC_STRIPE_LINK_MONTHLY || "https://buy.stripe.com/test_monthly",
+  lifetime: process.env.NEXT_PUBLIC_STRIPE_LINK_LIFETIME || "https://buy.stripe.com/test_lifetime",
 };
 
 const PRICING = {
   monthly: {
     price: 19.95,
     cadence: "/mo",
-    title: "Haul Pass",
-    subtitle: "Cancel anytime. Good for quick refreshers.",
-    features: ["Full Simulator Access", "Smart Fix Plan", "Unlimited Retakes"],
+    title: "CDL Pro Monthly",
+    subtitle: "Cancel anytime. Perfect for fast prep + retakes.",
+    features: ["Full CDL Simulator Access", "Smart Fix Plan", "Unlimited Practice Tests", "Instant Explanations"],
   },
   lifetime: {
     price: 69.0,
     cadence: " one-time",
-    title: "Pass Guarantee",
-    subtitle: "Get your CDL or money back. Own it forever.",
+    title: "CDL Pro Lifetime",
+    subtitle: "One payment. Lifetime access. Includes all updates.",
     badge: "BEST VALUE",
-    features: [
-      "Everything in Monthly",
-      "Lifetime Updates",
-      "100% Money-Back Guarantee",
-      "Priority Fix Plan (fast path)",
-    ],
+    features: ["Everything in Monthly", "Lifetime Updates", "Priority Fix Plan (fast path)", "Support via email"],
   },
 } as const;
 
-const PASSING_SCORE = 80;
+// --- STORAGE (client only) ---
+const ACCESS_KEY = "cdlpretest.access.v1"; // JSON
+const EMAIL_KEY = "cdlpretest.email.v1"; // string
 
-// Optional: keep in sync with your sim page config key
-const CONFIG_KEY = "haulOS.config.v1";
+type StoredAccess = {
+  email: string;
+  access: AccessType;
+  ts: number; // Date.now()
+};
 
 type UserContext = {
   score: number;
@@ -112,11 +122,11 @@ function stepCopy(score: number, weakDomain: string, userState: string) {
   if (score >= PASSING_SCORE) {
     return {
       headline: "Lock in your pass.",
-      sub: `You’re at ${score}%. Fix the last weak spots and walk into the ${userState} test confident.`,
+      sub: `You’re at ${score}%. Polish the last weak spots and walk into the ${userState} CDL test confident.`,
       steps: [
         { k: "1", t: "Confirm mastery", d: "Run targeted sets until your weak domain never misses." },
         { k: "2", t: "Timed reps", d: "Build speed under pressure so test day feels easy." },
-        { k: "3", t: "Final sweep", d: "Practice the full simulator until you’re consistently 80%+." },
+        { k: "3", t: "Final sweep", d: "Practice full simulator runs until you’re consistently 80%+." },
       ],
     };
   }
@@ -129,6 +139,52 @@ function stepCopy(score: number, weakDomain: string, userState: string) {
       { k: "3", t: "Pass Mode", d: "Timed simulator until you clear 80%+ consistently." },
     ],
   };
+}
+
+function getStoredAccess(): StoredAccess | null {
+  const raw = safeParseJSON<StoredAccess>(typeof window !== "undefined" ? localStorage.getItem(ACCESS_KEY) : null);
+  if (!raw) return null;
+  if (!raw.email || !raw.access) return null;
+  return raw;
+}
+
+function persistAccess(email: string, access: AccessType) {
+  const payload: StoredAccess = { email, access, ts: Date.now() };
+  localStorage.setItem(ACCESS_KEY, JSON.stringify(payload));
+  localStorage.setItem(EMAIL_KEY, email);
+
+  // (Optional) legacy/compat keys (harmless + helps older gating code if any exists)
+  localStorage.setItem("haul.access", access);
+  localStorage.setItem("haul.email", email);
+  localStorage.setItem("userEmail", email);
+}
+
+async function postJSON<T>(path: string, body: any, timeoutMs = 10000): Promise<T> {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    const json = (await res.json().catch(() => ({}))) as any;
+    return json as T;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+function buildStripeLink(base: string, email?: string) {
+  // Stripe hosted checkout often supports prefilled_email as a query param (works with many payment links).
+  // If your link already has params, we append.
+  if (!email || !email.includes("@")) return base;
+  const sep = base.includes("?") ? "&" : "?";
+  return `${base}${sep}prefilled_email=${encodeURIComponent(email.trim())}`;
 }
 
 function PaywallContent() {
@@ -146,14 +202,27 @@ function PaywallContent() {
     endorsements: [],
   });
 
-  // Restore
-  const [restoreEmail, setRestoreEmail] = useState("");
+  // Email (used for BOTH checkout prefill + restore/login)
+  const [email, setEmail] = useState("");
+
+  // Restore/login
   const [isRestoring, setIsRestoring] = useState(false);
   const [restoreMsg, setRestoreMsg] = useState("");
+  const [restoredAccess, setRestoredAccess] = useState<AccessType | null>(null);
+
+  // Billing portal
+  const [isOpeningPortal, setIsOpeningPortal] = useState(false);
+  const [portalMsg, setPortalMsg] = useState("");
 
   // Sticky CTA behavior
   const [showSticky, setShowSticky] = useState(true);
   const topCtaRef = useRef<HTMLDivElement | null>(null);
+
+  const nextPath = useMemo(() => {
+    // Where to send users after successful login/restore
+    const n = searchParams.get("next");
+    return n && n.startsWith("/") ? n : "/sim";
+  }, [searchParams]);
 
   useEffect(() => {
     const s = parseInt(localStorage.getItem("diagnosticScore") || "42", 10);
@@ -178,6 +247,12 @@ function PaywallContent() {
       license,
       endorsements,
     });
+
+    // Prefill email from storage if we have it
+    const storedEmail = localStorage.getItem(EMAIL_KEY) || localStorage.getItem("haul.email") || "";
+    const stored = getStoredAccess();
+    if (stored?.email) setEmail(stored.email);
+    else if (storedEmail) setEmail(storedEmail);
   }, []);
 
   useEffect(() => {
@@ -199,42 +274,120 @@ function PaywallContent() {
     if (plan === "monthly" || plan === "lifetime") setSelectedPlan(plan);
   }, [searchParams]);
 
-  const checkoutUrl = STRIPE_LINKS[selectedPlan];
+  // Show success/cancel hints if Stripe redirects back with params (depends on your payment link settings)
+  useEffect(() => {
+    const success = searchParams.get("success");
+    const canceled = searchParams.get("canceled");
+    if (success) {
+      setRestoreMsg("Payment received ✅ Enter your purchase email to unlock access instantly.");
+    } else if (canceled) {
+      setRestoreMsg("Checkout canceled. You can try again anytime.");
+    }
+  }, [searchParams]);
 
   const { label: risk, tone } = riskFromScore(ctx.score);
   const tc = toneClasses(tone);
 
-  const copy = useMemo(
-    () => stepCopy(ctx.score, ctx.weakDomain, ctx.userState),
-    [ctx.score, ctx.weakDomain, ctx.userState]
-  );
+  const copy = useMemo(() => stepCopy(ctx.score, ctx.weakDomain, ctx.userState), [ctx.score, ctx.weakDomain, ctx.userState]);
 
   const progressToPass = useMemo(() => {
-    // visual progress towards PASSING_SCORE, capped
     const pct = (ctx.score / PASSING_SCORE) * 100;
     return clamp(Math.round(pct), 0, 100);
   }, [ctx.score]);
 
-  // ✅ NEW: risk-based sticky CTA text
   const stickyCtaText = useMemo(() => {
     if (risk === "HIGH") return "Unlock Fix Plan (fastest path) →";
     if (risk === "ELEVATED") return "Unlock Fix Plan (push to 80%) →";
-    return "Unlock Final Sweep Plan →"; // CLEAR
+    return "Unlock Final Sweep Plan →";
   }, [risk]);
 
+  const checkoutUrl = useMemo(() => buildStripeLink(STRIPE_LINKS[selectedPlan], email), [selectedPlan, email]);
+
+  const checkoutDisabled = useMemo(() => {
+    // We don’t *require* email to checkout (Stripe can collect it),
+    // but email improves matching for instant restore/login.
+    return !STRIPE_LINKS[selectedPlan] || STRIPE_LINKS[selectedPlan].includes("test_");
+  }, [selectedPlan]);
+
+  const handleCheckout = () => {
+    // If user typed an email, store it so “restore” becomes one-tap after checkout email receipt.
+    if (email && email.includes("@")) {
+      localStorage.setItem(EMAIL_KEY, email.trim().toLowerCase());
+      localStorage.setItem("haul.email", email.trim().toLowerCase());
+    }
+    window.location.href = checkoutUrl;
+  };
+
   const handleRestore = async () => {
-    if (!restoreEmail.includes("@")) {
-      setRestoreMsg("Please enter a valid email.");
+    const e = email.trim().toLowerCase();
+    if (!e || !e.includes("@")) {
+      setRestoreMsg("Please enter a valid purchase email.");
       return;
     }
+
+    setPortalMsg("");
     setRestoreMsg("");
+    setRestoredAccess(null);
     setIsRestoring(true);
 
-    // Placeholder behavior (you’ll wire to real API later)
-    setTimeout(() => {
-      setRestoreMsg("We couldn’t find that email. If you just purchased, check your inbox for the access link.");
+    try {
+      // ✅ Real login check (Cloudflare Pages Function): POST /api/login { email }
+      const res = await postJSON<{ ok: boolean; access?: AccessType; error?: string }>("/api/login", { email: e });
+
+      if (!res?.ok || !res.access) {
+        setRestoreMsg(
+          "No active access found for that email. If you just purchased, wait 1–2 minutes then try again (also check Promotions/Spam)."
+        );
+        return;
+      }
+
+      persistAccess(e, res.access);
+      setRestoredAccess(res.access);
+      setRestoreMsg(`Unlocked ✅ (${res.access === "lifetime" ? "Lifetime" : "Subscription"}). Redirecting…`);
+
+      // slight delay so UI updates
+      setTimeout(() => router.push(nextPath), 650);
+    } catch (err: any) {
+      setRestoreMsg(err?.message ? `Error: ${err.message}` : "Something went wrong. Please try again.");
+    } finally {
       setIsRestoring(false);
-    }, 1100);
+    }
+  };
+
+  const handleOpenPortal = async () => {
+    const e = email.trim().toLowerCase();
+    if (!e || !e.includes("@")) {
+      setPortalMsg("Enter the same email you used to pay.");
+      return;
+    }
+
+    setPortalMsg("");
+    setIsOpeningPortal(true);
+
+    try {
+      // ✅ Prefer /api/billing/portal. If your project still uses /api/billing-portal, we fallback.
+      let res = await postJSON<{ ok: boolean; url?: string; error?: string }>("/api/billing/portal", { email: e });
+
+      if (!res?.ok || !res.url) {
+        // fallback to older endpoint name if present in your project
+        res = await postJSON<{ ok: boolean; url?: string; error?: string }>("/api/billing-portal", {
+          email: e,
+          returnUrl: `${window.location.origin}/profile`,
+        });
+      }
+
+      if (!res?.ok || !res.url) {
+        setPortalMsg(res?.error || "Could not open the subscription portal for that email.");
+        return;
+      }
+
+      window.open(res.url, "_blank", "noopener,noreferrer");
+      setPortalMsg("Portal opened in a new tab.");
+    } catch (err: any) {
+      setPortalMsg(err?.message ? `Error: ${err.message}` : "Something went wrong. Please try again.");
+    } finally {
+      setIsOpeningPortal(false);
+    }
   };
 
   const ValueChip = ({ children }: { children: React.ReactNode }) => (
@@ -258,7 +411,7 @@ function PaywallContent() {
           <div className="flex flex-wrap justify-center gap-2 mb-4">
             <ValueChip>Secure checkout</ValueChip>
             <ValueChip>Instant access</ValueChip>
-            <ValueChip>Pass Guarantee</ValueChip>
+            <ValueChip>DMV-focused prep</ValueChip>
           </div>
 
           <div
@@ -304,9 +457,27 @@ function PaywallContent() {
 
           {/* Personalization strip */}
           <div className="mt-4 text-[10px] font-mono text-slate-500 uppercase tracking-widest">
-            Config: {ctx.userState} • {classLabel(ctx.license)} • Endorsements: {formatEndorsements(ctx.endorsements)}
+            {APP_NAME} • {ctx.userState} • {classLabel(ctx.license)} • Endorsements: {formatEndorsements(ctx.endorsements)}
           </div>
         </motion.div>
+
+        {/* EMAIL (prefill + restore) */}
+        <div className="mb-6 rounded-3xl border border-white/10 bg-slate-900/40 backdrop-blur p-5 text-left">
+          <div className="text-xs font-black uppercase tracking-widest text-slate-300 mb-2">Use your email for instant unlock</div>
+          <p className="text-sm text-slate-400 leading-relaxed mb-4">
+            Enter the email you’ll use at checkout (or already used). This lets you restore access with no password.
+          </p>
+          <input
+            type="email"
+            placeholder="Email used for purchase"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:border-amber-500 outline-none"
+          />
+          <p className="mt-3 text-[10px] text-slate-500 font-mono">
+            Tip: If you checked out with Apple Pay / Link, use the email on your Stripe receipt.
+          </p>
+        </div>
 
         {/* WHAT YOU GET */}
         <div className="grid grid-cols-1 gap-3 mb-7">
@@ -335,7 +506,7 @@ function PaywallContent() {
                 ? "bg-amber-500/10 border-amber-500 shadow-[0_0_34px_rgba(245,158,11,0.18)]"
                 : "bg-slate-900/60 border-slate-800 hover:border-slate-700"
             }`}
-            aria-label="Select Pass Guarantee plan"
+            aria-label="Select CDL Pro Lifetime plan"
           >
             {selectedPlan === "lifetime" && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wide shadow-lg">
@@ -375,9 +546,12 @@ function PaywallContent() {
                       <span className="text-emerald-400 font-black">✓</span> {feat}
                     </div>
                   ))}
-
                   <div className="mt-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-200 leading-relaxed">
-                    <span className="font-black">Guarantee:</span> If you don’t pass after completing the Fix Plan, request a refund.
+                    <span className="font-black">Support:</span> Email us anytime at{" "}
+                    <a className="underline text-white font-bold" href={`mailto:${SUPPORT_EMAIL}?subject=Support%20Request%20-%20CDL%20PreTest`}>
+                      {SUPPORT_EMAIL}
+                    </a>
+                    .
                   </div>
                 </motion.div>
               )}
@@ -392,7 +566,7 @@ function PaywallContent() {
                 ? "bg-white/5 border-slate-500"
                 : "bg-slate-900/60 border-slate-800 opacity-90 hover:opacity-100 hover:border-slate-700"
             }`}
-            aria-label="Select Haul Pass monthly plan"
+            aria-label="Select CDL Pro Monthly plan"
           >
             <div className="flex justify-between items-start gap-4">
               <div className="min-w-0">
@@ -462,49 +636,76 @@ function PaywallContent() {
           </div>
         </div>
 
-        {/* RESTORE */}
+        {/* RESTORE / LOGIN + PORTAL */}
         <div className="mt-10 p-6 rounded-3xl bg-slate-900/60 border border-slate-800 text-left">
           <div className="flex items-center justify-between gap-3 mb-3">
-            <h4 className="text-xs font-black text-slate-300 uppercase tracking-widest">Restore access</h4>
+            <h4 className="text-xs font-black text-slate-300 uppercase tracking-widest">Restore / Login</h4>
             <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Already paid?</span>
           </div>
 
           <div className="flex gap-2">
-            <input
-              type="email"
-              placeholder="Enter purchase email"
-              value={restoreEmail}
-              onChange={(e) => setRestoreEmail(e.target.value)}
-              className="flex-1 bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:border-amber-500 outline-none"
-            />
             <button
               onClick={handleRestore}
               disabled={isRestoring}
-              className={`px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest border border-white/10 ${
+              className={`flex-1 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest border border-white/10 ${
                 isRestoring ? "bg-slate-800 text-slate-400" : "bg-white/5 hover:bg-white/10 text-white"
               }`}
             >
-              {isRestoring ? "Checking..." : "Restore"}
+              {isRestoring ? "Checking..." : "Unlock access"}
+            </button>
+
+            <button
+              onClick={handleOpenPortal}
+              disabled={isOpeningPortal}
+              className={`px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest border border-white/10 ${
+                isOpeningPortal ? "bg-slate-800 text-slate-400" : "bg-white/5 hover:bg-white/10 text-white"
+              }`}
+              title="Update card, cancel subscription, view invoices"
+            >
+              {isOpeningPortal ? "Opening..." : "Manage"}
             </button>
           </div>
 
           <AnimatePresence>
-            {restoreMsg && (
-              <motion.p
+            {(restoreMsg || portalMsg) && (
+              <motion.div
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 6 }}
-                className="text-xs text-amber-300 mt-3"
+                className="mt-3 space-y-2"
               >
-                {restoreMsg}
-              </motion.p>
+                {restoreMsg && <p className="text-xs text-amber-300">{restoreMsg}</p>}
+                {portalMsg && <p className="text-xs text-slate-300">{portalMsg}</p>}
+                {restoredAccess && (
+                  <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">
+                    Access: {restoredAccess === "lifetime" ? "Lifetime" : "Subscription"} • Redirecting to {nextPath}
+                  </p>
+                )}
+              </motion.div>
             )}
           </AnimatePresence>
 
           <p className="text-[10px] text-slate-500 font-mono mt-4">
-            If you just purchased, check your email for your access link (sometimes in Promotions/Spam).
+            Support:{" "}
+            <a
+              className="underline text-white font-bold"
+              href={`mailto:${SUPPORT_EMAIL}?subject=Support%20Request%20-%20CDL%20PreTest&body=Please%20include%20the%20email%20you%20paid%20with%20and%20a%20brief%20description%20of%20the%20issue.`}
+            >
+              {SUPPORT_EMAIL}
+            </a>
           </p>
         </div>
+
+        {/* DEV SAFETY: warn if Stripe links are still placeholders */}
+        {checkoutDisabled && (
+          <div className="mt-6 rounded-3xl border border-red-500/20 bg-red-500/10 p-5 text-left">
+            <div className="text-xs font-black uppercase tracking-widest text-red-200 mb-1">Stripe links not set</div>
+            <div className="text-sm text-red-100/80 leading-relaxed">
+              Set <span className="font-mono">NEXT_PUBLIC_STRIPE_LINK_MONTHLY</span> and{" "}
+              <span className="font-mono">NEXT_PUBLIC_STRIPE_LINK_LIFETIME</span> to your real Stripe payment links.
+            </div>
+          </div>
+        )}
 
         <div className="h-10" />
       </main>
@@ -531,20 +732,17 @@ function PaywallContent() {
                 <div className="text-right">
                   <div className="text-lg font-black text-white">
                     ${PRICING[selectedPlan].price.toFixed(2)}
-                    <span className="text-xs text-slate-500">
-                      {" "}
-                      {selectedPlan === "lifetime" ? "" : PRICING[selectedPlan].cadence}
-                    </span>
+                    <span className="text-xs text-slate-500"> {selectedPlan === "lifetime" ? "" : PRICING[selectedPlan].cadence}</span>
                   </div>
                 </div>
               </div>
 
-              <a
-                href={checkoutUrl}
+              <button
+                onClick={handleCheckout}
                 className={`block w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black text-lg text-center uppercase tracking-widest transition-transform active:scale-95 ${tc.glow}`}
               >
                 {stickyCtaText}
-              </a>
+              </button>
 
               <p className="text-center text-[10px] text-slate-500 mt-2 flex items-center justify-center gap-2 font-mono uppercase tracking-widest">
                 <span>🔒 Secure checkout</span> • <span>Instant access</span>
