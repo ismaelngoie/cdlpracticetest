@@ -17,19 +17,21 @@ body {
     )
     rgb(var(--background-start-rgb));
   min-height: 100vh;
+  /* Prevent rubber-banding on iOS for that solid app feel */
+  overscroll-behavior: none;
 }
 
-/* Industrial Scrollbars */
+/* --- HIDE SCROLLBARS (The "Native App" Look) --- */
+
+/* Chrome, Safari, Opera */
 ::-webkit-scrollbar {
-  width: 6px;
+  display: none;
 }
-::-webkit-scrollbar-track {
-  background: #0f172a; 
-}
-::-webkit-scrollbar-thumb {
-  background: #334155; 
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #f59e0b; /* Amber hover */
+
+/* Firefox, IE, Edge */
+html {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+  /* Smooth scrolling for anchor links */
+  scroll-behavior: smooth;
 }
