@@ -2,319 +2,213 @@
 
 import Dock from "@/components/Dock";
 import TruckSchematic from "@/components/TruckSchematic";
-import { motion } from "framer-motion";
+import { motion, useSpring, useTransform } from "framer-motion";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
-// --- TYPES ---
-interface AnimatedNumberProps {
-  value: number;
-}
+// --- HELPER COMPONENTS ---
 
-interface BentoCardProps {
-  children: React.ReactNode;
-  className?: string;
-  glowColor?: "emerald" | "amber" | "red" | "slate" | "blue";
-}
+function AnimatedNumber({ value }: { value: number }) {
+  const spring = useSpring(0, { mass: 0.8, stiffness: 75, damping: 15 });
+  const display = useTransform(spring, (current) => Math.round(current));
 
-// --- ANIMATION VARIANTS ---
-const containerVar = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
-};
-
-const itemVar = {
-  hidden: { y: 20, opacity: 0 },
-  show: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 50 } }
-};
-
-// --- UTILITY COMPONENTS ---
-
-// A "CountUp" component makes data feel real and computed live
-const AnimatedNumber = ({ value }: AnimatedNumberProps) => {
-  const [display, setDisplay] = useState(0);
   useEffect(() => {
-    let start = 0;
-    const duration = 1000;
-    const startTime = performance.now();
-    
-    const animate = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      // Ease out quart
-      const ease = 1 - Math.pow(1 - progress, 4); 
-      
-      setDisplay(Math.floor(start + (value - start) * ease));
-      
-      if (progress < 1) requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
-  }, [value]);
-  
-  return <span>{display.toLocaleString()}</span>;
-};
+    spring.set(value);
+  }, [value, spring]);
 
-// A premium "Card" wrapper with subtle gradients and glass effects
-const BentoCard = ({ children, className = "", glowColor = "slate" }: BentoCardProps) => {
-  const glows = {
-    emerald: "shadow-emerald-500/10 border-emerald-500/20",
-    amber: "shadow-amber-500/10 border-amber-500/20",
-    red: "shadow-red-500/10 border-red-500/20",
-    slate: "shadow-slate-500/10 border-slate-800",
-    blue: "shadow-blue-500/10 border-blue-500/20"
-  };
+  return <motion.span>{display}</motion.span>;
+}
+
+function BentoCard({ children, className, glowColor = "amber" }: { children: React.ReactNode; className?: string; glowColor?: "amber" | "emerald" | "red" }) {
+  const glow = 
+    glowColor === "emerald" ? "shadow-emerald-500/10 border-emerald-500/20" : 
+    glowColor === "red" ? "shadow-red-500/10 border-red-500/20" : 
+    "shadow-amber-500/10 border-amber-500/20";
 
   return (
-    <motion.div 
-      variants={itemVar}
-      className={`relative bg-slate-900/60 backdrop-blur-md border rounded-2xl overflow-hidden shadow-xl ${glows[glowColor]} ${className}`}
-    >
-      {/* Top Highlight for depth */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+    <div className={`bg-slate-900/80 backdrop-blur-md border rounded-3xl relative overflow-hidden ${glow} ${className}`}>
       {children}
-    </motion.div>
+    </div>
   );
-};
+}
+
+// --- MAIN PAGE ---
 
 export default function DashboardPage() {
-  const router = useRouter();
-  
-  // --- STATE ---
   const [userName, setUserName] = useState("OPERATOR");
   const [license, setLicense] = useState("A");
   const [score, setScore] = useState(0);
   const [userState, setUserState] = useState("TX");
   const [weakDomain, setWeakDomain] = useState("General Knowledge");
-  const [salary, setSalary] = useState(75000);
-  const [daysToExam, setDaysToExam] = useState(14);
+  const [salary, setSalary] = useState("75,000");
   const [mounted, setMounted] = useState(false);
 
-  // --- INIT ---
   useEffect(() => {
     setMounted(true);
-    // Simulating data fetch for smoothness
-    const storedLevel = localStorage.getItem("userLevel") || "A";
-    setLicense(storedLevel);
+    setLicense(localStorage.getItem("userLevel") || "A");
     setUserState(localStorage.getItem("userState") || "TX");
-    
-    const s = parseInt(localStorage.getItem("diagnosticScore") || "45");
-    setScore(s);
+    setScore(parseInt(localStorage.getItem("diagnosticScore") || "45"));
     setWeakDomain(localStorage.getItem("weakestDomain") || "Air Brakes");
     
-    const base = storedLevel === "A" ? 75000 : 55000;
+    // Salary calculation
+    const base = localStorage.getItem("userLevel") === "A" ? 75000 : 55000;
     const ends = JSON.parse(localStorage.getItem("userEndorsements") || "[]").length * 5000;
-    setSalary(base + ends);
+    setSalary((base + ends).toLocaleString());
   }, []);
 
-  // --- COMPUTED VISUALS ---
-  const getStatusTheme = (s: number) => {
-    if (s >= 80) return { color: "text-emerald-400", bg: "bg-emerald-500", glow: "emerald" as const };
-    if (s >= 60) return { color: "text-amber-400", bg: "bg-amber-500", glow: "amber" as const };
-    return { color: "text-red-400", bg: "bg-red-500", glow: "red" as const };
+  // Visual Logic
+  const passed = score >= 80;
+  const risk = score < 60;
+  
+  const theme = {
+    color: passed ? "text-emerald-400" : risk ? "text-red-500" : "text-amber-500",
+    glow: passed ? "emerald" : risk ? "red" : "amber" as "amber" | "emerald" | "red",
+    bg: passed ? "bg-emerald-500" : risk ? "bg-red-500" : "bg-amber-500",
   };
 
-  const theme = getStatusTheme(score);
-  const circleCircumference = 2 * Math.PI * 40; // for SVG radius 40
-  const circleOffset = circleCircumference - (score / 100) * circleCircumference;
+  // Radial Graph Math
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (score / 100) * circumference;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white pb-32 relative overflow-x-hidden font-sans selection:bg-amber-500/30">
+    <div className="min-h-screen bg-slate-950 text-white pb-32 relative overflow-hidden font-sans">
       
-      {/* 1. CINEMATIC BACKGROUND */}
-      <div className="fixed inset-0 pointer-events-none">
-        {/* Subtle grid moving slowly */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] opacity-20" />
-        {/* Ambient Glow */}
-        <div className={`absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-${theme.glow}-600/10 blur-[120px] rounded-full mix-blend-screen`} />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-900/10 blur-[120px] rounded-full mix-blend-screen" />
-      </div>
-
-      <motion.main 
-        variants={containerVar}
-        initial="hidden"
-        animate="show"
-        className="relative z-10 px-4 pt-4 md:px-8 max-w-7xl mx-auto space-y-6"
-      >
-        
-        {/* 2. HUD HEADER (Redesigned for density) */}
-        <header className="flex flex-col md:flex-row justify-between items-end md:items-center py-4 border-b border-white/5 mb-8">
-          <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-slate-900 border border-slate-800 shadow-inner`}>
-              <span className="font-black text-xl text-slate-500">{license}</span>
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">
-                {userName}
-              </h1>
-              <div className="flex items-center gap-3 text-xs font-mono text-slate-400">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  ONLINE
-                </span>
-                <span>•</span>
-                <span>{userState} JURISDICTION</span>
-              </div>
-            </div>
+      {/* Background FX */}
+      <div className="fixed inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:30px_30px]" />
+      
+      {/* Header */}
+      <header className="relative z-40 px-6 pt-6 pb-2 flex justify-between items-center">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className={`w-2 h-2 rounded-full animate-pulse ${theme.bg}`} />
+            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">
+              System Online
+            </span>
           </div>
-
-          <div className="hidden md:block text-right">
-             <div className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1">Current Objective</div>
-             <div className="text-white font-medium">CDL Class {license} Certification</div>
-          </div>
-        </header>
-
-        {/* 3. BENTO GRID LAYOUT */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
-          
-          {/* A. SCORES (Span 4) - Now with Radial Graph */}
-          <BentoCard className="md:col-span-4 p-6 flex flex-col justify-between" glowColor={theme.glow}>
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Exam Readiness</h3>
-                <p className="text-[10px] text-slate-500 mt-1">BASED ON RECENT SIMS</p>
-              </div>
-              <div className={`px-2 py-1 rounded text-[9px] font-bold uppercase border ${theme.color === 'text-emerald-400' ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-amber-500/30 bg-amber-500/10'} ${theme.color}`}>
-                {score >= 80 ? "PASSING" : "AT RISK"}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-6">
-              {/* Radial Progress */}
-              <div className="relative w-24 h-24 flex-shrink-0">
-                <svg className="w-full h-full -rotate-90">
-                  <circle cx="50%" cy="50%" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-slate-800" />
-                  <circle 
-                    cx="50%" cy="50%" r="40" 
-                    stroke="currentColor" strokeWidth="8" fill="transparent" 
-                    strokeDasharray={circleCircumference}
-                    strokeDashoffset={mounted ? circleOffset : circleCircumference}
-                    strokeLinecap="round"
-                    className={`${theme.color} transition-all duration-1000 ease-out`}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center flex-col">
-                  <span className={`text-2xl font-black ${theme.color}`}>
-                    <AnimatedNumber value={score} />%
-                  </span>
-                </div>
-              </div>
-              
-              <div className="space-y-1">
-                <div className="text-sm text-slate-300">Projected Result</div>
-                <div className="text-xs text-slate-500 leading-relaxed">
-                  You need <span className="text-white font-bold">+{(80-score) > 0 ? 80-score : 0}%</span> to guarantee a pass on exam day.
-                </div>
-              </div>
-            </div>
-          </BentoCard>
-
-          {/* B. ACTION CENTER (Span 8) - High Contrast */}
-          <BentoCard className="md:col-span-8 relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="p-6 h-full flex flex-col justify-center relative z-10">
-               <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-xl font-bold text-white mb-2">Daily Priority: {weakDomain}</h2>
-                    <p className="text-slate-400 text-sm max-w-md mb-6">
-                      Our algorithms detected a weakness in <span className="text-white">{weakDomain}</span>. 
-                      Spending 15 minutes now boosts your pass probability by 12%.
-                    </p>
-                  </div>
-                  <div className="text-center hidden sm:block">
-                    <div className="text-3xl font-black text-white">{daysToExam}</div>
-                    <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Days Left</div>
-                  </div>
-               </div>
-
-               <div className="flex gap-3">
-                 <Link 
-                   href={`/station?category=${encodeURIComponent(weakDomain)}`}
-                   className="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm uppercase tracking-wide py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-[1.01] active:scale-[0.98]"
-                 >
-                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                   Start Repair Drill
-                 </Link>
-                 <Link 
-                   href="/simulator"
-                   className="px-6 py-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm uppercase tracking-wide border border-slate-700 transition-colors"
-                 >
-                   Simulate
-                 </Link>
-               </div>
-            </div>
-          </BentoCard>
-
-          {/* C. TRUCK SCHEMATIC (Span 8, Row 2) - The "Toy" */}
-          <BentoCard className="md:col-span-8 h-[300px] bg-slate-900 relative" glowColor="blue">
-            <div className="absolute top-4 left-4 z-10">
-               <div className="text-[10px] font-mono text-blue-400 uppercase tracking-widest flex items-center gap-2">
-                 <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                  </span>
-                 Live Diagnostics
-               </div>
-            </div>
-            
-            {/* Simulated Scanning Line Overlay */}
-            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-               <div className="w-full h-[2px] bg-blue-500/50 blur-[1px] absolute top-0 animate-[scan_3s_ease-in-out_infinite]" />
-            </div>
-
-            <div className="flex items-center justify-center h-full opacity-80 grayscale hover:grayscale-0 transition-all duration-500">
-               {/* Pass props to child to animate parts based on weakDomain */}
-               <TruckSchematic highlight={weakDomain} />
-            </div>
-          </BentoCard>
-
-          {/* D. FINANCIALS (Span 4, Row 2) */}
-          <BentoCard className="md:col-span-4 p-6 flex flex-col justify-center" glowColor="emerald">
-             <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Est. Salary</div>
-                  <div className="text-xs text-emerald-400 font-mono">MARKET RATE ({userState})</div>
-                </div>
-             </div>
-             
-             <div className="text-4xl font-black text-white tracking-tight mb-2">
-               $<AnimatedNumber value={salary} />
-             </div>
-             
-             <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
-                <motion.div 
-                   initial={{ width: 0 }}
-                   animate={{ width: "75%" }}
-                   transition={{ delay: 0.5, duration: 1 }}
-                   className="h-full bg-emerald-500" 
-                />
-             </div>
-             <p className="text-[10px] text-slate-400 text-right">Top 25% of earners</p>
-          </BentoCard>
-
+          <h1 className="text-xl font-black text-white tracking-tighter">
+            {userName} <span className="text-slate-600 mx-1">/</span> CLASS {license}
+          </h1>
         </div>
+        <div className="text-right">
+          <div className="text-[10px] text-slate-500 font-mono">JURISDICTION</div>
+          <div className="text-sm font-bold text-slate-300">{userState}</div>
+        </div>
+      </header>
 
-      </motion.main>
-      
-      {/* 4. FLOATING DOCK */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-        <Dock />
-      </div>
+      {/* Main BENTO GRID */}
+      <main className="p-4 max-w-xl mx-auto relative z-10 grid grid-cols-2 gap-3">
+        
+        {/* 1. VEHICLE DIAGNOSTICS (Truck) - Spans full width */}
+        <BentoCard className="col-span-2 p-0 h-[280px]" glowColor={theme.glow}>
+          <div className="absolute top-4 left-4 z-10">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Vehicle Diagnostics</h3>
+            <p className="text-[10px] text-slate-500">REAL-TIME TELEMETRY</p>
+          </div>
+          
+          <div className="absolute top-4 right-4 z-10">
+             <div className={`px-2 py-1 rounded text-[9px] font-bold uppercase border bg-opacity-10 ${passed ? 'border-emerald-500 bg-emerald-500 text-emerald-400' : 'border-amber-500 bg-amber-500 text-amber-500'}`}>
+                {passed ? "ALL SYSTEMS GO" : "Check Engine"}
+             </div>
+          </div>
 
-      <style jsx global>{`
-        @keyframes scan {
-          0% { top: 0%; opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 1; }
-          100% { top: 100%; opacity: 0; }
-        }
-      `}</style>
+          <div className="pt-8">
+            <TruckSchematic />
+          </div>
+        </BentoCard>
+
+        {/* 2. EXAM READINESS (Radial Graph) - Spans full width */}
+        <BentoCard className="col-span-2 p-6 flex flex-row items-center justify-between gap-4" glowColor={theme.glow}>
+           <div className="space-y-1 flex-1">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Exam Readiness</h3>
+              <p className="text-[10px] text-slate-500">BASED ON RECENT SIMS</p>
+              
+              <div className="pt-2">
+                <div className="text-2xl font-black text-white">
+                   {passed ? "PASSING" : "AT RISK"}
+                </div>
+                <div className="text-xs text-slate-400 leading-tight mt-1">
+                   You need <span className="text-white font-bold">+{Math.max(0, 80 - score)} pts</span> to guarantee a pass on exam day.
+                </div>
+              </div>
+           </div>
+
+           {/* The Graph */}
+           <div className="relative w-24 h-24 flex-shrink-0">
+              <svg className="w-full h-full -rotate-90">
+                {/* Track */}
+                <circle cx="50%" cy="50%" r={radius} stroke="#1e293b" strokeWidth="8" fill="transparent" />
+                {/* Indicator */}
+                <circle 
+                  cx="50%" cy="50%" r={radius} 
+                  stroke="currentColor" 
+                  strokeWidth="8" 
+                  fill="transparent"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={mounted ? offset : circumference}
+                  strokeLinecap="round"
+                  className={`${theme.color} transition-all duration-1000 ease-out`}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center flex-col">
+                <span className={`text-2xl font-black ${theme.color}`}>
+                  <AnimatedNumber value={score} />%
+                </span>
+              </div>
+           </div>
+        </BentoCard>
+
+        {/* 3. DAILY MANIFEST (Action) - Spans full width */}
+        <BentoCard className="col-span-2 bg-gradient-to-br from-slate-900 to-slate-950 p-5" glowColor="amber">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">
+                Daily Manifest
+              </h3>
+              <h2 className="text-lg font-bold text-white">
+                Fix Priority: <span className="text-amber-500">{weakDomain}</span>
+              </h2>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Link 
+              href={`/station?category=${encodeURIComponent(weakDomain)}`}
+              className="w-full py-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-wider shadow-[0_4px_20px_rgba(245,158,11,0.3)] transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+            >
+              <span>🛠️</span> Repair System (15m)
+            </Link>
+
+            <Link 
+              href="/simulator"
+              className="w-full py-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs uppercase tracking-wider border border-slate-700 transition-all flex items-center justify-center gap-2"
+            >
+              <span>🚛</span> Run Full Exam
+            </Link>
+          </div>
+        </BentoCard>
+
+        {/* 4. SALARY STATS - Left Col */}
+        <BentoCard className="p-4 flex flex-col justify-center" glowColor="emerald">
+           <div className="text-emerald-500 mb-2">
+             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+           </div>
+           <div className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Est. Salary</div>
+           <div className="text-lg font-mono font-black text-white">${salary}</div>
+        </BentoCard>
+
+        {/* 5. KNOWLEDGE BANK - Right Col */}
+        <BentoCard className="p-4 flex flex-col justify-center" glowColor="amber">
+           <div className="text-blue-500 mb-2">
+             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+           </div>
+           <div className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Manuals</div>
+           <div className="text-lg font-mono font-black text-white">12<span className="text-slate-600 text-xs">/300</span></div>
+        </BentoCard>
+
+      </main>
+
+      <Dock />
     </div>
   );
 }
