@@ -11,6 +11,9 @@ const EXAM_LENGTH = 70;
 const EXAM_DURATION_SEC = 7200; // 2 hours
 const PASS_THRESHOLD = 80;
 
+// Keep in sync with paywall/dashboard
+const CONFIG_KEY = "haulOS.config.v1";
+
 // --- TYPES ---
 type ExamState = "boot" | "manifest" | "active" | "submitting" | "results";
 
@@ -25,6 +28,13 @@ type ExamSession = {
   endAt: number;
   startedAt: number;
   examId: string;
+};
+
+type HaulConfig = {
+  name?: string;
+  license?: LicenseClass | string;
+  userState?: string;
+  endorsements?: Endorsement[] | string[];
 };
 
 // --- HELPERS ---
@@ -44,11 +54,53 @@ function clamp(n: number, a: number, b: number) {
 }
 
 function makeExamId() {
-  // short, “official” looking id
   const partA = Math.floor(100 + Math.random() * 900);
   const partB = Math.floor(1000 + Math.random() * 9000);
   const partC = Math.floor(10 + Math.random() * 90);
   return `DMV-${partA}-${partB}-${partC}`;
+}
+
+function safeParseJSON<T>(value: string | null): T | null {
+  if (!value) return null;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return null;
+  }
+}
+
+function computeResults(qs: Question[], answers: Record<number, number>, timeLeft: number) {
+  const total = qs.length || 1;
+
+  let correctCount = 0;
+  for (let i = 0; i < qs.length; i++) {
+    if (answers[i] !== undefined && answers[i] === qs[i]?.correctIndex) correctCount++;
+  }
+
+  const score = Math.round((correctCount / total) * 100);
+  const passed = score >= PASS_THRESHOLD;
+  const elapsedMin = Math.ceil((EXAM_DURATION_SEC - timeLeft) / 60);
+
+  return { correctCount, score, passed, elapsedMin };
+}
+
+function computeWeakestDomain(qs: Question[], answers: Record<number, number>) {
+  const counts: Record<string, number> = {};
+  for (let i = 0; i < qs.length; i++) {
+    const q = qs[i];
+    const a = answers[i];
+    const correct = a !== undefined && a === q.correctIndex;
+    if (!correct) counts[q.category] = (counts[q.category] || 0) + 1;
+  }
+  let worst = "General Knowledge";
+  let max = -1;
+  for (const [cat, c] of Object.entries(counts)) {
+    if (c > max) {
+      max = c;
+      worst = cat;
+    }
+  }
+  return worst;
 }
 
 // --- UI PRIMITIVES ---
@@ -227,7 +279,11 @@ export default function SimulatorPage() {
 
   const answeredCount = useMemo(() => Object.keys(answers).length, [answers]);
   const flaggedCount = useMemo(() => flags.size, [flags]);
-  const unansweredCount = useMemo(() => Math.max(0, activeQuestions.length - answeredCount), [activeQuestions.length, answeredCount]);
+  const unansweredCount = useMemo(
+    () => Math.max(0, activeQuestions.length - answeredCount),
+    [activeQuestions.length, answeredCount]
+  );
+
   const progressPct = useMemo(() => {
     if (!activeQuestions.length) return 0;
     return Math.round(((currentIdx + 1) / activeQuestions.length) * 100);
@@ -239,10 +295,13 @@ export default function SimulatorPage() {
     return "slate";
   }, [timeLeft]);
 
-  // --- ACTIONS (callbacks) ---
-  const handleSelect = useCallback((optIdx: number) => {
-    setAnswers((prev) => ({ ...prev, [currentIdx]: optIdx }));
-  }, [currentIdx]);
+  // --- ACTIONS ---
+  const handleSelect = useCallback(
+    (optIdx: number) => {
+      setAnswers((prev) => ({ ...prev, [currentIdx]: optIdx }));
+    },
+    [currentIdx]
+  );
 
   const toggleFlag = useCallback(() => {
     setFlags((prev) => {
@@ -253,16 +312,65 @@ export default function SimulatorPage() {
     });
   }, [currentIdx]);
 
+  const finalizeToLocalStorage = useCallback(
+    (qs: Question[], ans: Record<number, number>, tLeft: number) => {
+      if (!qs.length) return;
+
+      const res = computeResults(qs, ans, tLeft);
+      const weakest = computeWeakestDomain(qs, ans);
+
+      // Power the dashboard + paywall personalization
+      localStorage.setItem("diagnosticScore", String(res.score));
+      localStorage.setItem("weakestDomain", weakest);
+      localStorage.setItem("userState", jurisdiction);
+
+      // For "last miss" card on dashboard
+      const diagnosticAnswers = qs.map((q, i) => ({
+        isCorrect: ans[i] !== undefined && ans[i] === q.correctIndex,
+        text: q.text,
+        category: q.category,
+      }));
+      localStorage.setItem("diagnosticAnswers", JSON.stringify(diagnosticAnswers));
+
+      // Optional: auto-grow mastery with correct question IDs
+      const existing = safeParseJSON<number[]>(localStorage.getItem("mastered-ids")) || [];
+      const mastered = new Set<number>(Array.isArray(existing) ? existing : []);
+      qs.forEach((q, i) => {
+        if (ans[i] !== undefined && ans[i] === q.correctIndex) mastered.add(q.id);
+      });
+      localStorage.setItem("mastered-ids", JSON.stringify(Array.from(mastered)));
+
+      // Last exam summary (nice for future)
+      localStorage.setItem(
+        "haul-last-exam",
+        JSON.stringify({
+          examId,
+          score: res.score,
+          correct: res.correctCount,
+          total: qs.length,
+          passed: res.passed,
+          weakestDomain: weakest,
+          endedAt: Date.now(),
+        })
+      );
+    },
+    [examId, jurisdiction]
+  );
+
   const finishExam = useCallback(() => {
     setSubmitPromptOpen(false);
     setReviewOpen(false);
+
+    // Persist summary before wiping session keys
+    finalizeToLocalStorage(activeQuestions, answers, timeLeft);
+
     setState("submitting");
     setTimeout(() => {
       localStorage.removeItem("haul-active-session");
-      localStorage.removeItem("haul-exam-id");
+      localStorage.removeItem("haul-exam-id"); // new run => new ID
       setState("results");
     }, 1400);
-  }, []);
+  }, [activeQuestions, answers, finalizeToLocalStorage, timeLeft]);
 
   const startExam = useCallback(() => {
     // Only set new end time if not resuming
@@ -277,28 +385,29 @@ export default function SimulatorPage() {
 
   // --- INITIALIZATION ---
   useEffect(() => {
-    // 1) Driver profile
-    const l = (localStorage.getItem("userLevel") as LicenseClass) || "A";
-    const e = (() => {
-      try {
-        return JSON.parse(localStorage.getItem("userEndorsements") || "[]");
-      } catch {
-        return [];
-      }
-    })();
-    const s = localStorage.getItem("userState") || "TX";
+    // Prefer unified config, fallback to legacy keys
+    const saved = safeParseJSON<HaulConfig>(localStorage.getItem(CONFIG_KEY));
+
+    const legacyLicense = (localStorage.getItem("userLevel") as LicenseClass) || "A";
+    const legacyState = localStorage.getItem("userState") || "TX";
+
+    const l = (saved?.license as LicenseClass) || legacyLicense || "A";
+    const s = saved?.userState || legacyState || "TX";
+
+    const legacyEnd = safeParseJSON<Endorsement[]>(localStorage.getItem("userEndorsements")) || [];
+    const e = Array.isArray(saved?.endorsements) ? (saved!.endorsements as Endorsement[]) : legacyEnd;
 
     setLicense(l);
     setEndorsements(Array.isArray(e) ? e : []);
     setJurisdiction(s);
 
-    // 1b) Exam ID (persist across resume)
+    // Exam ID (persist across resume)
     const savedExamId = localStorage.getItem("haul-exam-id");
     const id = savedExamId || makeExamId();
     setExamId(id);
     if (!savedExamId) localStorage.setItem("haul-exam-id", id);
 
-    // 2) Silent resume
+    // Silent resume
     const savedSession = localStorage.getItem("haul-active-session");
     if (savedSession) {
       try {
@@ -310,12 +419,15 @@ export default function SimulatorPage() {
 
           if (restoredQs.length > 0) {
             setActiveQuestions(restoredQs);
-            setAnswers(session.answers || {});
+
+            // answers keys come back as strings; still indexable, but keep shape
+            setAnswers((session.answers || {}) as Record<number, number>);
             setFlags(new Set(session.flags || []));
             setCurrentIdx(session.currentIdx || 0);
             setEndAt(session.endAt);
             setTimeLeft(Math.floor((session.endAt - Date.now()) / 1000));
             setExamId(session.examId || id);
+
             setTimeout(() => setState("manifest"), 700);
             return;
           }
@@ -325,20 +437,22 @@ export default function SimulatorPage() {
       }
     }
 
-    // 3) Build new pool
+    // Build new pool
     const pool = questions.filter((q) => {
       if (!q.licenseClasses.includes(l)) return false;
+
+      // If question requires endorsements, user must have at least one
       if (q.endorsements && q.endorsements.length > 0) {
         const hasReq = q.endorsements.some((req) => (Array.isArray(e) ? e : []).includes(req));
         if (!hasReq) return false;
       }
+
       return true;
     });
 
     const finalSet = shuffle(pool).slice(0, EXAM_LENGTH);
     setActiveQuestions(finalSet);
 
-    // Boot -> manifest
     setTimeout(() => setState("manifest"), 1400);
   }, []);
 
@@ -376,7 +490,7 @@ export default function SimulatorPage() {
     return () => clearInterval(timer);
   }, [state, endAt, finishExam]);
 
-  // --- KEYBOARD SHORTCUTS (real exam vibe) ---
+  // --- KEYBOARD SHORTCUTS ---
   useEffect(() => {
     if (state !== "active") return;
 
@@ -409,14 +523,7 @@ export default function SimulatorPage() {
   // --- RESULTS COMPUTATION ---
   const results = useMemo(() => {
     if (!activeQuestions.length) return null;
-    const correctCount = Object.keys(answers).filter((idx) => {
-      const i = parseInt(idx, 10);
-      return answers[i] === activeQuestions[i]?.correctIndex;
-    }).length;
-    const score = Math.round((correctCount / activeQuestions.length) * 100);
-    const passed = score >= PASS_THRESHOLD;
-    const elapsedMin = Math.ceil((EXAM_DURATION_SEC - timeLeft) / 60);
-    return { correctCount, score, passed, elapsedMin };
+    return computeResults(activeQuestions, answers, timeLeft);
   }, [answers, activeQuestions, timeLeft]);
 
   // --- REVIEW GRID (navigator) ---
@@ -463,11 +570,7 @@ export default function SimulatorPage() {
         <div className="fixed inset-0 pointer-events-none opacity-10 bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.25),transparent_60%)]" />
         <div className="fixed inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:28px_28px]" />
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center"
-        >
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center">
           <div className="inline-flex items-center gap-3 mb-4 px-4 py-2 rounded-2xl border border-slate-800 bg-slate-900/60">
             <div className="w-3 h-3 bg-amber-500 animate-pulse rounded-sm" />
             <div className="text-amber-500 text-xs tracking-[0.22em] font-black uppercase">Secure Exam Environment</div>
@@ -571,7 +674,10 @@ export default function SimulatorPage() {
           </button>
 
           <div className="mt-4 text-center">
-            <Link href="/dashboard" className="text-[10px] text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-colors">
+            <Link
+              href="/dashboard"
+              className="text-[10px] text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-colors"
+            >
               Return to Command Center
             </Link>
           </div>
@@ -610,7 +716,13 @@ export default function SimulatorPage() {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4 relative overflow-hidden">
         <div className="fixed inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:28px_28px]" />
-        <div className={`fixed inset-0 pointer-events-none opacity-10 ${passed ? "bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.25),transparent_60%)]" : "bg-[radial-gradient(circle_at_top,rgba(239,68,68,0.25),transparent_60%)]"}`} />
+        <div
+          className={`fixed inset-0 pointer-events-none opacity-10 ${
+            passed
+              ? "bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.25),transparent_60%)]"
+              : "bg-[radial-gradient(circle_at_top,rgba(239,68,68,0.25),transparent_60%)]"
+          }`}
+        />
 
         <div className="max-w-lg w-full bg-slate-900/70 backdrop-blur-xl border border-slate-800 p-8 rounded-3xl relative overflow-hidden shadow-2xl text-center">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 to-amber-400" />
@@ -633,7 +745,11 @@ export default function SimulatorPage() {
           </div>
 
           <div className="flex justify-center mb-10">
-            <div className={`w-44 h-44 rounded-full border-4 flex items-center justify-center bg-slate-950 ${passed ? "border-emerald-500 text-emerald-400" : "border-red-500 text-red-400"}`}>
+            <div
+              className={`w-44 h-44 rounded-full border-4 flex items-center justify-center bg-slate-950 ${
+                passed ? "border-emerald-500 text-emerald-400" : "border-red-500 text-red-400"
+              }`}
+            >
               <div>
                 <div className="text-6xl font-mono font-black tracking-tighter">{score}%</div>
                 <div className="text-[10px] text-slate-500 font-black uppercase mt-1">Final Score</div>
@@ -656,12 +772,30 @@ export default function SimulatorPage() {
             </div>
           </div>
 
-          <Link
-            href="/dashboard"
-            className="block w-full py-4 bg-white text-slate-950 font-black uppercase tracking-widest rounded-2xl hover:bg-slate-200 transition-colors"
-          >
-            Return to Base
-          </Link>
+          <div className="space-y-3">
+            {!passed && (
+              <Link
+                href="/pay"
+                className="block w-full py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black uppercase tracking-widest rounded-2xl transition-colors"
+              >
+                Unlock Fix Plan →
+              </Link>
+            )}
+
+            <Link
+              href="/dashboard"
+              className="block w-full py-4 bg-white text-slate-950 font-black uppercase tracking-widest rounded-2xl hover:bg-slate-200 transition-colors"
+            >
+              Return to Base
+            </Link>
+
+            <Link
+              href="/simulator"
+              className="block w-full py-3 border border-slate-700 bg-slate-950/40 hover:bg-slate-900 text-slate-200 font-black uppercase tracking-widest rounded-2xl transition-colors text-[11px]"
+            >
+              Run Another Exam
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -779,9 +913,7 @@ export default function SimulatorPage() {
               <span className="text-amber-400 text-lg">🛡️</span>
             </div>
             <div className="min-w-0">
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                Secure Exam • {jurisdiction} DMV
-              </div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Secure Exam • {jurisdiction} DMV</div>
               <div className="text-sm font-mono font-bold text-slate-200 truncate">
                 {examId} <span className="text-slate-600">/</span> CLASS {license}
               </div>
@@ -797,7 +929,11 @@ export default function SimulatorPage() {
             <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Time Remaining</div>
             <div
               className={`text-2xl md:text-3xl font-mono font-black tracking-tight ${
-                timeTone === "red" ? "text-red-400 animate-pulse" : timeTone === "amber" ? "text-amber-400" : "text-white"
+                timeTone === "red"
+                  ? "text-red-400 animate-pulse"
+                  : timeTone === "amber"
+                  ? "text-amber-400"
+                  : "text-white"
               }`}
             >
               {formatTime(timeLeft)}
@@ -880,9 +1016,7 @@ export default function SimulatorPage() {
 
             <div className="p-6 md:p-8">
               <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Prompt</div>
-              <h2 className="text-xl md:text-3xl font-semibold text-slate-100 leading-snug mb-8">
-                {currentQ.text}
-              </h2>
+              <h2 className="text-xl md:text-3xl font-semibold text-slate-100 leading-snug mb-8">{currentQ.text}</h2>
 
               {/* Options */}
               <div className="grid gap-3">
@@ -912,7 +1046,11 @@ export default function SimulatorPage() {
                         </div>
 
                         <div className="flex-1">
-                          <div className={`text-base md:text-lg ${isSelected ? "text-white font-bold" : "text-slate-300 group-hover:text-slate-100"}`}>
+                          <div
+                            className={`text-base md:text-lg ${
+                              isSelected ? "text-white font-bold" : "text-slate-300 group-hover:text-slate-100"
+                            }`}
+                          >
                             {opt}
                           </div>
                           <div className="mt-1 text-[10px] font-mono uppercase tracking-widest text-slate-600">
@@ -921,11 +1059,7 @@ export default function SimulatorPage() {
                         </div>
 
                         {isSelected && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="text-amber-400 font-black"
-                          >
+                          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-amber-400 font-black">
                             ✓
                           </motion.div>
                         )}
@@ -935,7 +1069,7 @@ export default function SimulatorPage() {
                 })}
               </div>
 
-              {/* Small helper row */}
+              {/* Helper row */}
               <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
                 <div className="text-[10px] font-mono uppercase tracking-widest text-slate-600">
                   Shortcuts: <span className="text-slate-300 font-bold">A/B/C/D</span> select •{" "}
@@ -1006,7 +1140,10 @@ export default function SimulatorPage() {
                 </button>
 
                 <div className="text-center">
-                  <Link href="/dashboard" className="text-[10px] text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-colors">
+                  <Link
+                    href="/dashboard"
+                    className="text-[10px] text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-colors"
+                  >
                     Exit to Command Center
                   </Link>
                 </div>
