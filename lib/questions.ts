@@ -8732,5 +8732,3006 @@ export const questions: Question[] = [
     ],
     correctIndex: 2,
     explanation: "Never use burning signals (flares/fusees) around certain hazmat cargo tanks; use triangles or electric lights."
+  },
+  // ===== NEXT 200 QUESTIONS (IDs 611–810) — Endorsement Add-Ons Focus =====
+  {
+    id: 611,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "You are hauling latex in a smooth bore tanker. Which driving style is safest?",
+    options: [
+      "Sharp steering to keep the load centered",
+      "Frequent lane changes to avoid surge",
+      "Quick starts and stops to reduce time on the road",
+      "Slow, smooth starts and gentle braking",
+    ],
+    correctIndex: 3,
+    explanation: "Smooth bore tanks have strong surge. Smooth, gradual control is safest."
+  },
+  {
+    id: 612,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "If your tanker begins to skid, the worst action is to:",
+    options: [
+      "Regain traction smoothly",
+      "Avoid oversteering",
+      "Oversteer or brake/accelerate aggressively",
+      "Avoid hard acceleration",
+    ],
+    correctIndex: 2,
+    explanation: "Oversteering or aggressive braking/acceleration can worsen a skid and trigger a jackknife/rollover."
+  },
+  {
+    id: 613,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "During a tanker pre-trip, you should pay special attention to the manhole covers and gaskets because:",
+    options: [
+      "It changes the tire pressure",
+      "It reduces engine noise",
+      "It improves fuel mileage",
+      "Leaks or wrong settings can cause a spill or release",
+    ],
+    correctIndex: 3,
+    explanation: "Covers must close correctly and seal to prevent leaks."
+  },
+  {
+    id: 614,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "You are hauling liquid fertilizer in a smooth bore tanker. Which driving style is safest?",
+    options: [
+      "Sharp steering to keep the load centered",
+      "Quick starts and stops to reduce time on the road",
+      "Slow, smooth starts and gentle braking",
+      "Frequent lane changes to avoid surge",
+    ],
+    correctIndex: 2,
+    explanation: "Smooth bore tanks have strong surge. Smooth, gradual control is safest."
+  },
+  {
+    id: 615,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "You are hauling water in a smooth bore tanker. Which driving style is safest?",
+    options: [
+      "Frequent lane changes to avoid surge",
+      "Quick starts and stops to reduce time on the road",
+      "Slow, smooth starts and gentle braking",
+      "Sharp steering to keep the load centered",
+    ],
+    correctIndex: 2,
+    explanation: "Smooth bore tanks have strong surge. Smooth, gradual control is safest."
+  },
+  {
+    id: 616,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "You are hauling liquid soap in a smooth bore tanker. Which driving style is safest?",
+    options: [
+      "Frequent lane changes to avoid surge",
+      "Quick starts and stops to reduce time on the road",
+      "Slow, smooth starts and gentle braking",
+      "Sharp steering to keep the load centered",
+    ],
+    correctIndex: 2,
+    explanation: "Smooth bore tanks have strong surge. Smooth, gradual control is safest."
+  },
+  {
+    id: 617,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "To reduce surge, you should generally:",
+    options: [
+      "Tailgate so you can draft",
+      "Make rapid lane changes",
+      "Coast in neutral",
+      "Brake far in advance and increase following distance",
+    ],
+    correctIndex: 3,
+    explanation: "More following distance and early braking help control surge."
+  },
+  {
+    id: 618,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "Before moving a tanker, you must never drive with:",
+    options: [
+      "Mirrors adjusted",
+      "Windows closed",
+      "Open valves or open manhole covers",
+      "Headlights on",
+    ],
+    correctIndex: 2,
+    explanation: "Open valves or manholes can cause leaks/releases and are unsafe/illegal."
+  },
+  {
+    id: 619,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "During a tanker pre-trip, you should pay special attention to the intake/discharge/cut-off valves because:",
+    options: [
+      "It improves fuel mileage",
+      "It reduces engine noise",
+      "It changes the tire pressure",
+      "Leaks or wrong settings can cause a spill or release",
+    ],
+    correctIndex: 3,
+    explanation: "Valves must be in the correct position before loading, unloading, or moving."
+  },
+  {
+    id: 620,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "When loading a tank divided by bulkheads, you must pay close attention to:",
+    options: [
+      "Seat belt adjustment",
+      "Mirror tint",
+      "Weight distribution front-to-rear",
+      "Engine oil color",
+    ],
+    correctIndex: 2,
+    explanation: "Bulkheads create compartments; loading/unloading can shift weight distribution."
+  },
+  {
+    id: 621,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "When inspecting a tank vehicle, the single most important thing to check for is:",
+    options: [
+      "Cargo temperature",
+      "Tire brand",
+      "Paint damage",
+      "Leaks",
+    ],
+    correctIndex: 3,
+    explanation: "Leaks are the #1 concern on tank vehicles. A leaking tank must not be operated."
+  },
+  {
+    id: 622,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "Compared to a full tank vehicle, an empty tank vehicle may:",
+    options: [
+      "Have no risk of skids",
+      "Always stop faster",
+      "Take longer to stop",
+      "Have no rollover risk",
+    ],
+    correctIndex: 2,
+    explanation: "Empty tank vehicles may take longer to stop than full ones."
+  },
+  {
+    id: 623,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "During a tanker pre-trip, you should pay special attention to the pipes and hose connections because:",
+    options: [
+      "It improves fuel mileage",
+      "It reduces engine noise",
+      "Leaks or wrong settings can cause a spill or release",
+      "It changes the tire pressure",
+    ],
+    correctIndex: 2,
+    explanation: "Leaks often show up around joints and connections."
+  },
+  {
+    id: 624,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "You are hauling fuel oil in a smooth bore tanker. Which driving style is safest?",
+    options: [
+      "Sharp steering to keep the load centered",
+      "Frequent lane changes to avoid surge",
+      "Quick starts and stops to reduce time on the road",
+      "Slow, smooth starts and gentle braking",
+    ],
+    correctIndex: 3,
+    explanation: "Smooth bore tanks have strong surge. Smooth, gradual control is safest."
+  },
+  {
+    id: 625,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "Bulkheads in a liquid tank are used to:",
+    options: [
+      "Eliminate all surge",
+      "Clean the tank",
+      "Divide the tank into smaller compartments",
+      "Increase tire traction",
+    ],
+    correctIndex: 2,
+    explanation: "Bulkheads divide a tank into smaller tanks, affecting weight distribution."
+  },
+  {
+    id: 626,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "A tank vehicle is more likely to roll over mainly because of:",
+    options: [
+      "Long wheelbase",
+      "Lighter tires",
+      "Low center of gravity",
+      "High center of gravity",
+    ],
+    correctIndex: 3,
+    explanation: "Tankers are top-heavy because much of the load weight is carried high."
+  },
+  {
+    id: 627,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "Baffles in a tank help mainly with:",
+    options: [
+      "Side-to-side surge only",
+      "Tire wear",
+      "Increasing fuel economy",
+      "Forward-and-back surge",
+    ],
+    correctIndex: 3,
+    explanation: "Baffles (bulkheads with holes) reduce forward/back surge, though side-to-side can still occur."
+  },
+  {
+    id: 628,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "To help control surge when stopping a tank vehicle, you should:",
+    options: [
+      "Release brakes early and coast",
+      "Pump the brakes quickly",
+      "Keep steady brake pressure and do not release too soon",
+      "Brake late and hard",
+    ],
+    correctIndex: 2,
+    explanation: "Steady braking and not releasing too soon helps prevent the liquid from surging forward."
+  },
+  {
+    id: 629,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "A smooth bore (unbaffled) tank requires extra caution especially when:",
+    options: [
+      "Cruising straight at steady speed",
+      "Using the horn",
+      "Starting and stopping",
+      "Checking mirrors",
+    ],
+    correctIndex: 2,
+    explanation: "Unbaffled tanks have very strong forward-and-back surge, making starts/stops more risky."
+  },
+  {
+    id: 630,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "During a tanker pre-trip, you should pay special attention to the vents because:",
+    options: [
+      "It improves fuel mileage",
+      "It changes the tire pressure",
+      "Leaks or wrong settings can cause a spill or release",
+      "It reduces engine noise",
+    ],
+    correctIndex: 2,
+    explanation: "Vents must be clear so they can work properly."
+  },
+  {
+    id: 631,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "When stopping a partially filled tanker on wet pavement, surge is especially dangerous because:",
+    options: [
+      "The lights will dim",
+      "The engine stalls",
+      "The steering wheel locks",
+      "The liquid can push the vehicle in the direction of the wave",
+    ],
+    correctIndex: 3,
+    explanation: "Reduced traction makes surge effects more dangerous."
+  },
+  {
+    id: 632,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "How much liquid you can load into a tank depends on:",
+    options: [
+      "The radio station",
+      "The color of the tank",
+      "Liquid expansion, weight, legal limits, and temperature",
+      "Only the number of axles",
+    ],
+    correctIndex: 2,
+    explanation: "Load amount depends on expansion, weight, legal limits, and temperature."
+  },
+  {
+    id: 633,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "You are hauling molasses in a smooth bore tanker. Which driving style is safest?",
+    options: [
+      "Frequent lane changes to avoid surge",
+      "Quick starts and stops to reduce time on the road",
+      "Sharp steering to keep the load centered",
+      "Slow, smooth starts and gentle braking",
+    ],
+    correctIndex: 3,
+    explanation: "Smooth bore tanks have strong surge. Smooth, gradual control is safest."
+  },
+  {
+    id: 634,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "Outage means you must:",
+    options: [
+      "Drain the tank daily",
+      "Load only at night",
+      "Fill the tank to the top",
+      "Leave space for liquid expansion",
+    ],
+    correctIndex: 3,
+    explanation: "Liquids expand as they warm, so tanks must not be loaded completely full."
+  },
+  {
+    id: 635,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "You are hauling juice concentrate in a smooth bore tanker. Which driving style is safest?",
+    options: [
+      "Sharp steering to keep the load centered",
+      "Frequent lane changes to avoid surge",
+      "Quick starts and stops to reduce time on the road",
+      "Slow, smooth starts and gentle braking",
+    ],
+    correctIndex: 3,
+    explanation: "Smooth bore tanks have strong surge. Smooth, gradual control is safest."
+  },
+  {
+    id: 636,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "You are hauling propane (liquid gas) in a smooth bore tanker. Which driving style is safest?",
+    options: [
+      "Sharp steering to keep the load centered",
+      "Quick starts and stops to reduce time on the road",
+      "Slow, smooth starts and gentle braking",
+      "Frequent lane changes to avoid surge",
+    ],
+    correctIndex: 2,
+    explanation: "Smooth bore tanks have strong surge. Smooth, gradual control is safest."
+  },
+  {
+    id: 637,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "Liquid surge is most likely to be a problem when the tank is:",
+    options: [
+      "Completely full",
+      "Made of steel",
+      "Completely empty",
+      "Partially full",
+    ],
+    correctIndex: 3,
+    explanation: "Surge comes from liquid moving in partially filled tanks."
+  },
+  {
+    id: 638,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "You are hauling brine in a smooth bore tanker. Which driving style is safest?",
+    options: [
+      "Quick starts and stops to reduce time on the road",
+      "Frequent lane changes to avoid surge",
+      "Sharp steering to keep the load centered",
+      "Slow, smooth starts and gentle braking",
+    ],
+    correctIndex: 3,
+    explanation: "Smooth bore tanks have strong surge. Smooth, gradual control is safest."
+  },
+  {
+    id: 639,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "You are hauling milk in a smooth bore tanker. Which driving style is safest?",
+    options: [
+      "Quick starts and stops to reduce time on the road",
+      "Frequent lane changes to avoid surge",
+      "Sharp steering to keep the load centered",
+      "Slow, smooth starts and gentle braking",
+    ],
+    correctIndex: 3,
+    explanation: "Smooth bore tanks have strong surge. Smooth, gradual control is safest."
+  },
+  {
+    id: 640,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "When stopping a partially filled tanker on ice, surge is especially dangerous because:",
+    options: [
+      "The lights will dim",
+      "The steering wheel locks",
+      "The engine stalls",
+      "The liquid can push the vehicle in the direction of the wave",
+    ],
+    correctIndex: 3,
+    explanation: "A surge wave can shove the truck out of position."
+  },
+  {
+    id: 641,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "The best way to reduce rollover risk in a tanker on ramps and curves is to:",
+    options: [
+      "Rely on ABS",
+      "Increase speed to stabilize",
+      "Shift up in the curve",
+      "Steer and brake smoothly and reduce speed well below posted curve speeds",
+    ],
+    correctIndex: 3,
+    explanation: "Tankers can roll at posted curve speeds; slow and steer gently."
+  },
+  {
+    id: 642,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "When approaching a curve in a tank vehicle, the safest action is to:",
+    options: [
+      "Brake hard in the curve",
+      "Enter at the posted speed",
+      "Slow down before the curve",
+      "Shift gears mid-curve",
+    ],
+    correctIndex: 2,
+    explanation: "The posted curve speed may be too fast for tankers; slow before the curve."
+  },
+  {
+    id: 643,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "When stopping a partially filled tanker on a downhill grade, surge is especially dangerous because:",
+    options: [
+      "The engine stalls",
+      "The steering wheel locks",
+      "The liquid can push the vehicle in the direction of the wave",
+      "The lights will dim",
+    ],
+    correctIndex: 2,
+    explanation: "Stopping requires more distance and surge can push the vehicle."
+  },
+  {
+    id: 644,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "Safety chains on doubles should be:",
+    options: [
+      "Only used in snow",
+      "Removed to reduce weight",
+      "Secured to the trailer(s)",
+      "Wrapped around the axle",
+    ],
+    correctIndex: 2,
+    explanation: "Safety chains must be secured as part of the coupling system."
+  },
+  {
+    id: 645,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When coupling the rear trailer to the converter dolly, trailer height should be:",
+    options: [
+      "Higher than the fifth-wheel center",
+      "As high as possible",
+      "Exactly level with the fifth-wheel",
+      "Slightly lower than the fifth-wheel center",
+    ],
+    correctIndex: 3,
+    explanation: "Trailer should be slightly lower so it lifts slightly when the dolly goes under."
+  },
+  {
+    id: 646,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "A major reason doubles require gentler steering is that:",
+    options: [
+      "They are always lighter",
+      "They have no mirrors",
+      "They have smaller tires",
+      "The last trailer reacts more sharply than the tractor",
+    ],
+    correctIndex: 3,
+    explanation: "Rearward amplification increases trailer swing and rollover risk."
+  },
+  {
+    id: 647,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "After coupling the dolly to the rear trailer, you should make a visual check that:",
+    options: [
+      "The radio works",
+      "The tires are shiny",
+      "The trailer is painted",
+      "There is no space between upper/lower fifth-wheel and jaws are locked on kingpin",
+    ],
+    correctIndex: 3,
+    explanation: "A proper fifth-wheel lock and no gap confirms correct coupling."
+  },
+  {
+    id: 648,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "On the converter dolly, you must confirm the pintle hook is:",
+    options: [
+      "Painted",
+      "New",
+      "Warm",
+      "Latched",
+    ],
+    correctIndex: 3,
+    explanation: "A latched pintle hook is critical to prevent separation."
+  },
+  {
+    id: 649,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When pulling doubles/triples and driving in strong crosswinds, you should:",
+    options: [
+      "Make sudden moves to match traffic",
+      "Drive with one hand to relax",
+      "Allow larger gaps and make gradual changes",
+      "Ignore mirror checks to stay focused ahead",
+    ],
+    correctIndex: 2,
+    explanation: "Doubles/triples need more space and smooth, gradual lane/speed changes."
+  },
+  {
+    id: 650,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When parking doubles/triples, you should avoid:",
+    options: [
+      "Places you can pull straight through",
+      "Well-lit areas",
+      "Spots you cannot pull straight through",
+      "Parking in a straight line",
+    ],
+    correctIndex: 2,
+    explanation: "Avoid getting trapped where you cannot pull through; backing doubles is difficult."
+  },
+  {
+    id: 651,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When pulling doubles/triples and changing lanes in city traffic, you should:",
+    options: [
+      "Drive with one hand to relax",
+      "Make sudden moves to match traffic",
+      "Ignore mirror checks to stay focused ahead",
+      "Allow larger gaps and make gradual changes",
+    ],
+    correctIndex: 3,
+    explanation: "Doubles/triples need more space and smooth, gradual lane/speed changes."
+  },
+  {
+    id: 652,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "Compared to a single trailer, doubles/triples require:",
+    options: [
+      "Less following distance",
+      "The same space to change lanes",
+      "No extra space",
+      "More following distance",
+    ],
+    correctIndex: 3,
+    explanation: "More length and stability issues require more following distance."
+  },
+  {
+    id: 653,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When pulling doubles/triples and entering freeway traffic, you should:",
+    options: [
+      "Make sudden moves to match traffic",
+      "Ignore mirror checks to stay focused ahead",
+      "Allow larger gaps and make gradual changes",
+      "Drive with one hand to relax",
+    ],
+    correctIndex: 2,
+    explanation: "Doubles/triples need more space and smooth, gradual lane/speed changes."
+  },
+  {
+    id: 654,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "On a set of doubles, the shut-off valves at the rear of the last (rear) trailer should be:",
+    options: [
+      "Open",
+      "Open only in rain",
+      "Closed",
+      "Disconnected",
+    ],
+    correctIndex: 2,
+    explanation: "Rear of the last trailer should be closed."
+  },
+  {
+    id: 655,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "If the rear trailer in doubles does NOT have spring brakes, one safe way to set its emergency brakes before coupling is to:",
+    options: [
+      "Bleed the air from the tractor",
+      "Park downhill",
+      "Disconnect the service line",
+      "Connect the emergency line to charge the tank, then disconnect it",
+    ],
+    correctIndex: 3,
+    explanation: "Charging and disconnecting the emergency line can set the trailer emergency brakes."
+  },
+  {
+    id: 656,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When pulling doubles/triples and descending a grade, you should:",
+    options: [
+      "Make sudden moves to match traffic",
+      "Drive with one hand to relax",
+      "Allow larger gaps and make gradual changes",
+      "Ignore mirror checks to stay focused ahead",
+    ],
+    correctIndex: 2,
+    explanation: "Doubles/triples need more space and smooth, gradual lane/speed changes."
+  },
+  {
+    id: 657,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "The 'crack-the-whip' effect means:",
+    options: [
+      "The first trailer swings the most",
+      "Only triples can roll over",
+      "It happens only when braking",
+      "The last trailer is most likely to turn over",
+    ],
+    correctIndex: 3,
+    explanation: "Rearward amplification makes the last trailer swing and roll more easily."
+  },
+  {
+    id: 658,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "Converter dollies built on or after March 1, 1998 are required to have:",
+    options: [
+      "Air suspension",
+      "Disc brakes only",
+      "A third axle",
+      "Anti-lock brakes",
+    ],
+    correctIndex: 3,
+    explanation: "ABS is required on newer converter dollies."
+  },
+  {
+    id: 659,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When coupling doubles, after you lock the pintle hook you should also:",
+    options: [
+      "Remove the safety chains",
+      "Turn off the hazard lights",
+      "Secure the dolly support in the raised position",
+      "Cut the air lines short",
+    ],
+    correctIndex: 2,
+    explanation: "The dolly support must be secured raised so it will not drop while moving."
+  },
+  {
+    id: 660,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "One way to identify ABS on a converter dolly is:",
+    options: [
+      "A green lamp on the right side",
+      "A red triangle decal",
+      "A yellow lamp on the left side of the dolly",
+      "A blue light on the trailer",
+    ],
+    correctIndex: 2,
+    explanation: "The dolly has a yellow lamp on the left side."
+  },
+  {
+    id: 661,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When pulling doubles/triples and approaching an off-ramp, you should:",
+    options: [
+      "Make sudden moves to match traffic",
+      "Ignore mirror checks to stay focused ahead",
+      "Allow larger gaps and make gradual changes",
+      "Drive with one hand to relax",
+    ],
+    correctIndex: 2,
+    explanation: "Doubles/triples need more space and smooth, gradual lane/speed changes."
+  },
+  {
+    id: 662,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "During doubles inspection, the converter dolly air tank drain valve should be:",
+    options: [
+      "Removed",
+      "Open",
+      "Closed",
+      "Tied up",
+    ],
+    correctIndex: 2,
+    explanation: "Drain valve should be closed so the dolly retains air."
+  },
+  {
+    id: 663,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "A key safety warning when uncoupling doubles is: never:",
+    options: [
+      "Lower landing gear",
+      "Chock wheels",
+      "Unlock the pintle hook with the dolly still under the rear trailer",
+      "Park on level ground",
+    ],
+    correctIndex: 2,
+    explanation: "Unlocking the pintle hook while the dolly is under the trailer can make the tow bar fly up."
+  },
+  {
+    id: 664,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "On a set of doubles, the shut-off valves at the rear of the first (front) trailer should be:",
+    options: [
+      "Half-open",
+      "Removed",
+      "Open",
+      "Closed",
+    ],
+    correctIndex: 2,
+    explanation: "Air must flow to the rear trailer; front trailer rear valves should be open."
+  },
+  {
+    id: 665,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "For safest handling, trailer loading should be:",
+    options: [
+      "Heaviest trailer on the converter dolly",
+      "Heaviest trailer in the rear",
+      "Even weight doesn't matter",
+      "Heaviest trailer directly behind the tractor",
+    ],
+    correctIndex: 3,
+    explanation: "Heavier trailer should be first; lighter trailer in the rear."
+  },
+  {
+    id: 666,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "To check that air flows to all trailers in a set of doubles, after charging the system you should:",
+    options: [
+      "Open the fuel cap",
+      "Tap each tire with a hammer",
+      "Open the emergency line shut-off at the rear of the last trailer and listen for air",
+      "Turn the steering wheel left",
+    ],
+    correctIndex: 2,
+    explanation: "Opening the emergency line at the rear and hearing air confirms the system is charged to the back."
+  },
+  {
+    id: 667,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When checking that service pressure reaches the rear trailer, you should:",
+    options: [
+      "Drain the coolant",
+      "Release all brakes",
+      "Unplug the light cord",
+      "Apply the trailer handbrake or service brake and open the service line valve at the rear",
+    ],
+    correctIndex: 3,
+    explanation: "With brakes applied, opening the service line valve at the rear should release air if pressure is present."
+  },
+  {
+    id: 668,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "Before backing the converter dolly under the rear trailer, you should make sure:",
+    options: [
+      "The fuel cap is open",
+      "The headlights are off",
+      "The rear trailer brakes are locked and/or wheels chocked",
+      "The turn signal is on",
+    ],
+    correctIndex: 2,
+    explanation: "Rear trailer must be secured so it cannot roll when you couple the dolly."
+  },
+  {
+    id: 669,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "If you do not hear air escaping when checking airflow at the rear of the last trailer, you should first:",
+    options: [
+      "Remove the pintle hook",
+      "Replace the glad hands",
+      "Check that trailer/dolly shut-off valves are open",
+      "Drain the fuel tank",
+    ],
+    correctIndex: 2,
+    explanation: "No air at the back often means a shut-off valve is not open."
+  },
+  {
+    id: 670,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "Doubles/triples are less stable than other CMVs, so you should:",
+    options: [
+      "Rely on the trailer hand valve",
+      "Make quick lane changes",
+      "Turn sharply to keep trailers straight",
+      "Drive smoothly and plan far ahead",
+    ],
+    correctIndex: 3,
+    explanation: "Smooth control and looking far ahead reduces rollover/jackknife risk."
+  },
+  {
+    id: 671,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "A passenger carrying common hazards like gasoline or a car battery should be:",
+    options: [
+      "Allowed if it is sealed",
+      "Allowed if it is under a seat",
+      "Not allowed unless you are sure rules allow it",
+      "Allowed if the passenger promises to be careful",
+    ],
+    correctIndex: 2,
+    explanation: "Most hazardous materials are forbidden on buses; watch for common hazards."
+  },
+  {
+    id: 672,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "If your bus is equipped with circuit breakers instead of fuses, the bus:",
+    options: [
+      "Must carry spare tires",
+      "Must still carry spare fuses",
+      "Does not need spare fuses",
+      "Cannot operate at night",
+    ],
+    correctIndex: 2,
+    explanation: "Spare electrical fuses are required unless equipped with circuit breakers."
+  },
+  {
+    id: 673,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "Before driving a bus, you should review the previous driver's inspection report and:",
+    options: [
+      "Ignore it if you're in a hurry",
+      "Only check the fuel level",
+      "Throw it away",
+      "Sign it only after defects are certified repaired or not needed",
+    ],
+    correctIndex: 3,
+    explanation: "You certify by signing that reported defects were repaired or repairs not needed."
+  },
+  {
+    id: 674,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "When checking bus interior, handholds and seats must be:",
+    options: [
+      "Warm",
+      "Soft",
+      "Secure and in safe working condition",
+      "Decorated",
+    ],
+    correctIndex: 2,
+    explanation: "Handholds/rails and seats must be safe and securely fastened."
+  },
+  {
+    id: 675,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "You should never drive a bus with:",
+    options: [
+      "Heater on",
+      "Radio on",
+      "Open emergency exit door or window",
+      "Passengers seated",
+    ],
+    correctIndex: 2,
+    explanation: "Emergency exits must be closed and properly marked before driving."
+  },
+  {
+    id: 676,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "A passenger drops a bag in the aisle during loading. You should:",
+    options: [
+      "Drive off to keep schedule",
+      "Kick it under a seat",
+      "Leave it; it will not matter",
+      "Have it secured so the aisle/doorway stays clear",
+    ],
+    correctIndex: 3,
+    explanation: "Aisles/doorways must remain clear for safety and evacuation."
+  },
+  {
+    id: 677,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "Emergency exits must be checked for:",
+    options: [
+      "Tire pressure",
+      "Window tint",
+      "Ease of operation and proper markings (and buzzers if required)",
+      "Seat comfort",
+    ],
+    correctIndex: 2,
+    explanation: "Passenger vehicles require emergency exits that open easily and are properly marked."
+  },
+  {
+    id: 678,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "If a bus has a red emergency door light, you should:",
+    options: [
+      "Never use it",
+      "Tape over it",
+      "Turn it on only in fog",
+      "Turn it on at night or any time you use outside lights",
+    ],
+    correctIndex: 3,
+    explanation: "Emergency exit indicators must work; use the red emergency door light when using outside lights."
+  },
+  {
+    id: 679,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "If a bus has a 'standee line', passengers should:",
+    options: [
+      "Stand forward of the standee line",
+      "Stand in the stairwell",
+      "Not stand forward of the standee line",
+      "Sit on the floor",
+    ],
+    correctIndex: 2,
+    explanation: "The standee line marks how far forward standees may be so the driver can see and operate safely."
+  },
+  {
+    id: 680,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "A passenger bus interior check is important because:",
+    options: [
+      "It is only required on new buses",
+      "It improves fuel economy",
+      "It reduces tire wear",
+      "People sometimes damage unattended buses",
+    ],
+    correctIndex: 3,
+    explanation: "Interior checks protect rider safety from damage or hazards."
+  },
+  {
+    id: 681,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "When loading passengers, carry-on baggage should:",
+    options: [
+      "Be held by passengers while standing",
+      "Be stacked on steps",
+      "Be placed in aisles to save time",
+      "Be secured and kept out of doorways/aisles",
+    ],
+    correctIndex: 3,
+    explanation: "Carry-ons must not block aisles/doors and should be secured to prevent injury."
+  },
+  {
+    id: 682,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "If your bus has roof hatches, you may lock some hatches partly open for fresh air, but you should remember:",
+    options: [
+      "It reduces the bus height",
+      "It increases braking power",
+      "Clearance is unchanged",
+      "The bus has higher clearance with hatches open",
+    ],
+    correctIndex: 3,
+    explanation: "Partly open roof hatches increase clearance needs."
+  },
+  {
+    id: 683,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "On a bus, the driver's seat belt should be:",
+    options: [
+      "Used only on highways",
+      "Optional if driving slowly",
+      "Used only in rain",
+      "Always used",
+    ],
+    correctIndex: 3,
+    explanation: "Drivers should always use the seat belt for safety."
+  },
+  {
+    id: 684,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "A CLP holder with a Passenger (P) endorsement is generally prohibited from operating a CMV with passengers except:",
+    options: [
+      "Any paying passengers",
+      "No one ever",
+      "Auditors/inspectors, test examiners, other trainees, and the accompanying CDL holder",
+      "Only family members",
+    ],
+    correctIndex: 2,
+    explanation: "Learner permit holders cannot carry passengers except limited authorized persons and the accompanying CDL holder."
+  },
+  {
+    id: 685,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "Before pulling away from a stop, you should ensure:",
+    options: [
+      "Only that the engine runs",
+      "Passengers are standing near the door",
+      "Carry-ons are secured and exits are not blocked",
+      "That the radio is loud enough",
+    ],
+    correctIndex: 2,
+    explanation: "Secure baggage and keep exits clear so passengers can evacuate if needed."
+  },
+  {
+    id: 686,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "Aisles and stairwells on a bus should be:",
+    options: [
+      "Used for luggage",
+      "Covered with loose mats",
+      "Kept clear at all times",
+      "Blocked to prevent standees",
+    ],
+    correctIndex: 2,
+    explanation: "Clear aisles/stairwells prevent trips and allow emergency evacuation."
+  },
+  {
+    id: 687,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "The area to the left of the school bus is always considered dangerous because:",
+    options: [
+      "Students never use that side",
+      "It has more mirrors",
+      "Cars may pass on the left",
+      "It is higher",
+    ],
+    correctIndex: 2,
+    explanation: "Passing cars and limited visibility make the left side especially dangerous."
+  },
+  {
+    id: 688,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "A school bus evacuation may be required when:",
+    options: [
+      "A student is talking loudly",
+      "It is raining lightly",
+      "You are behind schedule",
+      "There is a fire or smell of smoke",
+    ],
+    correctIndex: 3,
+    explanation: "Fire/smoke is a common condition that requires evacuation."
+  },
+  {
+    id: 689,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "When stopping to load students, you should stop with the front bumper at least ___ away from students.",
+    options: [
+      "5 feet",
+      "2 feet",
+      "10 feet",
+      "20 feet",
+    ],
+    correctIndex: 2,
+    explanation: "Stopping at least 10 feet away improves visibility of student movements."
+  },
+  {
+    id: 690,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "When crossing railroad tracks in a CMV, you should generally NOT:",
+    options: [
+      "Use hazard flashers when stopping",
+      "Proceed only when you can clear the tracks",
+      "Shift gears while crossing",
+      "Look both ways",
+    ],
+    correctIndex: 2,
+    explanation: "Do not shift while crossing; select a gear before entering the tracks."
+  },
+  {
+    id: 691,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "Before opening the door to load students, you should:",
+    options: [
+      "Assume traffic will stop",
+      "Turn off all lights",
+      "Wave students across immediately",
+      "Make a final check that all traffic has stopped and it is safe",
+    ],
+    correctIndex: 3,
+    explanation: "You must confirm traffic has stopped before signaling students to approach."
+  },
+  {
+    id: 692,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "The school bus 'danger zone' can extend as much as:",
+    options: [
+      "5 feet behind only",
+      "10 feet all around",
+      "30 feet in front, 12 feet to sides, and 12 feet behind",
+      "100 feet behind only",
+    ],
+    correctIndex: 2,
+    explanation: "Danger zones can extend 30 ft in front, 12 ft to sides, and 12 ft behind (with most danger close to the front)."
+  },
+  {
+    id: 693,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "When approaching a school stop, you should continuously check:",
+    options: [
+      "Only the interior mirror",
+      "Only the speedometer",
+      "Only the right mirror",
+      "All mirrors to monitor danger zones",
+    ],
+    correctIndex: 3,
+    explanation: "Mirror checks help you monitor students and traffic in danger zones."
+  },
+  {
+    id: 694,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "If you cannot account for a student at the stop, the safest action is to:",
+    options: [
+      "Honk twice and leave",
+      "Tell other students to find them",
+      "Drive off and call later",
+      "Secure the bus, take the key, and check around/under the bus",
+    ],
+    correctIndex: 3,
+    explanation: "If a student is missing, you must secure the bus and physically check around and underneath."
+  },
+  {
+    id: 695,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "At a railroad-highway crossing with a white stop line, the front of the school bus must remain:",
+    options: [
+      "Past the line",
+      "Halfway across the tracks",
+      "Behind the line",
+      "On top of the line",
+    ],
+    correctIndex: 2,
+    explanation: "If a white stop line is present, the front of the bus must stay behind it while stopped."
+  },
+  {
+    id: 696,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "A school bus can have up to about ___ of tail swing.",
+    options: [
+      "8 feet",
+      "1 foot",
+      "6 inches",
+      "3 feet",
+    ],
+    correctIndex: 3,
+    explanation: "Tail swing can reach about 3 feet; check mirrors before and during turns."
+  },
+  {
+    id: 697,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "Crossview mirrors are designed mainly to help you see:",
+    options: [
+      "Only the rear window",
+      "The engine compartment",
+      "The speedometer",
+      "The front bumper danger zone directly in front of the bus",
+    ],
+    correctIndex: 3,
+    explanation: "Crossview mirrors show the area directly in front of the bus and near the service door/front wheels."
+  },
+  {
+    id: 698,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "When approaching a school bus stop (if equipped), you should activate alternating flashing amber lights about:",
+    options: [
+      "Only after stopping",
+      "20 feet before the stop",
+      "At least 200 feet (or about 5–10 seconds) before the stop, or as state law requires",
+      "50 feet before the stop",
+    ],
+    correctIndex: 2,
+    explanation: "Amber lights are used to warn traffic in advance (commonly at least 200 ft / 5–10 seconds, per state law)."
+  },
+  {
+    id: 699,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "If you must back up at a student pick-up point, a safer practice is to:",
+    options: [
+      "Have students guide you from behind",
+      "Back with the door open",
+      "Back first, then pick up students",
+      "Pick up students before backing and watch for late comers",
+    ],
+    correctIndex: 3,
+    explanation: "Pick up students before backing and continuously watch for latecomers."
+  },
+  {
+    id: 700,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "Students should board the school bus:",
+    options: [
+      "After the bus starts moving",
+      "Whenever they want",
+      "From the left side only",
+      "Only when signaled by the driver",
+    ],
+    correctIndex: 3,
+    explanation: "Driver must signal students to board to control the danger zone."
+  },
+  {
+    id: 701,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "Before leaving a school bus stop, you should:",
+    options: [
+      "Leave the door open to hear kids",
+      "Let students run to catch the bus",
+      "Check mirrors and make sure no students are around or returning to the bus",
+      "Turn off alternating red lights only after you are moving",
+    ],
+    correctIndex: 2,
+    explanation: "Always check mirrors and confirm students are clear before moving."
+  },
+  {
+    id: 702,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "If there is NO white stop line at a railroad crossing, the school bus should stop:",
+    options: [
+      "After the crossbuck",
+      "Only if lights are flashing",
+      "Before the crossbuck sign",
+      "On the tracks",
+    ],
+    correctIndex: 2,
+    explanation: "If no stop line exists, stop before the crossbuck sign."
+  },
+  {
+    id: 703,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "After unloading on the route, students should be told to:",
+    options: [
+      "Stand next to the rear bumper",
+      "Run behind the bus",
+      "Walk at least 10 feet away from the side of the bus where the driver can see them",
+      "Wait under the bus mirror",
+    ],
+    correctIndex: 2,
+    explanation: "Students should move to a spot the driver can plainly see (commonly at least 10 feet away)."
+  },
+  {
+    id: 704,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "At passive railroad crossings (no gates/lights), you should be extra cautious because:",
+    options: [
+      "The tracks are abandoned",
+      "Trains always stop",
+      "Crossings are closed to buses",
+      "The decision to stop or proceed is entirely up to you",
+    ],
+    correctIndex: 3,
+    explanation: "Passive crossings have no active controls; you must recognize, look, and decide if safe."
+  },
+  {
+    id: 705,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "Proper mirror adjustment is vital on a school bus mainly to:",
+    options: [
+      "Keep the bus level",
+      "Reduce glare",
+      "Observe the danger zone for students and objects",
+      "Increase fuel mileage",
+    ],
+    correctIndex: 2,
+    explanation: "You must see students/objects in danger zones before moving."
+  },
+  {
+    id: 706,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "Properly adjusted outside flat mirrors should let you see:",
+    options: [
+      "Only the front bumper",
+      "Only the bus interior",
+      "200 feet (about 4 bus lengths) behind, along sides, and rear tires touching the ground",
+      "Only one lane",
+    ],
+    correctIndex: 2,
+    explanation: "Flat mirrors are used for traffic, clearances, and students; you should see far behind and the rear tires."
+  },
+  {
+    id: 707,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "When stopping a partially filled tanker on ice, surge is especially dangerous because: (Scenario 1)",
+    options: [
+      "The engine stalls",
+      "The steering wheel locks",
+      "The liquid can push the vehicle in the direction of the wave",
+      "The lights will dim",
+    ],
+    correctIndex: 2,
+    explanation: "A surge wave can shove the truck out of position."
+  },
+  {
+    id: 708,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "To reduce surge, you should generally: (Scenario 2)",
+    options: [
+      "Coast in neutral",
+      "Tailgate so you can draft",
+      "Brake far in advance and increase following distance",
+      "Make rapid lane changes",
+    ],
+    correctIndex: 2,
+    explanation: "More following distance and early braking help control surge."
+  },
+  {
+    id: 709,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "You are hauling molasses in a smooth bore tanker. Which driving style is safest? (Scenario 3)",
+    options: [
+      "Sharp steering to keep the load centered",
+      "Frequent lane changes to avoid surge",
+      "Quick starts and stops to reduce time on the road",
+      "Slow, smooth starts and gentle braking",
+    ],
+    correctIndex: 3,
+    explanation: "Smooth bore tanks have strong surge. Smooth, gradual control is safest."
+  },
+  {
+    id: 710,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "When loading a tank divided by bulkheads, you must pay close attention to: (Scenario 4)",
+    options: [
+      "Engine oil color",
+      "Seat belt adjustment",
+      "Mirror tint",
+      "Weight distribution front-to-rear",
+    ],
+    correctIndex: 3,
+    explanation: "Bulkheads create compartments; loading/unloading can shift weight distribution."
+  },
+  {
+    id: 711,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "When approaching a curve in a tank vehicle, the safest action is to: (Scenario 5)",
+    options: [
+      "Shift gears mid-curve",
+      "Brake hard in the curve",
+      "Slow down before the curve",
+      "Enter at the posted speed",
+    ],
+    correctIndex: 2,
+    explanation: "The posted curve speed may be too fast for tankers; slow before the curve."
+  },
+  {
+    id: 712,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "During a tanker pre-trip, you should pay special attention to the intake/discharge/cut-off valves because: (Scenario 6)",
+    options: [
+      "It improves fuel mileage",
+      "It changes the tire pressure",
+      "Leaks or wrong settings can cause a spill or release",
+      "It reduces engine noise",
+    ],
+    correctIndex: 2,
+    explanation: "Valves must be in the correct position before loading, unloading, or moving."
+  },
+  {
+    id: 713,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "A tank vehicle is more likely to roll over mainly because of: (Scenario 7)",
+    options: [
+      "Lighter tires",
+      "Low center of gravity",
+      "High center of gravity",
+      "Long wheelbase",
+    ],
+    correctIndex: 2,
+    explanation: "Tankers are top-heavy because much of the load weight is carried high."
+  },
+  {
+    id: 714,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "The best way to reduce rollover risk in a tanker on ramps and curves is to: (Scenario 8)",
+    options: [
+      "Shift up in the curve",
+      "Increase speed to stabilize",
+      "Rely on ABS",
+      "Steer and brake smoothly and reduce speed well below posted curve speeds",
+    ],
+    correctIndex: 3,
+    explanation: "Tankers can roll at posted curve speeds; slow and steer gently."
+  },
+  {
+    id: 715,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "When loading a tank divided by bulkheads, you must pay close attention to: (Scenario 9)",
+    options: [
+      "Seat belt adjustment",
+      "Engine oil color",
+      "Weight distribution front-to-rear",
+      "Mirror tint",
+    ],
+    correctIndex: 2,
+    explanation: "Bulkheads create compartments; loading/unloading can shift weight distribution."
+  },
+  {
+    id: 716,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "You are hauling latex in a smooth bore tanker. Which driving style is safest? (Scenario 10)",
+    options: [
+      "Frequent lane changes to avoid surge",
+      "Sharp steering to keep the load centered",
+      "Slow, smooth starts and gentle braking",
+      "Quick starts and stops to reduce time on the road",
+    ],
+    correctIndex: 2,
+    explanation: "Smooth bore tanks have strong surge. Smooth, gradual control is safest."
+  },
+  {
+    id: 717,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "A tank vehicle is more likely to roll over mainly because of: (Scenario 11)",
+    options: [
+      "Lighter tires",
+      "Low center of gravity",
+      "High center of gravity",
+      "Long wheelbase",
+    ],
+    correctIndex: 2,
+    explanation: "Tankers are top-heavy because much of the load weight is carried high."
+  },
+  {
+    id: 718,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "Before moving a tanker, you must never drive with: (Scenario 12)",
+    options: [
+      "Mirrors adjusted",
+      "Windows closed",
+      "Open valves or open manhole covers",
+      "Headlights on",
+    ],
+    correctIndex: 2,
+    explanation: "Open valves or manholes can cause leaks/releases and are unsafe/illegal."
+  },
+  {
+    id: 719,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "During a tanker pre-trip, you should pay special attention to the pipes and hose connections because: (Scenario 13)",
+    options: [
+      "It reduces engine noise",
+      "It changes the tire pressure",
+      "It improves fuel mileage",
+      "Leaks or wrong settings can cause a spill or release",
+    ],
+    correctIndex: 3,
+    explanation: "Leaks often show up around joints and connections."
+  },
+  {
+    id: 720,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "When loading a tank divided by bulkheads, you must pay close attention to: (Scenario 14)",
+    options: [
+      "Engine oil color",
+      "Seat belt adjustment",
+      "Weight distribution front-to-rear",
+      "Mirror tint",
+    ],
+    correctIndex: 2,
+    explanation: "Bulkheads create compartments; loading/unloading can shift weight distribution."
+  },
+  {
+    id: 721,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "When inspecting a tank vehicle, the single most important thing to check for is: (Scenario 15)",
+    options: [
+      "Cargo temperature",
+      "Paint damage",
+      "Tire brand",
+      "Leaks",
+    ],
+    correctIndex: 3,
+    explanation: "Leaks are the #1 concern on tank vehicles. A leaking tank must not be operated."
+  },
+  {
+    id: 722,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "To help control surge when stopping a tank vehicle, you should: (Scenario 16)",
+    options: [
+      "Pump the brakes quickly",
+      "Brake late and hard",
+      "Release brakes early and coast",
+      "Keep steady brake pressure and do not release too soon",
+    ],
+    correctIndex: 3,
+    explanation: "Steady braking and not releasing too soon helps prevent the liquid from surging forward."
+  },
+  {
+    id: 723,
+    licenseClasses: ["A", "B"],
+    endorsements: ["Tanker"],
+    category: "Tank Vehicles",
+    text: "You are hauling water in a smooth bore tanker. Which driving style is safest? (Scenario 17)",
+    options: [
+      "Frequent lane changes to avoid surge",
+      "Sharp steering to keep the load centered",
+      "Slow, smooth starts and gentle braking",
+      "Quick starts and stops to reduce time on the road",
+    ],
+    correctIndex: 2,
+    explanation: "Smooth bore tanks have strong surge. Smooth, gradual control is safest."
+  },
+  {
+    id: 724,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When pulling doubles/triples and driving in strong crosswinds, you should: (Scenario 1)",
+    options: [
+      "Ignore mirror checks to stay focused ahead",
+      "Make sudden moves to match traffic",
+      "Drive with one hand to relax",
+      "Allow larger gaps and make gradual changes",
+    ],
+    correctIndex: 3,
+    explanation: "Doubles/triples need more space and smooth, gradual lane/speed changes."
+  },
+  {
+    id: 725,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "The 'crack-the-whip' effect means: (Scenario 2)",
+    options: [
+      "The first trailer swings the most",
+      "Only triples can roll over",
+      "The last trailer is most likely to turn over",
+      "It happens only when braking",
+    ],
+    correctIndex: 2,
+    explanation: "Rearward amplification makes the last trailer swing and roll more easily."
+  },
+  {
+    id: 726,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When pulling doubles/triples and approaching an off-ramp, you should: (Scenario 3)",
+    options: [
+      "Make sudden moves to match traffic",
+      "Drive with one hand to relax",
+      "Allow larger gaps and make gradual changes",
+      "Ignore mirror checks to stay focused ahead",
+    ],
+    correctIndex: 2,
+    explanation: "Doubles/triples need more space and smooth, gradual lane/speed changes."
+  },
+  {
+    id: 727,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When coupling doubles, after you lock the pintle hook you should also: (Scenario 4)",
+    options: [
+      "Turn off the hazard lights",
+      "Cut the air lines short",
+      "Remove the safety chains",
+      "Secure the dolly support in the raised position",
+    ],
+    correctIndex: 3,
+    explanation: "The dolly support must be secured raised so it will not drop while moving."
+  },
+  {
+    id: 728,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "For safest handling, trailer loading should be: (Scenario 5)",
+    options: [
+      "Heaviest trailer in the rear",
+      "Heaviest trailer on the converter dolly",
+      "Even weight doesn't matter",
+      "Heaviest trailer directly behind the tractor",
+    ],
+    correctIndex: 3,
+    explanation: "Heavier trailer should be first; lighter trailer in the rear."
+  },
+  {
+    id: 729,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When pulling doubles/triples and entering freeway traffic, you should: (Scenario 6)",
+    options: [
+      "Ignore mirror checks to stay focused ahead",
+      "Drive with one hand to relax",
+      "Make sudden moves to match traffic",
+      "Allow larger gaps and make gradual changes",
+    ],
+    correctIndex: 3,
+    explanation: "Doubles/triples need more space and smooth, gradual lane/speed changes."
+  },
+  {
+    id: 730,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "Before backing the converter dolly under the rear trailer, you should make sure: (Scenario 7)",
+    options: [
+      "The fuel cap is open",
+      "The headlights are off",
+      "The turn signal is on",
+      "The rear trailer brakes are locked and/or wheels chocked",
+    ],
+    correctIndex: 3,
+    explanation: "Rear trailer must be secured so it cannot roll when you couple the dolly."
+  },
+  {
+    id: 731,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When pulling doubles/triples and driving in strong crosswinds, you should: (Scenario 8)",
+    options: [
+      "Ignore mirror checks to stay focused ahead",
+      "Drive with one hand to relax",
+      "Allow larger gaps and make gradual changes",
+      "Make sudden moves to match traffic",
+    ],
+    correctIndex: 2,
+    explanation: "Doubles/triples need more space and smooth, gradual lane/speed changes."
+  },
+  {
+    id: 732,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "Converter dollies built on or after March 1, 1998 are required to have: (Scenario 9)",
+    options: [
+      "Air suspension",
+      "Disc brakes only",
+      "Anti-lock brakes",
+      "A third axle",
+    ],
+    correctIndex: 2,
+    explanation: "ABS is required on newer converter dollies."
+  },
+  {
+    id: 733,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "Doubles/triples are less stable than other CMVs, so you should: (Scenario 10)",
+    options: [
+      "Make quick lane changes",
+      "Rely on the trailer hand valve",
+      "Drive smoothly and plan far ahead",
+      "Turn sharply to keep trailers straight",
+    ],
+    correctIndex: 2,
+    explanation: "Smooth control and looking far ahead reduces rollover/jackknife risk."
+  },
+  {
+    id: 734,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When pulling doubles/triples and changing lanes in city traffic, you should: (Scenario 11)",
+    options: [
+      "Ignore mirror checks to stay focused ahead",
+      "Drive with one hand to relax",
+      "Make sudden moves to match traffic",
+      "Allow larger gaps and make gradual changes",
+    ],
+    correctIndex: 3,
+    explanation: "Doubles/triples need more space and smooth, gradual lane/speed changes."
+  },
+  {
+    id: 735,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "The 'crack-the-whip' effect means: (Scenario 12)",
+    options: [
+      "The last trailer is most likely to turn over",
+      "It happens only when braking",
+      "Only triples can roll over",
+      "The first trailer swings the most",
+    ],
+    correctIndex: 0,
+    explanation: "Rearward amplification makes the last trailer swing and roll more easily."
+  },
+  {
+    id: 736,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When pulling doubles/triples and approaching an off-ramp, you should: (Scenario 13)",
+    options: [
+      "Ignore mirror checks to stay focused ahead",
+      "Drive with one hand to relax",
+      "Allow larger gaps and make gradual changes",
+      "Make sudden moves to match traffic",
+    ],
+    correctIndex: 2,
+    explanation: "Doubles/triples need more space and smooth, gradual lane/speed changes."
+  },
+  {
+    id: 737,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "To check that air flows to all trailers in a set of doubles, after charging the system you should: (Scenario 14)",
+    options: [
+      "Turn the steering wheel left",
+      "Tap each tire with a hammer",
+      "Open the fuel cap",
+      "Open the emergency line shut-off at the rear of the last trailer and listen for air",
+    ],
+    correctIndex: 3,
+    explanation: "Opening the emergency line at the rear and hearing air confirms the system is charged to the back."
+  },
+  {
+    id: 738,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "Converter dollies built on or after March 1, 1998 are required to have: (Scenario 15)",
+    options: [
+      "A third axle",
+      "Disc brakes only",
+      "Air suspension",
+      "Anti-lock brakes",
+    ],
+    correctIndex: 3,
+    explanation: "ABS is required on newer converter dollies."
+  },
+  {
+    id: 739,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "If you do not hear air escaping when checking airflow at the rear of the last trailer, you should first: (Scenario 16)",
+    options: [
+      "Drain the fuel tank",
+      "Replace the glad hands",
+      "Check that trailer/dolly shut-off valves are open",
+      "Remove the pintle hook",
+    ],
+    correctIndex: 2,
+    explanation: "No air at the back often means a shut-off valve is not open."
+  },
+  {
+    id: 740,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "A key safety warning when uncoupling doubles is: never: (Scenario 17)",
+    options: [
+      "Unlock the pintle hook with the dolly still under the rear trailer",
+      "Lower landing gear",
+      "Park on level ground",
+      "Chock wheels",
+    ],
+    correctIndex: 0,
+    explanation: "Unlocking the pintle hook while the dolly is under the trailer can make the tow bar fly up."
+  },
+  {
+    id: 741,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When parking doubles/triples, you should avoid: (Scenario 18)",
+    options: [
+      "Well-lit areas",
+      "Parking in a straight line",
+      "Spots you cannot pull straight through",
+      "Places you can pull straight through",
+    ],
+    correctIndex: 2,
+    explanation: "Avoid getting trapped where you cannot pull through; backing doubles is difficult."
+  },
+  {
+    id: 742,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "Safety chains on doubles should be: (Scenario 19)",
+    options: [
+      "Only used in snow",
+      "Wrapped around the axle",
+      "Secured to the trailer(s)",
+      "Removed to reduce weight",
+    ],
+    correctIndex: 2,
+    explanation: "Safety chains must be secured as part of the coupling system."
+  },
+  {
+    id: 743,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "Before backing the converter dolly under the rear trailer, you should make sure: (Scenario 20)",
+    options: [
+      "The headlights are off",
+      "The turn signal is on",
+      "The rear trailer brakes are locked and/or wheels chocked",
+      "The fuel cap is open",
+    ],
+    correctIndex: 2,
+    explanation: "Rear trailer must be secured so it cannot roll when you couple the dolly."
+  },
+  {
+    id: 744,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When pulling doubles/triples and approaching an off-ramp, you should: (Scenario 21)",
+    options: [
+      "Make sudden moves to match traffic",
+      "Ignore mirror checks to stay focused ahead",
+      "Drive with one hand to relax",
+      "Allow larger gaps and make gradual changes",
+    ],
+    correctIndex: 3,
+    explanation: "Doubles/triples need more space and smooth, gradual lane/speed changes."
+  },
+  {
+    id: 745,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "One way to identify ABS on a converter dolly is: (Scenario 22)",
+    options: [
+      "A blue light on the trailer",
+      "A green lamp on the right side",
+      "A yellow lamp on the left side of the dolly",
+      "A red triangle decal",
+    ],
+    correctIndex: 2,
+    explanation: "The dolly has a yellow lamp on the left side."
+  },
+  {
+    id: 746,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When pulling doubles/triples and driving in strong crosswinds, you should: (Scenario 23)",
+    options: [
+      "Ignore mirror checks to stay focused ahead",
+      "Make sudden moves to match traffic",
+      "Drive with one hand to relax",
+      "Allow larger gaps and make gradual changes",
+    ],
+    correctIndex: 3,
+    explanation: "Doubles/triples need more space and smooth, gradual lane/speed changes."
+  },
+  {
+    id: 747,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When pulling doubles/triples and driving in strong crosswinds, you should: (Scenario 24)",
+    options: [
+      "Drive with one hand to relax",
+      "Make sudden moves to match traffic",
+      "Ignore mirror checks to stay focused ahead",
+      "Allow larger gaps and make gradual changes",
+    ],
+    correctIndex: 3,
+    explanation: "Doubles/triples need more space and smooth, gradual lane/speed changes."
+  },
+  {
+    id: 748,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When pulling doubles/triples and entering freeway traffic, you should: (Scenario 25)",
+    options: [
+      "Drive with one hand to relax",
+      "Ignore mirror checks to stay focused ahead",
+      "Make sudden moves to match traffic",
+      "Allow larger gaps and make gradual changes",
+    ],
+    correctIndex: 3,
+    explanation: "Doubles/triples need more space and smooth, gradual lane/speed changes."
+  },
+  {
+    id: 749,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "For safest handling, trailer loading should be: (Scenario 26)",
+    options: [
+      "Even weight doesn't matter",
+      "Heaviest trailer in the rear",
+      "Heaviest trailer directly behind the tractor",
+      "Heaviest trailer on the converter dolly",
+    ],
+    correctIndex: 2,
+    explanation: "Heavier trailer should be first; lighter trailer in the rear."
+  },
+  {
+    id: 750,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "One way to identify ABS on a converter dolly is: (Scenario 27)",
+    options: [
+      "A green lamp on the right side",
+      "A blue light on the trailer",
+      "A yellow lamp on the left side of the dolly",
+      "A red triangle decal",
+    ],
+    correctIndex: 2,
+    explanation: "The dolly has a yellow lamp on the left side."
+  },
+  {
+    id: 751,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "When coupling doubles, after you lock the pintle hook you should also: (Scenario 28)",
+    options: [
+      "Remove the safety chains",
+      "Turn off the hazard lights",
+      "Cut the air lines short",
+      "Secure the dolly support in the raised position",
+    ],
+    correctIndex: 3,
+    explanation: "The dolly support must be secured raised so it will not drop while moving."
+  },
+  {
+    id: 752,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "A major reason doubles require gentler steering is that: (Scenario 29)",
+    options: [
+      "They have smaller tires",
+      "They are always lighter",
+      "They have no mirrors",
+      "The last trailer reacts more sharply than the tractor",
+    ],
+    correctIndex: 3,
+    explanation: "Rearward amplification increases trailer swing and rollover risk."
+  },
+  {
+    id: 753,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "If you do not hear air escaping when checking airflow at the rear of the last trailer, you should first: (Scenario 30)",
+    options: [
+      "Remove the pintle hook",
+      "Drain the fuel tank",
+      "Check that trailer/dolly shut-off valves are open",
+      "Replace the glad hands",
+    ],
+    correctIndex: 2,
+    explanation: "No air at the back often means a shut-off valve is not open."
+  },
+  {
+    id: 754,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "On the converter dolly, you must confirm the pintle hook is: (Scenario 31)",
+    options: [
+      "Painted",
+      "New",
+      "Warm",
+      "Latched",
+    ],
+    correctIndex: 3,
+    explanation: "A latched pintle hook is critical to prevent separation."
+  },
+  {
+    id: 755,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "A key safety warning when uncoupling doubles is: never: (Scenario 32)",
+    options: [
+      "Lower landing gear",
+      "Chock wheels",
+      "Park on level ground",
+      "Unlock the pintle hook with the dolly still under the rear trailer",
+    ],
+    correctIndex: 3,
+    explanation: "Unlocking the pintle hook while the dolly is under the trailer can make the tow bar fly up."
+  },
+  {
+    id: 756,
+    licenseClasses: ["A"],
+    endorsements: ["Doubles/Triples"],
+    category: "Doubles/Triples",
+    text: "If the rear trailer in doubles does NOT have spring brakes, one safe way to set its emergency brakes before coupling is to: (Scenario 33)",
+    options: [
+      "Park downhill",
+      "Bleed the air from the tractor",
+      "Disconnect the service line",
+      "Connect the emergency line to charge the tank, then disconnect it",
+    ],
+    correctIndex: 3,
+    explanation: "Charging and disconnecting the emergency line can set the trailer emergency brakes."
+  },
+  {
+    id: 757,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "Emergency exits must be checked for: (Scenario 1)",
+    options: [
+      "Tire pressure",
+      "Seat comfort",
+      "Window tint",
+      "Ease of operation and proper markings (and buzzers if required)",
+    ],
+    correctIndex: 3,
+    explanation: "Passenger vehicles require emergency exits that open easily and are properly marked."
+  },
+  {
+    id: 758,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "If your bus is equipped with circuit breakers instead of fuses, the bus: (Scenario 2)",
+    options: [
+      "Cannot operate at night",
+      "Must still carry spare fuses",
+      "Does not need spare fuses",
+      "Must carry spare tires",
+    ],
+    correctIndex: 2,
+    explanation: "Spare electrical fuses are required unless equipped with circuit breakers."
+  },
+  {
+    id: 759,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "A CLP holder with a Passenger (P) endorsement is generally prohibited from operating a CMV with passengers except: (Scenario 3)",
+    options: [
+      "Only family members",
+      "Any paying passengers",
+      "Auditors/inspectors, test examiners, other trainees, and the accompanying CDL holder",
+      "No one ever",
+    ],
+    correctIndex: 2,
+    explanation: "Learner permit holders cannot carry passengers except limited authorized persons and the accompanying CDL holder."
+  },
+  {
+    id: 760,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "Before pulling away from a stop, you should ensure: (Scenario 4)",
+    options: [
+      "Passengers are standing near the door",
+      "That the radio is loud enough",
+      "Carry-ons are secured and exits are not blocked",
+      "Only that the engine runs",
+    ],
+    correctIndex: 2,
+    explanation: "Secure baggage and keep exits clear so passengers can evacuate if needed."
+  },
+  {
+    id: 761,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "If your bus is equipped with circuit breakers instead of fuses, the bus: (Scenario 5)",
+    options: [
+      "Cannot operate at night",
+      "Must still carry spare fuses",
+      "Must carry spare tires",
+      "Does not need spare fuses",
+    ],
+    correctIndex: 3,
+    explanation: "Spare electrical fuses are required unless equipped with circuit breakers."
+  },
+  {
+    id: 762,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "A passenger bus interior check is important because: (Scenario 6)",
+    options: [
+      "It is only required on new buses",
+      "It improves fuel economy",
+      "It reduces tire wear",
+      "People sometimes damage unattended buses",
+    ],
+    correctIndex: 3,
+    explanation: "Interior checks protect rider safety from damage or hazards."
+  },
+  {
+    id: 763,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "When loading passengers, carry-on baggage should: (Scenario 7)",
+    options: [
+      "Be held by passengers while standing",
+      "Be stacked on steps",
+      "Be secured and kept out of doorways/aisles",
+      "Be placed in aisles to save time",
+    ],
+    correctIndex: 2,
+    explanation: "Carry-ons must not block aisles/doors and should be secured to prevent injury."
+  },
+  {
+    id: 764,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "A passenger bus interior check is important because: (Scenario 8)",
+    options: [
+      "It is only required on new buses",
+      "It improves fuel economy",
+      "It reduces tire wear",
+      "People sometimes damage unattended buses",
+    ],
+    correctIndex: 3,
+    explanation: "Interior checks protect rider safety from damage or hazards."
+  },
+  {
+    id: 765,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "On a bus, the driver's seat belt should be: (Scenario 9)",
+    options: [
+      "Used only in rain",
+      "Optional if driving slowly",
+      "Used only on highways",
+      "Always used",
+    ],
+    correctIndex: 3,
+    explanation: "Drivers should always use the seat belt for safety."
+  },
+  {
+    id: 766,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "If your bus is equipped with circuit breakers instead of fuses, the bus: (Scenario 10)",
+    options: [
+      "Must carry spare tires",
+      "Must still carry spare fuses",
+      "Does not need spare fuses",
+      "Cannot operate at night",
+    ],
+    correctIndex: 2,
+    explanation: "Spare electrical fuses are required unless equipped with circuit breakers."
+  },
+  {
+    id: 767,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "On a bus, the driver's seat belt should be: (Scenario 11)",
+    options: [
+      "Used only in rain",
+      "Optional if driving slowly",
+      "Used only on highways",
+      "Always used",
+    ],
+    correctIndex: 3,
+    explanation: "Drivers should always use the seat belt for safety."
+  },
+  {
+    id: 768,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "When loading passengers, carry-on baggage should: (Scenario 12)",
+    options: [
+      "Be held by passengers while standing",
+      "Be placed in aisles to save time",
+      "Be secured and kept out of doorways/aisles",
+      "Be stacked on steps",
+    ],
+    correctIndex: 2,
+    explanation: "Carry-ons must not block aisles/doors and should be secured to prevent injury."
+  },
+  {
+    id: 769,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "Emergency exits must be checked for: (Scenario 13)",
+    options: [
+      "Tire pressure",
+      "Seat comfort",
+      "Window tint",
+      "Ease of operation and proper markings (and buzzers if required)",
+    ],
+    correctIndex: 3,
+    explanation: "Passenger vehicles require emergency exits that open easily and are properly marked."
+  },
+  {
+    id: 770,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "On a bus, the driver's seat belt should be: (Scenario 14)",
+    options: [
+      "Used only on highways",
+      "Used only in rain",
+      "Always used",
+      "Optional if driving slowly",
+    ],
+    correctIndex: 2,
+    explanation: "Drivers should always use the seat belt for safety."
+  },
+  {
+    id: 771,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "A CLP holder with a Passenger (P) endorsement is generally prohibited from operating a CMV with passengers except: (Scenario 15)",
+    options: [
+      "Any paying passengers",
+      "Only family members",
+      "No one ever",
+      "Auditors/inspectors, test examiners, other trainees, and the accompanying CDL holder",
+    ],
+    correctIndex: 3,
+    explanation: "Learner permit holders cannot carry passengers except limited authorized persons and the accompanying CDL holder."
+  },
+  {
+    id: 772,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "Before pulling away from a stop, you should ensure: (Scenario 16)",
+    options: [
+      "Passengers are standing near the door",
+      "That the radio is loud enough",
+      "Carry-ons are secured and exits are not blocked",
+      "Only that the engine runs",
+    ],
+    correctIndex: 2,
+    explanation: "Secure baggage and keep exits clear so passengers can evacuate if needed."
+  },
+  {
+    id: 773,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "A CLP holder with a Passenger (P) endorsement is generally prohibited from operating a CMV with passengers except: (Scenario 17)",
+    options: [
+      "No one ever",
+      "Only family members",
+      "Any paying passengers",
+      "Auditors/inspectors, test examiners, other trainees, and the accompanying CDL holder",
+    ],
+    correctIndex: 3,
+    explanation: "Learner permit holders cannot carry passengers except limited authorized persons and the accompanying CDL holder."
+  },
+  {
+    id: 774,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "Before driving a bus, you should review the previous driver's inspection report and: (Scenario 18)",
+    options: [
+      "Throw it away",
+      "Only check the fuel level",
+      "Ignore it if you're in a hurry",
+      "Sign it only after defects are certified repaired or not needed",
+    ],
+    correctIndex: 3,
+    explanation: "You certify by signing that reported defects were repaired or repairs not needed."
+  },
+  {
+    id: 775,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "A passenger bus interior check is important because: (Scenario 19)",
+    options: [
+      "It improves fuel economy",
+      "It is only required on new buses",
+      "People sometimes damage unattended buses",
+      "It reduces tire wear",
+    ],
+    correctIndex: 2,
+    explanation: "Interior checks protect rider safety from damage or hazards."
+  },
+  {
+    id: 776,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "Aisles and stairwells on a bus should be: (Scenario 20)",
+    options: [
+      "Used for luggage",
+      "Covered with loose mats",
+      "Kept clear at all times",
+      "Blocked to prevent standees",
+    ],
+    correctIndex: 2,
+    explanation: "Clear aisles/stairwells prevent trips and allow emergency evacuation."
+  },
+  {
+    id: 777,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "Before driving a bus, you should review the previous driver's inspection report and: (Scenario 21)",
+    options: [
+      "Throw it away",
+      "Only check the fuel level",
+      "Ignore it if you're in a hurry",
+      "Sign it only after defects are certified repaired or not needed",
+    ],
+    correctIndex: 3,
+    explanation: "You certify by signing that reported defects were repaired or repairs not needed."
+  },
+  {
+    id: 778,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "A passenger drops a bag in the aisle during loading. You should: (Scenario 22)",
+    options: [
+      "Drive off to keep schedule",
+      "Kick it under a seat",
+      "Leave it; it will not matter",
+      "Have it secured so the aisle/doorway stays clear",
+    ],
+    correctIndex: 3,
+    explanation: "Aisles/doorways must remain clear for safety and evacuation."
+  },
+  {
+    id: 779,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "A passenger drops a bag in the aisle during loading. You should: (Scenario 23)",
+    options: [
+      "Leave it; it will not matter",
+      "Drive off to keep schedule",
+      "Kick it under a seat",
+      "Have it secured so the aisle/doorway stays clear",
+    ],
+    correctIndex: 3,
+    explanation: "Aisles/doorways must remain clear for safety and evacuation."
+  },
+  {
+    id: 780,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "When checking bus interior, handholds and seats must be: (Scenario 24)",
+    options: [
+      "Warm",
+      "Decorated",
+      "Soft",
+      "Secure and in safe working condition",
+    ],
+    correctIndex: 3,
+    explanation: "Handholds/rails and seats must be safe and securely fastened."
+  },
+  {
+    id: 781,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "On a bus, the driver's seat belt should be: (Scenario 25)",
+    options: [
+      "Optional if driving slowly",
+      "Used only in rain",
+      "Used only on highways",
+      "Always used",
+    ],
+    correctIndex: 3,
+    explanation: "Drivers should always use the seat belt for safety."
+  },
+  {
+    id: 782,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "A passenger bus interior check is important because: (Scenario 26)",
+    options: [
+      "It is only required on new buses",
+      "It improves fuel economy",
+      "It reduces tire wear",
+      "People sometimes damage unattended buses",
+    ],
+    correctIndex: 3,
+    explanation: "Interior checks protect rider safety from damage or hazards."
+  },
+  {
+    id: 783,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "You should never drive a bus with: (Scenario 27)",
+    options: [
+      "Heater on",
+      "Passengers seated",
+      "Radio on",
+      "Open emergency exit door or window",
+    ],
+    correctIndex: 3,
+    explanation: "Emergency exits must be closed and properly marked before driving."
+  },
+  {
+    id: 784,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "If your bus has roof hatches, you may lock some hatches partly open for fresh air, but you should remember: (Scenario 28)",
+    options: [
+      "It increases braking power",
+      "It reduces the bus height",
+      "The bus has higher clearance with hatches open",
+      "Clearance is unchanged",
+    ],
+    correctIndex: 2,
+    explanation: "Partly open roof hatches increase clearance needs."
+  },
+  {
+    id: 785,
+    licenseClasses: ["B", "C"],
+    endorsements: ["Passenger"],
+    category: "Safety Systems",
+    text: "Emergency exits must be checked for: (Scenario 29)",
+    options: [
+      "Window tint",
+      "Seat comfort",
+      "Ease of operation and proper markings (and buzzers if required)",
+      "Tire pressure",
+    ],
+    correctIndex: 2,
+    explanation: "Passenger vehicles require emergency exits that open easily and are properly marked."
+  },
+  {
+    id: 786,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "Students should board the school bus: (Scenario 1)",
+    options: [
+      "Whenever they want",
+      "After the bus starts moving",
+      "Only when signaled by the driver",
+      "From the left side only",
+    ],
+    correctIndex: 2,
+    explanation: "Driver must signal students to board to control the danger zone."
+  },
+  {
+    id: 787,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "Before opening the door to load students, you should: (Scenario 2)",
+    options: [
+      "Wave students across immediately",
+      "Turn off all lights",
+      "Make a final check that all traffic has stopped and it is safe",
+      "Assume traffic will stop",
+    ],
+    correctIndex: 2,
+    explanation: "You must confirm traffic has stopped before signaling students to approach."
+  },
+  {
+    id: 788,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "When approaching a school stop, you should continuously check: (Scenario 3)",
+    options: [
+      "Only the speedometer",
+      "Only the right mirror",
+      "Only the interior mirror",
+      "All mirrors to monitor danger zones",
+    ],
+    correctIndex: 3,
+    explanation: "Mirror checks help you monitor students and traffic in danger zones."
+  },
+  {
+    id: 789,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "If you cannot account for a student at the stop, the safest action is to: (Scenario 4)",
+    options: [
+      "Drive off and call later",
+      "Honk twice and leave",
+      "Tell other students to find them",
+      "Secure the bus, take the key, and check around/under the bus",
+    ],
+    correctIndex: 3,
+    explanation: "If a student is missing, you must secure the bus and physically check around and underneath."
+  },
+  {
+    id: 790,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "If you must back up at a student pick-up point, a safer practice is to: (Scenario 5)",
+    options: [
+      "Back with the door open",
+      "Have students guide you from behind",
+      "Pick up students before backing and watch for late comers",
+      "Back first, then pick up students",
+    ],
+    correctIndex: 2,
+    explanation: "Pick up students before backing and continuously watch for latecomers."
+  },
+  {
+    id: 791,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "The school bus 'danger zone' can extend as much as: (Scenario 6)",
+    options: [
+      "5 feet behind only",
+      "100 feet behind only",
+      "10 feet all around",
+      "30 feet in front, 12 feet to sides, and 12 feet behind",
+    ],
+    correctIndex: 3,
+    explanation: "Danger zones can extend 30 ft in front, 12 ft to sides, and 12 ft behind (with most danger close to the front)."
+  },
+  {
+    id: 792,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "Before leaving a school bus stop, you should: (Scenario 7)",
+    options: [
+      "Turn off alternating red lights only after you are moving",
+      "Leave the door open to hear kids",
+      "Let students run to catch the bus",
+      "Check mirrors and make sure no students are around or returning to the bus",
+    ],
+    correctIndex: 3,
+    explanation: "Always check mirrors and confirm students are clear before moving."
+  },
+  {
+    id: 793,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "If there is NO white stop line at a railroad crossing, the school bus should stop: (Scenario 8)",
+    options: [
+      "After the crossbuck",
+      "On the tracks",
+      "Before the crossbuck sign",
+      "Only if lights are flashing",
+    ],
+    correctIndex: 2,
+    explanation: "If no stop line exists, stop before the crossbuck sign."
+  },
+  {
+    id: 794,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "Before leaving a school bus stop, you should: (Scenario 9)",
+    options: [
+      "Leave the door open to hear kids",
+      "Turn off alternating red lights only after you are moving",
+      "Check mirrors and make sure no students are around or returning to the bus",
+      "Let students run to catch the bus",
+    ],
+    correctIndex: 2,
+    explanation: "Always check mirrors and confirm students are clear before moving."
+  },
+  {
+    id: 795,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "The school bus 'danger zone' can extend as much as: (Scenario 10)",
+    options: [
+      "10 feet all around",
+      "5 feet behind only",
+      "100 feet behind only",
+      "30 feet in front, 12 feet to sides, and 12 feet behind",
+    ],
+    correctIndex: 3,
+    explanation: "Danger zones can extend 30 ft in front, 12 ft to sides, and 12 ft behind (with most danger close to the front)."
+  },
+  {
+    id: 796,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "The area to the left of the school bus is always considered dangerous because: (Scenario 11)",
+    options: [
+      "Students never use that side",
+      "It is higher",
+      "Cars may pass on the left",
+      "It has more mirrors",
+    ],
+    correctIndex: 2,
+    explanation: "Passing cars and limited visibility make the left side especially dangerous."
+  },
+  {
+    id: 797,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "If there is NO white stop line at a railroad crossing, the school bus should stop: (Scenario 12)",
+    options: [
+      "Only if lights are flashing",
+      "On the tracks",
+      "After the crossbuck",
+      "Before the crossbuck sign",
+    ],
+    correctIndex: 3,
+    explanation: "If no stop line exists, stop before the crossbuck sign."
+  },
+  {
+    id: 798,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "Before leaving a school bus stop, you should: (Scenario 13)",
+    options: [
+      "Let students run to catch the bus",
+      "Turn off alternating red lights only after you are moving",
+      "Leave the door open to hear kids",
+      "Check mirrors and make sure no students are around or returning to the bus",
+    ],
+    correctIndex: 3,
+    explanation: "Always check mirrors and confirm students are clear before moving."
+  },
+  {
+    id: 799,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "Before leaving a school bus stop, you should: (Scenario 14)",
+    options: [
+      "Let students run to catch the bus",
+      "Leave the door open to hear kids",
+      "Check mirrors and make sure no students are around or returning to the bus",
+      "Turn off alternating red lights only after you are moving",
+    ],
+    correctIndex: 2,
+    explanation: "Always check mirrors and confirm students are clear before moving."
+  },
+  {
+    id: 800,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "If you cannot account for a student at the stop, the safest action is to: (Scenario 15)",
+    options: [
+      "Drive off and call later",
+      "Tell other students to find them",
+      "Secure the bus, take the key, and check around/under the bus",
+      "Honk twice and leave",
+    ],
+    correctIndex: 2,
+    explanation: "If a student is missing, you must secure the bus and physically check around and underneath."
+  },
+  {
+    id: 801,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "At a railroad-highway crossing with a white stop line, the front of the school bus must remain: (Scenario 16)",
+    options: [
+      "On top of the line",
+      "Past the line",
+      "Halfway across the tracks",
+      "Behind the line",
+    ],
+    correctIndex: 3,
+    explanation: "If a white stop line is present, the front of the bus must stay behind it while stopped."
+  },
+  {
+    id: 802,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "If you cannot account for a student at the stop, the safest action is to: (Scenario 17)",
+    options: [
+      "Tell other students to find them",
+      "Honk twice and leave",
+      "Secure the bus, take the key, and check around/under the bus",
+      "Drive off and call later",
+    ],
+    correctIndex: 2,
+    explanation: "If a student is missing, you must secure the bus and physically check around and underneath."
+  },
+  {
+    id: 803,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "Students should board the school bus: (Scenario 18)",
+    options: [
+      "From the left side only",
+      "After the bus starts moving",
+      "Only when signaled by the driver",
+      "Whenever they want",
+    ],
+    correctIndex: 2,
+    explanation: "Driver must signal students to board to control the danger zone."
+  },
+  {
+    id: 804,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "The area to the left of the school bus is always considered dangerous because: (Scenario 19)",
+    options: [
+      "Students never use that side",
+      "It has more mirrors",
+      "It is higher",
+      "Cars may pass on the left",
+    ],
+    correctIndex: 3,
+    explanation: "Passing cars and limited visibility make the left side especially dangerous."
+  },
+  {
+    id: 805,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "At passive railroad crossings (no gates/lights), you should be extra cautious because: (Scenario 20)",
+    options: [
+      "The tracks are abandoned",
+      "Trains always stop",
+      "Crossings are closed to buses",
+      "The decision to stop or proceed is entirely up to you",
+    ],
+    correctIndex: 3,
+    explanation: "Passive crossings have no active controls; you must recognize, look, and decide if safe."
+  },
+  {
+    id: 806,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "The area to the left of the school bus is always considered dangerous because: (Scenario 21)",
+    options: [
+      "Students never use that side",
+      "It has more mirrors",
+      "It is higher",
+      "Cars may pass on the left",
+    ],
+    correctIndex: 3,
+    explanation: "Passing cars and limited visibility make the left side especially dangerous."
+  },
+  {
+    id: 807,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "Before leaving a school bus stop, you should: (Scenario 22)",
+    options: [
+      "Leave the door open to hear kids",
+      "Turn off alternating red lights only after you are moving",
+      "Let students run to catch the bus",
+      "Check mirrors and make sure no students are around or returning to the bus",
+    ],
+    correctIndex: 3,
+    explanation: "Always check mirrors and confirm students are clear before moving."
+  },
+  {
+    id: 808,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "If you cannot account for a student at the stop, the safest action is to: (Scenario 23)",
+    options: [
+      "Tell other students to find them",
+      "Drive off and call later",
+      "Honk twice and leave",
+      "Secure the bus, take the key, and check around/under the bus",
+    ],
+    correctIndex: 3,
+    explanation: "If a student is missing, you must secure the bus and physically check around and underneath."
+  },
+  {
+    id: 809,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "A school bus can have up to about ___ of tail swing. (Scenario 24)",
+    options: [
+      "6 inches",
+      "8 feet",
+      "3 feet",
+      "1 foot",
+    ],
+    correctIndex: 2,
+    explanation: "Tail swing can reach about 3 feet; check mirrors before and during turns."
+  },
+  {
+    id: 810,
+    licenseClasses: ["B", "C"],
+    endorsements: ["School Bus"],
+    category: "Safety Systems",
+    text: "If you cannot account for a student at the stop, the safest action is to: (Scenario 25)",
+    options: [
+      "Tell other students to find them",
+      "Honk twice and leave",
+      "Secure the bus, take the key, and check around/under the bus",
+      "Drive off and call later",
+    ],
+    correctIndex: 2,
+    explanation: "If a student is missing, you must secure the bus and physically check around and underneath."
   }
 ];
