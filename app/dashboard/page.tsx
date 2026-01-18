@@ -10,6 +10,20 @@ import Link from "next/link";
 // Keep in sync with your sim/pay config key
 const CONFIG_KEY = "haulOS.config.v1";
 
+/**
+ * ✅ Google Ads purchase conversion (CDL)
+ * Fires ONLY when dashboard has ?plan=monthly|lifetime
+ * Uses real values (monthly: 19.95, lifetime: 69)
+ * Prevents duplicates on refresh:
+ *   - removes ?plan from URL after firing
+ *   - sessionStorage guard if user hits the same URL again
+ *
+ * IMPORTANT:
+ * - Set these to your CDL Google Ads values (same pattern as your NREMT setup)
+ */
+const GOOGLE_ADS_ID = "AW-17883612588";
+const GOOGLE_ADS_CONVERSION_LABEL = "eEaJCJm9oOcbEKyLyc9C"; // replace if CDL has a different label
+
 // --- HELPERS ---
 function AnimatedNumber({ value }: { value: number }) {
   const spring = useSpring(0, { mass: 0.8, stiffness: 75, damping: 15 });
@@ -102,6 +116,69 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
 
   const [lastMiss, setLastMiss] = useState<{ text: string; category: string } | null>(null);
+
+  // ✅ Google Ads conversion:
+  // Fires ONLY when dashboard has ?plan=monthly|lifetime
+  // Uses real prices 19.95 / 69
+  // Uses transaction_id = timestamp (Date.now())
+  // Prevents duplicates on refresh:
+  //   - removes ?plan from URL after firing
+  //   - sessionStorage guard if user hits the same URL again
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const url = new URL(window.location.href);
+    const plan = (url.searchParams.get("plan") || "").toLowerCase();
+
+    const PLAN_VALUE: Record<string, number> = {
+      monthly: 19.95,
+      lifetime: 69,
+    };
+
+    if (!(plan in PLAN_VALUE)) return;
+
+    // ✅ session guard: prevents double-firing even if the user re-opens same URL with plan again
+    const firedKey = `ads_purchase_fired_${plan}`;
+    if (sessionStorage.getItem(firedKey) === "1") {
+      // still clean URL so refresh doesn't show plan
+      url.searchParams.delete("plan");
+      window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+      return;
+    }
+
+    const value = PLAN_VALUE[plan];
+    const transaction_id = String(Date.now());
+
+    const w = window as any;
+    w.dataLayer = w.dataLayer || [];
+
+    const gtag =
+      typeof w.gtag === "function"
+        ? w.gtag
+        : function () {
+            w.dataLayer.push(arguments);
+          };
+
+    try {
+      // robustness: ensure config exists even if init script hasn’t run yet
+      gtag("config", GOOGLE_ADS_ID);
+
+      gtag("event", "conversion", {
+        send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_CONVERSION_LABEL}`,
+        value,
+        currency: "USD",
+        transaction_id,
+      });
+
+      sessionStorage.setItem(firedKey, "1");
+    } catch {
+      // if anything fails, we still clean URL below
+    }
+
+    // ✅ prevent duplicate firing on refresh: remove plan from the URL
+    url.searchParams.delete("plan");
+    window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
