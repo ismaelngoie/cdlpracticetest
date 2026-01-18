@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-// --- CONSTANTS ---
+// -------------------- CONSTANTS --------------------
 const US_STATES = [
   { code: "AL", name: "Alabama" }, { code: "AK", name: "Alaska" }, { code: "AZ", name: "Arizona" }, { code: "AR", name: "Arkansas" },
   { code: "CA", name: "California" }, { code: "CO", name: "Colorado" }, { code: "CT", name: "Connecticut" }, { code: "DE", name: "Delaware" },
@@ -22,13 +22,11 @@ const US_STATES = [
   { code: "WV", name: "West Virginia" }, { code: "WI", name: "Wisconsin" }, { code: "WY", name: "Wyoming" }
 ] as const;
 
-// --- TYPES ---
 type LicenseClass = "A" | "B" | "C" | "D";
 type Endorsement = "Air Brakes" | "Hazmat" | "Tanker" | "Doubles/Triples" | "Passenger";
 
-// --- STORAGE ---
+// Config storage (new) + legacy keys (existing app)
 const STORAGE_KEY = "haulOS.config.v1";
-
 type StoredConfig = {
   license: LicenseClass;
   endorsements: Endorsement[];
@@ -45,22 +43,24 @@ function safeParseJSON<T>(value: string | null): T | null {
   }
 }
 
+// -------------------- COMPONENT --------------------
 export default function Home() {
   const router = useRouter();
   const configuratorRef = useRef<HTMLDivElement | null>(null);
 
-  // --- State ---
   const [mounted, setMounted] = useState(false);
+
+  // Personalization
   const [license, setLicense] = useState<LicenseClass>("A");
   const [endorsements, setEndorsements] = useState<Endorsement[]>([]);
   const [userState, setUserState] = useState("TX");
 
-  // UI State
+  // UI
   const [stickyCtaVisible, setStickyCtaVisible] = useState(true);
 
   useEffect(() => setMounted(true), []);
 
-  // Restore persisted config (production-ready, resilient)
+  // Restore persisted config (safe)
   useEffect(() => {
     if (!mounted) return;
 
@@ -69,7 +69,7 @@ export default function Home() {
     if (Array.isArray(saved?.endorsements)) setEndorsements(saved.endorsements);
     if (typeof saved?.userState === "string") setUserState(saved.userState);
 
-    // Also support legacy keys if they exist (migration)
+    // Legacy keys support (migration)
     const legacyLicense = localStorage.getItem("userLevel") as LicenseClass | null;
     const legacyEnd = safeParseJSON<Endorsement[]>(localStorage.getItem("userEndorsements"));
     const legacyState = localStorage.getItem("userState");
@@ -79,9 +79,10 @@ export default function Home() {
     if (legacyState) setUserState(legacyState);
   }, [mounted]);
 
-  // Persist on every change (so a user can bounce and come back without losing choices)
+  // Persist on every change
   useEffect(() => {
     if (!mounted) return;
+
     const payload: StoredConfig = {
       license,
       endorsements,
@@ -90,18 +91,17 @@ export default function Home() {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 
-    // Keep legacy keys updated so /sim stays compatible
+    // Keep legacy keys updated for /sim and other pages
     localStorage.setItem("userLevel", license);
     localStorage.setItem("userEndorsements", JSON.stringify(endorsements));
     localStorage.setItem("userState", userState);
   }, [mounted, license, endorsements, userState]);
 
-  // Sticky CTA visibility (mobile conversion boost)
+  // Sticky CTA (hide when near configurator)
   useEffect(() => {
     if (!mounted) return;
 
     const onScroll = () => {
-      // Hide sticky CTA if user is already near the configurator CTA
       const el = configuratorRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
@@ -114,8 +114,8 @@ export default function Home() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [mounted]);
 
-  // --- Salary Calculator Logic (labelled as estimate) ---
   const estimatedSalary = useMemo(() => {
+    // Labeled as estimate only — keep it simple + motivating
     let base = 45000;
     if (license === "A") base += 25000;
     if (license === "B") base += 10000;
@@ -124,18 +124,16 @@ export default function Home() {
     if (endorsements.includes("Tanker")) base += 8000;
     if (endorsements.includes("Doubles/Triples")) base += 15000;
     if (endorsements.includes("Air Brakes")) base += 2000;
+    if (endorsements.includes("Passenger")) base += 5000;
 
     return base.toLocaleString();
   }, [license, endorsements]);
 
   const toggleEndorsement = (e: Endorsement) => {
-    setEndorsements((prev) =>
-      prev.includes(e) ? prev.filter((item) => item !== e) : [...prev, e]
-    );
+    setEndorsements((prev) => (prev.includes(e) ? prev.filter((x) => x !== e) : [...prev, e]));
   };
 
   const startDiagnostic = () => {
-    // Storage already synced by effect; this is just a hard “commit + go”.
     router.push("/sim");
   };
 
@@ -144,57 +142,54 @@ export default function Home() {
   };
 
   const badge = (text: string) => (
-    <span className="px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+    <span className="px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-black text-slate-300 uppercase tracking-widest">
       {text}
     </span>
   );
 
   return (
     <main className="min-h-screen bg-slate-950 text-white font-sans selection:bg-amber-500/30">
-      {/* Background FX */}
+      {/* Background FX (minimalist grid + soft glows) */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:44px_44px]" />
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.20),transparent_60%)]" />
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[900px] h-[900px] opacity-10 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.25),transparent_60%)]" />
+        <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:52px_52px]" />
+        <div className="absolute inset-0 opacity-[0.10] bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.22),transparent_60%)]" />
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[900px] h-[900px] opacity-[0.10] bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.25),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_35%,rgba(2,6,23,0.90)_75%)]" />
       </div>
 
       {/* Top Nav */}
       <div className="sticky top-0 z-30 bg-slate-950/70 backdrop-blur border-b border-white/5">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 grid place-items-center">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 grid place-items-center shadow-[0_0_18px_rgba(245,158,11,0.10)]">
               <span className="text-amber-400 font-black">H</span>
             </div>
             <div className="leading-tight">
               <div className="text-xs font-black tracking-widest uppercase">
-                HAUL<span className="text-amber-500">.OS</span>
+                CDL<span className="text-amber-500">PracticeTest</span>
               </div>
               <div className="text-[10px] text-slate-400 font-mono uppercase tracking-widest">
-                CDL Practice Test • Smart Diagnostic
+                Smart Diagnostic • Fix Plan
               </div>
             </div>
           </div>
 
           <button
             onClick={scrollToConfigurator}
-            className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-black uppercase tracking-widest transition"
+            className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-black uppercase tracking-widest transition active:scale-[0.99]"
           >
-            Start Free Diagnostic →
+            Start Free →
           </button>
         </div>
       </div>
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 pt-10 pb-20">
         {/* HERO */}
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center"
-        >
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400 text-[10px] font-mono tracking-widest uppercase mb-6">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
             </span>
             Updated for 2026 • Works offline
           </div>
@@ -206,7 +201,7 @@ export default function Home() {
           </h1>
 
           <p className="text-slate-300/90 text-sm md:text-base leading-relaxed max-w-2xl mx-auto mb-6">
-            Take a 60-second diagnostic. We identify your weakest topic, then generate your personalized Fix Plan
+            Take a 5-question diagnostic. We identify your weakest topic, then generate your personalized Fix Plan
             so you can pass your state exam faster.
           </p>
 
@@ -220,13 +215,14 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={scrollToConfigurator}
-              className="px-6 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-black uppercase tracking-widest shadow-[0_0_40px_-10px_rgba(245,158,11,0.65)] transition active:scale-[0.99]"
+              className="px-6 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-black uppercase tracking-widest shadow-[0_0_44px_-12px_rgba(245,158,11,0.75)] transition active:scale-[0.99]"
             >
               Start Free Diagnostic →
             </button>
+
             <div className="px-6 py-4 rounded-2xl border border-white/10 bg-white/5 text-left max-w-sm mx-auto sm:mx-0">
               <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
-                What you get in 60 seconds
+                In 60 seconds you get
               </div>
               <div className="text-sm text-slate-300 mt-1">
                 Weakest topic + pass roadmap preview.
@@ -274,23 +270,23 @@ export default function Home() {
         {/* CONFIGURATOR */}
         <motion.div
           ref={configuratorRef}
-          initial={{ opacity: 0, scale: 0.98 }}
+          initial={{ opacity: 0, scale: 0.985 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.05 }}
           className="mt-10 bg-slate-900/70 backdrop-blur-md border border-slate-800 rounded-[28px] p-6 md:p-10 shadow-2xl relative overflow-hidden"
         >
-          {/* Subtle Glow */}
+          {/* Subtle top glow line */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent opacity-50" />
 
-          {/* Panel Header (conversion copy + clarity) */}
+          {/* Panel Header */}
           <div className="mb-8">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="text-xs font-black text-slate-300 uppercase tracking-widest">
-                  Build your CDL diagnostic
+                  Build your diagnostic
                 </div>
                 <div className="text-sm text-slate-400 mt-1">
-                  Pick your class + endorsements. We’ll customize the diagnostic instantly.
+                  Pick your class + endorsements. We’ll customize instantly.
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -307,11 +303,11 @@ export default function Home() {
           {/* STEP 1 */}
           <div className="mb-10">
             <div className="flex items-end justify-between gap-4 mb-4">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block">
+              <label className="text-xs font-black text-slate-500 uppercase tracking-widest block">
                 Step 1: CDL class
               </label>
               <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">
-                Not sure? Start with <span className="text-slate-300 font-bold">A</span>
+                Not sure? Start with <span className="text-slate-300 font-black">A</span>
               </div>
             </div>
 
@@ -323,6 +319,7 @@ export default function Home() {
                   cls === "B" ? "Heavy Straight" :
                   cls === "C" ? "Passenger/Hazmat" :
                   "General / Other";
+
                 return (
                   <button
                     key={cls}
@@ -344,7 +341,7 @@ export default function Home() {
                       </span>
                       {active && <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />}
                     </div>
-                    <div className="text-[10px] text-slate-400 mt-2 font-mono uppercase font-bold tracking-wide">
+                    <div className="text-[10px] text-slate-400 mt-2 font-mono uppercase font-black tracking-widest">
                       {label}
                     </div>
                   </button>
@@ -356,12 +353,12 @@ export default function Home() {
           {/* STEP 2 */}
           <div className="mb-10">
             <div className="flex justify-between items-end mb-4 gap-4">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                Step 2: Add endorsements (optional)
+              <label className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                Step 2: Endorsements (optional)
               </label>
 
               <div className="text-right">
-                <div className="text-[10px] text-slate-400 font-bold mb-1 uppercase tracking-widest">
+                <div className="text-[10px] text-slate-400 font-black mb-1 uppercase tracking-widest">
                   Est. earning potential
                 </div>
                 <AnimatePresence mode="wait">
@@ -375,14 +372,14 @@ export default function Home() {
                     ${estimatedSalary}
                   </motion.div>
                 </AnimatePresence>
-                <div className="text-[10px] text-slate-600 font-mono mt-1">
-                  estimate only
-                </div>
+                <div className="text-[10px] text-slate-600 font-mono mt-1">estimate only</div>
               </div>
             </div>
 
             <div className="space-y-2">
-              {(["Air Brakes", "Hazmat", "Tanker", "Doubles/Triples"] as Endorsement[]).map((end) => {
+              {(
+                ["Air Brakes", "Hazmat", "Tanker", "Doubles/Triples", "Passenger"] as Endorsement[]
+              ).map((end) => {
                 const active = endorsements.includes(end);
                 return (
                   <button
@@ -407,8 +404,9 @@ export default function Home() {
                           </svg>
                         )}
                       </div>
+
                       <div className="text-left">
-                        <div className={`text-sm font-bold ${active ? "text-white" : "text-slate-300"}`}>
+                        <div className={`text-sm font-black ${active ? "text-white" : "text-slate-300"}`}>
                           {end}
                         </div>
                         <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest mt-0.5">
@@ -416,8 +414,9 @@ export default function Home() {
                         </div>
                       </div>
                     </div>
+
                     {active && (
-                      <span className="text-[10px] text-emerald-300 font-mono tracking-wider font-black px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                      <span className="text-[10px] text-emerald-300 font-mono tracking-widest font-black px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                         Added
                       </span>
                     )}
@@ -430,11 +429,11 @@ export default function Home() {
           {/* STEP 3 */}
           <div className="mb-10">
             <div className="flex items-end justify-between gap-4 mb-4">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block">
+              <label className="text-xs font-black text-slate-500 uppercase tracking-widest block">
                 Step 3: State
               </label>
               <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">
-                We use your state to match DMV rules + test wording.
+                We match DMV rules + wording.
               </div>
             </div>
 
@@ -442,7 +441,7 @@ export default function Home() {
               <select
                 value={userState}
                 onChange={(e) => setUserState(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 text-white rounded-2xl p-4 text-sm font-bold focus:border-amber-500 focus:outline-none appearance-none cursor-pointer hover:border-slate-600 transition-colors"
+                className="w-full bg-slate-950 border border-slate-700 text-white rounded-2xl p-4 text-sm font-black focus:border-amber-500 focus:outline-none appearance-none cursor-pointer hover:border-slate-600 transition-colors"
                 aria-label="Select state"
               >
                 {US_STATES.map((s) => (
@@ -460,7 +459,7 @@ export default function Home() {
           {/* PRIMARY CTA */}
           <button
             onClick={startDiagnostic}
-            className="w-full py-5 bg-amber-500 hover:bg-amber-400 text-black font-black text-lg uppercase tracking-wider rounded-2xl shadow-[0_0_44px_-12px_rgba(245,158,11,0.75)] transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 group"
+            className="w-full py-5 bg-amber-500 hover:bg-amber-400 text-black font-black text-lg uppercase tracking-widest rounded-2xl shadow-[0_0_44px_-12px_rgba(245,158,11,0.75)] transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 group"
             aria-label="Start free diagnostic"
           >
             <span>Start Free Diagnostic</span>
@@ -478,29 +477,29 @@ export default function Home() {
           </div>
         </motion.div>
 
-        {/* TRUST + FAQ (keeps users scrolling without losing CTA via sticky) */}
+        {/* TRUST + FAQ */}
         <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
             <div className="text-xs font-black uppercase tracking-widest text-slate-300 mb-2">
-              Why this converts better than random practice tests
+              Why this works better than random practice
             </div>
             <ul className="space-y-3 text-sm text-slate-300/90">
               <li className="flex gap-3">
                 <span className="text-emerald-400 font-black">✓</span>
                 <span>
-                  <span className="font-bold text-white">Diagnosis first:</span> find the topic that’s actually failing you.
+                  <span className="font-black text-white">Diagnosis first:</span> find the topic you’re actually failing.
                 </span>
               </li>
               <li className="flex gap-3">
                 <span className="text-emerald-400 font-black">✓</span>
                 <span>
-                  <span className="font-bold text-white">Fix Plan next:</span> train the exact domain until you clear 80%+.
+                  <span className="font-black text-white">Fix Plan next:</span> train the exact domain until you clear 80%+.
                 </span>
               </li>
               <li className="flex gap-3">
                 <span className="text-emerald-400 font-black">✓</span>
                 <span>
-                  <span className="font-bold text-white">State matched:</span> your state selection tunes rules + wording.
+                  <span className="font-black text-white">State matched:</span> your state tunes rules + wording.
                 </span>
               </li>
             </ul>
@@ -512,23 +511,27 @@ export default function Home() {
             </div>
             <div className="space-y-4 text-sm text-slate-300/90">
               <div>
-                <div className="font-bold text-white">Do I need to create an account?</div>
-                <div className="text-slate-400 mt-1">No. The diagnostic runs instantly. Your choices save locally on your device.</div>
+                <div className="font-black text-white">Do I need an account?</div>
+                <div className="text-slate-400 mt-1">
+                  No. Your setup saves locally on your device.
+                </div>
               </div>
               <div>
-                <div className="font-bold text-white">How long is the diagnostic?</div>
+                <div className="font-black text-white">How long is it?</div>
                 <div className="text-slate-400 mt-1">5 questions. About 60 seconds.</div>
               </div>
               <div>
-                <div className="font-bold text-white">Is this the official DMV test?</div>
-                <div className="text-slate-400 mt-1">No—this is practice designed to mirror exam concepts and highlight weaknesses.</div>
+                <div className="font-black text-white">Is this the official DMV test?</div>
+                <div className="text-slate-400 mt-1">
+                  No—this is practice designed to mirror concepts and expose weaknesses.
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* STICKY MOBILE CTA (conversion safety net) */}
+      {/* STICKY MOBILE CTA */}
       <AnimatePresence>
         {mounted && stickyCtaVisible && (
           <motion.div
