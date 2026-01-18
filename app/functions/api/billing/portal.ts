@@ -7,7 +7,7 @@
 // Requires env:
 // - STRIPE_SECRET_KEY
 // Optional:
-// - APP_URL (e.g. https://nremts.com) for return_url fallback
+// - APP_URL (e.g. https://cdlpretest.com) for return_url fallback
 
 type StripeList<T> = { object: "list"; data: T[]; has_more: boolean };
 type StripeCustomer = { id: string; email?: string | null };
