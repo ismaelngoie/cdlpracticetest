@@ -7,6 +7,9 @@ import { motion, useSpring, useTransform } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
+// Keep in sync with your sim/pay config key
+const CONFIG_KEY = "haulOS.config.v1";
+
 // --- HELPERS ---
 function AnimatedNumber({ value }: { value: number }) {
   const spring = useSpring(0, { mass: 0.8, stiffness: 75, damping: 15 });
@@ -54,16 +57,36 @@ function toneFromScore(score: number): { tone: DriverTone; label: string; dot: s
 
 function pillClasses(tone: DriverTone) {
   if (tone === "emerald")
-    return "border-emerald-500 bg-emerald-500 text-emerald-400 bg-opacity-10";
-  if (tone === "red") return "border-red-500 bg-red-500 text-red-400 bg-opacity-10";
-  return "border-amber-500 bg-amber-500 text-amber-500 bg-opacity-10";
+    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-300";
+  if (tone === "red") return "border-red-500/30 bg-red-500/10 text-red-300";
+  return "border-amber-500/30 bg-amber-500/10 text-amber-300";
 }
 
 function textTone(tone: DriverTone) {
-  if (tone === "emerald") return "text-emerald-400";
-  if (tone === "red") return "text-red-500";
-  return "text-amber-500";
+  if (tone === "emerald") return "text-emerald-300";
+  if (tone === "red") return "text-red-300";
+  return "text-amber-300";
 }
+
+function safeParseJSON<T>(value: string | null): T | null {
+  if (!value) return null;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return null;
+  }
+}
+
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
+
+type HaulConfig = {
+  name?: string;
+  license?: string;
+  userState?: string;
+  endorsements?: string[];
+};
 
 // --- MAIN ---
 export default function DashboardPage() {
@@ -78,46 +101,48 @@ export default function DashboardPage() {
   const [streak, setStreak] = useState(1);
   const [mounted, setMounted] = useState(false);
 
+  const [lastMiss, setLastMiss] = useState<{ text: string; category: string } | null>(null);
+
   useEffect(() => {
     setMounted(true);
 
-    const lvl = localStorage.getItem("userLevel") || "A";
-    const st = localStorage.getItem("userState") || "TX";
+    // Prefer unified config, fallback to legacy keys
+    const saved = safeParseJSON<HaulConfig>(localStorage.getItem(CONFIG_KEY));
+
+    const legacyLicense = localStorage.getItem("userLevel") || "A";
+    const legacyState = localStorage.getItem("userState") || "TX";
+    const legacyName = localStorage.getItem("userName") || "OPERATOR";
+
+    const lvl = saved?.license || legacyLicense;
+    const st = saved?.userState || legacyState;
+    const nm = saved?.name || legacyName;
+
     const sc = parseInt(localStorage.getItem("diagnosticScore") || "45", 10);
     const wd = localStorage.getItem("weakestDomain") || "Air Brakes";
 
+    setUserName(nm);
     setLicense(lvl);
     setUserState(st);
-    setScore(Number.isFinite(sc) ? sc : 45);
+    setScore(Number.isFinite(sc) ? clamp(sc, 0, 100) : 45);
     setWeakDomain(wd);
 
-    // Endorsements + Salary
-    const ends = (() => {
-      try {
-        return JSON.parse(localStorage.getItem("userEndorsements") || "[]");
-      } catch {
-        return [];
-      }
-    })();
+    // Endorsements (prefer unified config)
+    const legacyEnds = safeParseJSON<string[]>(localStorage.getItem("userEndorsements")) || [];
+    const ends = Array.isArray(saved?.endorsements) ? saved!.endorsements! : legacyEnds;
 
     const eCount = Array.isArray(ends) ? ends.length : 0;
     setEndorsementsCount(eCount);
 
+    // Salary estimate (simple, motivating)
     const base = lvl === "A" ? 75000 : lvl === "B" ? 60000 : 55000;
     const bump = eCount * 5000;
     setSalary((base + bump).toLocaleString());
 
     // Mastery (for study page progress)
-    const mastered = (() => {
-      try {
-        return JSON.parse(localStorage.getItem("mastered-ids") || "[]");
-      } catch {
-        return [];
-      }
-    })();
+    const mastered = safeParseJSON<string[]>(localStorage.getItem("mastered-ids")) || [];
     setMasteredCount(Array.isArray(mastered) ? mastered.length : 0);
 
-    // Micro-streak (toy, but feels premium): increment once per day if they opened dashboard
+    // Micro-streak: increments once/day when opening dashboard
     const today = new Date();
     const key = `haul-streak-${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
     const last = localStorage.getItem("haul-streak-last");
@@ -125,7 +150,7 @@ export default function DashboardPage() {
 
     if (!localStorage.getItem(key)) {
       localStorage.setItem(key, "1");
-      // If last open wasn't yesterday, reset
+
       if (last) {
         const lastDate = new Date(last);
         const diffDays = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -136,9 +161,24 @@ export default function DashboardPage() {
         localStorage.setItem("haul-streak", "1");
         setStreak(1);
       }
+
       localStorage.setItem("haul-streak-last", today.toISOString());
     } else {
       setStreak(parseInt(localStorage.getItem("haul-streak") || "1", 10) || 1);
+    }
+
+    // Last missed item preview (premium feel)
+    try {
+      const raw = localStorage.getItem("diagnosticAnswers");
+      if (!raw) {
+        setLastMiss(null);
+      } else {
+        const arr = JSON.parse(raw) as Array<{ isCorrect: boolean; text: string; category: string }>;
+        const miss = Array.isArray(arr) ? arr.find((a) => a && a.isCorrect === false) : null;
+        setLastMiss(miss ? { text: miss.text, category: miss.category } : null);
+      }
+    } catch {
+      setLastMiss(null);
     }
   }, []);
 
@@ -149,7 +189,7 @@ export default function DashboardPage() {
   // Next action math
   const deltaToPass = Math.max(0, 80 - score);
   const etaMinutes = score >= 80 ? 12 : score >= 60 ? 18 : 25; // vibe / motivation
-  const progressPct = Math.min(100, Math.max(0, score));
+  const progressPct = clamp(score, 0, 100);
 
   // Radial graph math
   const radius = 40;
@@ -158,7 +198,7 @@ export default function DashboardPage() {
 
   // Priority mapping: quick suggestion copy
   const priorityCopy = useMemo(() => {
-    const lower = weakDomain.toLowerCase();
+    const lower = (weakDomain || "").toLowerCase();
     if (lower.includes("air")) return "Air systems are the fastest score lift. Drill rules + symptom recognition.";
     if (lower.includes("pre-trip")) return "Pre-trip is free points if you memorize the flow. Lock the sequence.";
     if (lower.includes("general")) return "General Knowledge is volume. Do rapid reps until patterns stick.";
@@ -168,18 +208,7 @@ export default function DashboardPage() {
     return "This module is your pass blocker. Fix it first, then run full sims.";
   }, [weakDomain]);
 
-  // One “premium” UI: last missed item preview (if saved)
-  const lastMiss = useMemo(() => {
-    try {
-      const raw = localStorage.getItem("diagnosticAnswers");
-      if (!raw) return null;
-      const arr = JSON.parse(raw) as Array<{ isCorrect: boolean; text: string; category: string }>;
-      const miss = Array.isArray(arr) ? arr.find((a) => a && a.isCorrect === false) : null;
-      return miss ? { text: miss.text, category: miss.category } : null;
-    } catch {
-      return null;
-    }
-  }, [mounted]);
+  const missionPoints = Math.max(6, Math.min(18, deltaToPass || 8));
 
   return (
     <div className="min-h-screen bg-slate-950 text-white pb-32 relative overflow-hidden font-sans">
@@ -228,7 +257,7 @@ export default function DashboardPage() {
           <div className="min-w-0">
             <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Today’s Mission</div>
             <div className="text-sm font-bold text-white leading-tight">
-              Raise score by <span className={toneText}>+{Math.max(6, Math.min(18, deltaToPass || 8))} pts</span> by fixing{" "}
+              Raise score by <span className={toneText}>+{missionPoints} pts</span> by fixing{" "}
               <span className="text-amber-500">{weakDomain}</span>.
             </div>
             <div className="text-[10px] text-slate-500 mt-1 line-clamp-1">{priorityCopy}</div>
@@ -388,7 +417,7 @@ export default function DashboardPage() {
             </Link>
 
             <Link
-              href="/simulator"
+              href="/sim"
               className="w-full py-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs uppercase tracking-wider border border-slate-700 transition-all flex items-center justify-center gap-2"
             >
               <span>🚛</span> Run Full Exam
@@ -402,7 +431,7 @@ export default function DashboardPage() {
 
         {/* 4) SALARY STATS */}
         <BentoCard className="p-4 flex flex-col justify-center" glowColor="emerald">
-          <div className="text-emerald-500 mb-2">
+          <div className="text-emerald-400 mb-2">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </svg>
@@ -416,7 +445,7 @@ export default function DashboardPage() {
 
         {/* 5) KNOWLEDGE BANK */}
         <BentoCard className="p-4 flex flex-col justify-center" glowColor="amber">
-          <div className="text-blue-500 mb-2">
+          <div className="text-blue-400 mb-2">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
               <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
