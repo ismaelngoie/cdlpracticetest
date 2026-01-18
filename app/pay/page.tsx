@@ -10,8 +10,8 @@ type PlanKey = "monthly" | "lifetime";
 
 const STRIPE_LINKS: Record<PlanKey, string> = {
   // ⚠️ Replace with your real Stripe payment links
-  monthly: "https://buy.stripe.com/test_monthly",
-  lifetime: "https://buy.stripe.com/test_lifetime",
+  monthly: "https://buy.stripe.com/test_4gM4gB5YrbAd71Zeanb3q01",
+  lifetime: "https://buy.stripe.com/test_9B68wR5Yr7jXaeb2rFb3q00",
 };
 
 const PRICING = {
