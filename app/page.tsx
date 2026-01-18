@@ -4,20 +4,19 @@ import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
-// --- Configuration Types ---
+// --- Types ---
 type LicenseClass = "A" | "B" | "C" | "D";
 type Endorsement = "Air Brakes" | "Hazmat" | "Tanker" | "Doubles/Triples" | "Passenger";
 
 export default function Home() {
   const router = useRouter();
 
-  // --- State: The User's "Load Out" ---
+  // --- State ---
   const [license, setLicense] = useState<LicenseClass>("A");
   const [endorsements, setEndorsements] = useState<Endorsement[]>([]);
-  const [userState, setUserState] = useState("TX"); // Default to Texas for demo
+  const [userState, setUserState] = useState("TX");
 
-  // --- Salary Calculator Logic ---
-  // This is the "Hook" - showing them the value of studying harder
+  // --- Salary Calculator Logic (The Hook) ---
   const estimatedSalary = useMemo(() => {
     let base = 45000;
     if (license === "A") base += 25000; // Class A base ~70k
@@ -39,12 +38,12 @@ export default function Home() {
   };
 
   const startDiagnostic = () => {
-    // Save their "Rig" configuration
-    localStorage.setItem("userLevel", license); // "A", "B", etc.
+    // Save Config
+    localStorage.setItem("userLevel", license);
     localStorage.setItem("userEndorsements", JSON.stringify(endorsements));
     localStorage.setItem("userState", userState);
     
-    // Launch the Simulator
+    // Launch
     router.push("/sim");
   };
 
@@ -63,7 +62,7 @@ export default function Home() {
           className="text-center mb-10"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400 text-[10px] font-mono tracking-widest uppercase mb-4">
-            System Online • v4.0.2
+            System Online • v4.2
           </div>
           <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white mb-2">
             HAUL<span className="text-amber-500">.OS</span>
@@ -93,14 +92,14 @@ export default function Home() {
                 <button
                   key={cls}
                   onClick={() => setLicense(cls)}
-                  className={`relative p-4 rounded-xl border text-left transition-all ${
+                  className={`relative p-4 rounded-xl border text-left transition-all group ${
                     license === cls
                       ? "bg-amber-500/10 border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.2)]"
                       : "bg-slate-800/50 border-slate-700 hover:border-slate-600 hover:bg-slate-800"
                   }`}
                 >
                   <div className="flex justify-between items-start">
-                    <span className={`text-2xl font-black ${license === cls ? "text-white" : "text-slate-400"}`}>
+                    <span className={`text-2xl font-black ${license === cls ? "text-white" : "text-slate-400 group-hover:text-slate-200"}`}>
                       {cls}
                     </span>
                     {license === cls && <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />}
@@ -120,10 +119,10 @@ export default function Home() {
           <div className="mb-8">
             <div className="flex justify-between items-end mb-4">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                Step 2: Add Modules (Endorsements)
+                Step 2: Add Modules
               </label>
               <div className="text-right">
-                <div className="text-[10px] text-slate-400">EST. YEARLY SALARY</div>
+                <div className="text-[10px] text-slate-400 font-mono mb-0.5">EST. YEARLY SALARY</div>
                 <div className="text-lg font-mono font-bold text-emerald-400">
                   ${estimatedSalary}
                 </div>
@@ -140,11 +139,11 @@ export default function Home() {
                     className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
                       active
                         ? "bg-slate-800 border-emerald-500/50"
-                        : "bg-transparent border-slate-800 text-slate-500 hover:border-slate-700"
+                        : "bg-transparent border-slate-800 text-slate-500 hover:border-slate-700 hover:text-slate-300"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
                         active ? "bg-emerald-500 border-emerald-500" : "border-slate-600"
                       }`}>
                         {active && <span className="text-black text-[10px] font-bold">✓</span>}
@@ -168,7 +167,7 @@ export default function Home() {
             <select 
               value={userState}
               onChange={(e) => setUserState(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 text-white rounded-xl p-3 text-sm focus:border-amber-500 focus:outline-none appearance-none"
+              className="w-full bg-slate-950 border border-slate-700 text-white rounded-xl p-3 text-sm focus:border-amber-500 focus:outline-none appearance-none hover:border-slate-600 cursor-pointer"
             >
               <option value="TX">Texas (TX)</option>
               <option value="CA">California (CA)</option>
