@@ -417,7 +417,7 @@ export default function DashboardPage() {
             </Link>
 
             <Link
-              href="/sim"
+              href="/simulator"
               className="w-full py-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs uppercase tracking-wider border border-slate-700 transition-all flex items-center justify-center gap-2"
             >
               <span>🚛</span> Run Full Exam
