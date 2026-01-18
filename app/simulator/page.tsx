@@ -657,11 +657,45 @@ export default function SimulatorPage() {
                 <li className="flex gap-2">
                   <span className="text-amber-400">•</span> Timer continues once started. Session auto-submits at 0:00.
                 </li>
-                <li className="flex gap-2">
-                  <span className="text-amber-400">•</span> Shortcuts: <span className="font-mono text-slate-200">A/B/C/D</span> select •{" "}
-                  <span className="font-mono text-slate-200">F</span> flag • <span className="font-mono text-slate-200">R</span> review •{" "}
-                  <span className="font-mono text-slate-200">←/→</span> navigate.
-                </li>
+                // ✅ Replace ONLY this <li> in your MANIFEST "Rules" list
+// (keeps bullets aligned + wraps nicely inside the box)
+
+<li className="flex gap-2">
+  <span className="text-amber-400 shrink-0">•</span>
+
+  <div className="min-w-0">
+    <div className="text-slate-300">
+      Shortcuts:
+      <span className="ml-2 inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="inline-flex items-center gap-1">
+          <span className="font-mono text-slate-200">A/B/C/D</span>
+          <span className="text-slate-500">select</span>
+        </span>
+
+        <span className="text-slate-600">•</span>
+
+        <span className="inline-flex items-center gap-1">
+          <span className="font-mono text-slate-200">F</span>
+          <span className="text-slate-500">flag</span>
+        </span>
+
+        <span className="text-slate-600">•</span>
+
+        <span className="inline-flex items-center gap-1">
+          <span className="font-mono text-slate-200">R</span>
+          <span className="text-slate-500">review</span>
+        </span>
+
+        <span className="text-slate-600">•</span>
+
+        <span className="inline-flex items-center gap-1">
+          <span className="font-mono text-slate-200">←/→</span>
+          <span className="text-slate-500">navigate</span>
+        </span>
+      </span>
+    </div>
+  </div>
+</li>
               </ul>
             </div>
           </div>
@@ -678,7 +712,7 @@ export default function SimulatorPage() {
               href="/dashboard"
               className="text-[10px] text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-colors"
             >
-              Return to Command Center
+              Back to Home
             </Link>
           </div>
         </div>
