@@ -226,7 +226,7 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="mt-3 text-[11px] text-slate-500 font-mono">Takes ~60 seconds • No credit card • 5 questions</div>
+          <div className="mt-3 text-[11px] text-slate-500 font-mono">Takes ~60 seconds • No credit card • no signup</div>
         </motion.div>
 
         {/* VALUE STRIP */}
