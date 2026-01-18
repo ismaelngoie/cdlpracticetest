@@ -18,9 +18,9 @@ const PRICING = {
   monthly: {
     price: 19.95,
     cadence: "/mo",
-    title: "Haul Pass",
+    title: "Practice Pass",
     subtitle: "Cancel anytime. Good for quick refreshers.",
-    features: ["Full Simulator Access", "Smart Fix Plan", "Unlimited Retakes"],
+    features: ["4,000+ questions", "Full Simulator Access", "Smart Fix Plan", "Unlimited Retakes"],
   },
   lifetime: {
     price: 69.0,
@@ -30,6 +30,7 @@ const PRICING = {
     badge: "BEST VALUE",
     features: [
       "Everything in Monthly",
+      "6,000+ questions",
       "Lifetime Updates",
       "100% Money-Back Guarantee",
       "Priority Fix Plan (fast path)",
@@ -310,10 +311,10 @@ function PaywallContent() {
   };
 
   const ValueChip = ({ children }: { children: React.ReactNode }) => (
-    <span className="px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-300">
-      {children}
-    </span>
-  );
+  <span className="px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-300 whitespace-nowrap">
+    {children}
+  </span>
+);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white font-sans pb-32">
@@ -327,12 +328,11 @@ function PaywallContent() {
       <main className="relative z-10 max-w-lg mx-auto px-4 pt-10">
         {/* HEADER / HOOK */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-7">
-          <div className="flex flex-wrap justify-center gap-2 mb-4">
-            <ValueChip>Secure checkout</ValueChip>
-            <ValueChip>Instant access</ValueChip>
-            <ValueChip>Pass Guarantee</ValueChip>
-          </div>
-
+          <div className="flex flex-nowrap justify-center gap-2 mb-4">
+  <ValueChip>Secure checkout</ValueChip>
+  <ValueChip>Instant access</ValueChip>
+  <ValueChip>Pass Guarantee</ValueChip>
+</div>
           <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border ${tc.pill} text-[10px] font-black uppercase tracking-widest mb-4`}>
             ⚠️ Diagnostic Result • {ctx.userState} • {classLabel(ctx.license)}
           </div>
@@ -462,7 +462,7 @@ function PaywallContent() {
                 ? "bg-white/5 border-slate-500"
                 : "bg-slate-900/60 border-slate-800 opacity-90 hover:opacity-100 hover:border-slate-700"
             }`}
-            aria-label="Select Haul Pass monthly plan"
+            aria-label="Select Practice Pass monthly plan"
           >
             <div className="flex justify-between items-start gap-4">
               <div className="min-w-0">
