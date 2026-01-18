@@ -910,15 +910,6 @@ export default function ProfilePage() {
             <span className="text-slate-500">→</span>
           </button>
 
-          <button
-            onClick={openBillingFlow}
-            disabled={billingBusy}
-            className="w-full flex items-center justify-between p-5 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-colors disabled:opacity-60"
-          >
-            <span className="text-sm font-black text-slate-200">Manage Subscription</span>
-            <span className="text-slate-500">↗</span>
-          </button>
-
           {/* Privacy + Disclaimer */}
           <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
             <button
