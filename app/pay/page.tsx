@@ -28,7 +28,12 @@ const PRICING = {
     title: "Pass Guarantee",
     subtitle: "Get your CDL or money back. Own it forever.",
     badge: "BEST VALUE",
-    features: ["Everything in Monthly", "Lifetime Updates", "100% Money-Back Guarantee", "Priority Fix Plan (fast path)"],
+    features: [
+      "Everything in Monthly",
+      "Lifetime Updates",
+      "100% Money-Back Guarantee",
+      "Priority Fix Plan (fast path)",
+    ],
   },
 } as const;
 
@@ -164,7 +169,7 @@ function PaywallContent() {
     const legacyEnd = safeParseJSON<string[]>(localStorage.getItem("userEndorsements")) || [];
 
     const license = saved?.license || legacyLicense || "A";
-    const endorsements = Array.isArray(saved?.endorsements) ? saved!.endorsements! : legacyEnd;
+    const endorsements = Array.isArray(saved?.endorsements) ? saved.endorsements : legacyEnd;
 
     setCtx({
       score: Number.isFinite(s) ? clamp(s, 0, 100) : 42,
@@ -199,13 +204,23 @@ function PaywallContent() {
   const { label: risk, tone } = riskFromScore(ctx.score);
   const tc = toneClasses(tone);
 
-  const copy = useMemo(() => stepCopy(ctx.score, ctx.weakDomain, ctx.userState), [ctx.score, ctx.weakDomain, ctx.userState]);
+  const copy = useMemo(
+    () => stepCopy(ctx.score, ctx.weakDomain, ctx.userState),
+    [ctx.score, ctx.weakDomain, ctx.userState]
+  );
 
   const progressToPass = useMemo(() => {
     // visual progress towards PASSING_SCORE, capped
     const pct = (ctx.score / PASSING_SCORE) * 100;
     return clamp(Math.round(pct), 0, 100);
   }, [ctx.score]);
+
+  // ✅ NEW: risk-based sticky CTA text
+  const stickyCtaText = useMemo(() => {
+    if (risk === "HIGH") return "Unlock Fix Plan (fastest path) →";
+    if (risk === "ELEVATED") return "Unlock Fix Plan (push to 80%) →";
+    return "Unlock Final Sweep Plan →"; // CLEAR
+  }, [risk]);
 
   const handleRestore = async () => {
     if (!restoreEmail.includes("@")) {
@@ -246,18 +261,17 @@ function PaywallContent() {
             <ValueChip>Mobile-first</ValueChip>
           </div>
 
-          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border ${tc.pill} text-[10px] font-black uppercase tracking-widest mb-4`}>
+          <div
+            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border ${tc.pill} text-[10px] font-black uppercase tracking-widest mb-4`}
+          >
             ⚠️ Diagnostic Result • {ctx.userState} • {classLabel(ctx.license)}
           </div>
 
           <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-none mb-3">
-            {copy.headline}{" "}
-            <span className="text-amber-500">Unlock your Fix Plan.</span>
+            {copy.headline} <span className="text-amber-500">Unlock your Fix Plan.</span>
           </h1>
 
-          <p className="text-slate-400 text-sm leading-relaxed">
-            {copy.sub}
-          </p>
+          <p className="text-slate-400 text-sm leading-relaxed">{copy.sub}</p>
 
           {/* Score + Progress */}
           <div className={`mt-6 rounded-3xl border border-white/10 bg-slate-900/50 backdrop-blur p-5 ring-1 ${tc.ring}`}>
@@ -339,9 +353,7 @@ function PaywallContent() {
                     {PRICING.lifetime.badge}
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                  {PRICING.lifetime.subtitle}
-                </p>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">{PRICING.lifetime.subtitle}</p>
               </div>
 
               <div className="text-right shrink-0">
@@ -421,11 +433,16 @@ function PaywallContent() {
           <div className="space-y-3 text-sm text-slate-400 leading-relaxed">
             <div className="flex gap-3">
               <span className="text-emerald-400 font-black">✓</span>
-              <span>You get instant access to the simulator + your Fix Plan for <span className="font-bold text-white">{ctx.userState}</span>.</span>
+              <span>
+                You get instant access to the simulator + your Fix Plan for{" "}
+                <span className="font-bold text-white">{ctx.userState}</span>.
+              </span>
             </div>
             <div className="flex gap-3">
               <span className="text-emerald-400 font-black">✓</span>
-              <span>Your plan focuses on <span className="font-bold text-white">{ctx.weakDomain}</span> first—fastest score lift.</span>
+              <span>
+                Your plan focuses on <span className="font-bold text-white">{ctx.weakDomain}</span> first—fastest score lift.
+              </span>
             </div>
             <div className="flex gap-3">
               <span className="text-emerald-400 font-black">✓</span>
@@ -514,7 +531,10 @@ function PaywallContent() {
                 <div className="text-right">
                   <div className="text-lg font-black text-white">
                     ${PRICING[selectedPlan].price.toFixed(2)}
-                    <span className="text-xs text-slate-500"> {selectedPlan === "lifetime" ? "" : PRICING[selectedPlan].cadence}</span>
+                    <span className="text-xs text-slate-500">
+                      {" "}
+                      {selectedPlan === "lifetime" ? "" : PRICING[selectedPlan].cadence}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -523,7 +543,7 @@ function PaywallContent() {
                 href={checkoutUrl}
                 className={`block w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black text-lg text-center uppercase tracking-widest transition-transform active:scale-95 ${tc.glow}`}
               >
-                Unlock Fix Plan →
+                {stickyCtaText}
               </a>
 
               <p className="text-center text-[10px] text-slate-500 mt-2 flex items-center justify-center gap-2 font-mono uppercase tracking-widest">
