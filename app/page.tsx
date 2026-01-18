@@ -233,9 +233,7 @@ export default function Home() {
             </button>
           </div>
 
-          <p className="mt-4 text-[10px] text-slate-500 font-mono">
-            🔒 Anonymous • No credit card required for diagnostic
-          </p>
+          <div className="mt-3 text-[11px] text-slate-500 font-mono">Takes ~60 seconds • No credit card • Mobile-first</div>
         </motion.div>
 
         {/* VALUE STRIP */}
