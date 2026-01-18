@@ -2,6 +2,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
+import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import Dock from "@/components/Dock";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -130,8 +132,10 @@ function computeWeakestDomain(
     const catQs = relevantQs.filter((q) => q.category === cat);
     const total = catQs.length;
     if (total < 5) continue;
+
     const mastered = catQs.filter((q) => masteredIds.includes(q.id)).length;
     const pct = total ? Math.round((mastered / total) * 100) : 0;
+
     if (pct < weakest.pct) weakest = { cat, pct, total };
   }
 
@@ -144,7 +148,7 @@ function Pill({
   children,
   tone = "slate",
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   tone?: "amber" | "emerald" | "red" | "slate" | "blue";
 }) {
   const cls =
@@ -159,9 +163,7 @@ function Pill({
       : "bg-white/5 border-white/10 text-slate-300";
 
   return (
-    <span
-      className={`px-2 py-1 rounded border text-[10px] font-black uppercase tracking-widest ${cls}`}
-    >
+    <span className={`px-2 py-1 rounded border text-[10px] font-black uppercase tracking-widest ${cls}`}>
       {children}
     </span>
   );
@@ -181,6 +183,11 @@ function ProgressBar({ value }: { value: number }) {
   );
 }
 
+/**
+ * ✅ FIX: Centering bug for PDF viewer modal.
+ * We portal the modal to document.body so it’s not affected by any transformed parent / stacking contexts,
+ * and we center using a fixed flex container (no translate math).
+ */
 function Modal({
   open,
   title,
@@ -191,9 +198,13 @@ function Modal({
   open: boolean;
   title: string;
   subtitle?: string;
-  children: React.ReactNode;
+  children: ReactNode;
   onClose: () => void;
 }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
   // lock scroll
   useEffect(() => {
     if (!open) return;
@@ -213,22 +224,32 @@ function Modal({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
-        <>
+        <motion.div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          {/* Backdrop */}
           <motion.button
             aria-label="Close modal"
             onClick={onClose}
-            className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           />
+
+          {/* Panel */}
           <motion.div
             role="dialog"
             aria-modal="true"
-            className="fixed z-[90] left-1/2 top-1/2 w-[94vw] max-w-4xl -translate-x-1/2 -translate-y-1/2"
+            className="relative w-full max-w-4xl max-h-[92vh] overflow-hidden"
             initial={{ opacity: 0, y: 12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
@@ -237,15 +258,9 @@ function Modal({
             <div className="bg-slate-950 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden">
               <div className="p-5 md:p-6 border-b border-slate-800 flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                    Manuals Viewer
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-black text-white mt-1 truncate">
-                    {title}
-                  </h3>
-                  {subtitle && (
-                    <p className="text-sm text-slate-400 mt-1">{subtitle}</p>
-                  )}
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Manuals Viewer</div>
+                  <h3 className="text-xl md:text-2xl font-black text-white mt-1 truncate">{title}</h3>
+                  {subtitle && <p className="text-sm text-slate-400 mt-1">{subtitle}</p>}
                 </div>
                 <button
                   onClick={onClose}
@@ -254,12 +269,15 @@ function Modal({
                   ✕
                 </button>
               </div>
-              <div className="p-5 md:p-6">{children}</div>
+
+              {/* Scrollable content area (keeps panel centered even if tall) */}
+              <div className="p-5 md:p-6 overflow-auto max-h-[calc(92vh-92px)]">{children}</div>
             </div>
           </motion.div>
-        </>
+        </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
 
@@ -278,13 +296,7 @@ async function urlExists(url: string) {
   }
 }
 
-function StateQuickSheet({
-  stateCode,
-  onClose,
-}: {
-  stateCode: string;
-  onClose: () => void;
-}) {
+function StateQuickSheet({ stateCode, onClose }: { stateCode: string; onClose: () => void }) {
   const code = (stateCode || "TX").toUpperCase();
   const name = getStateName(code);
 
@@ -295,9 +307,7 @@ function StateQuickSheet({
   const fallback = `/manuals/states/GENERIC.pdf`;
 
   const [resolvedPdf, setResolvedPdf] = useState<string>(primary);
-  const [status, setStatus] = useState<"checking" | "ok" | "fallback">(
-    "checking"
-  );
+  const [status, setStatus] = useState<"checking" | "ok" | "fallback">("checking");
 
   useEffect(() => {
     let alive = true;
@@ -319,7 +329,6 @@ function StateQuickSheet({
   }, [primary, fallback]);
 
   const bullets = useMemo(() => {
-    // “Say something for each state” without inventing specific legal facts:
     return [
       `This is the ${name} (${code}) quick sheet used to mirror DMV-style wording and references.`,
       `Use it for: penalties & citations phrasing, inspection cues, and state-specific terminology that shows up on exams.`,
@@ -333,18 +342,12 @@ function StateQuickSheet({
         <Pill tone="blue">{code} DMV</Pill>
         <Pill tone="slate">PDF View</Pill>
         <Pill tone={status === "fallback" ? "amber" : "emerald"}>
-          {status === "checking"
-            ? "Checking…"
-            : status === "fallback"
-            ? "Fallback Pack"
-            : "State Pack"}
+          {status === "checking" ? "Checking…" : status === "fallback" ? "Fallback Pack" : "State Pack"}
         </Pill>
       </div>
 
       <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
-          What this is
-        </div>
+        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">What this is</div>
         <ul className="space-y-2 text-sm text-slate-300 leading-relaxed">
           {bullets.map((b, i) => (
             <li key={i} className="flex gap-2">
@@ -380,44 +383,28 @@ function StateQuickSheet({
 
         {status === "fallback" && (
           <div className="mt-3 text-[11px] text-amber-300/80">
-            State PDF not found at{" "}
-            <span className="font-mono text-amber-200">{primary}</span>. Showing
-            fallback pack instead. (Add a file at that path to enable true
-            state-specific packs.)
+            State PDF not found at <span className="font-mono text-amber-200">{primary}</span>. Showing fallback pack instead.
+            (Add a file at that path to enable true state-specific packs.)
           </div>
         )}
       </div>
 
       <div className="rounded-2xl border border-slate-800 bg-slate-950/30 overflow-hidden">
         <div className="p-3 border-b border-slate-800 flex items-center justify-between">
-          <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-            Preview
-          </div>
-          <div className="text-[10px] font-mono uppercase tracking-widest text-slate-600">
-            {resolvedPdf}
-          </div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Preview</div>
+          <div className="text-[10px] font-mono uppercase tracking-widest text-slate-600">{resolvedPdf}</div>
         </div>
 
         {/* PDF Preview */}
         <div className="h-[62vh] bg-black">
-          <iframe
-            title={`${code} quick sheet`}
-            src={resolvedPdf}
-            className="w-full h-full"
-          />
+          <iframe title={`${code} quick sheet`} src={resolvedPdf} className="w-full h-full" />
         </div>
       </div>
     </div>
   );
 }
 
-function ModuleManualViewer({
-  category,
-  onClose,
-}: {
-  category: string;
-  onClose: () => void;
-}) {
+function ModuleManualViewer({ category, onClose }: { category: string; onClose: () => void }) {
   // Optional: per-module PDFs
   // public/manuals/modules/<slug>.pdf and a fallback GENERIC-MODULE.pdf
   const slug = slugify(category);
@@ -425,9 +412,7 @@ function ModuleManualViewer({
   const fallback = `/manuals/modules/GENERIC-MODULE.pdf`;
 
   const [resolvedPdf, setResolvedPdf] = useState<string>(primary);
-  const [status, setStatus] = useState<"checking" | "ok" | "fallback">(
-    "checking"
-  );
+  const [status, setStatus] = useState<"checking" | "ok" | "fallback">("checking");
 
   useEffect(() => {
     let alive = true;
@@ -454,22 +439,15 @@ function ModuleManualViewer({
         <Pill tone="slate">Module</Pill>
         <Pill tone="blue">{category}</Pill>
         <Pill tone={status === "fallback" ? "amber" : "emerald"}>
-          {status === "checking"
-            ? "Checking…"
-            : status === "fallback"
-            ? "Fallback Manual"
-            : "Manual Found"}
+          {status === "checking" ? "Checking…" : status === "fallback" ? "Fallback Manual" : "Manual Found"}
         </Pill>
       </div>
 
       <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
-          How to use
-        </div>
+        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">How to use</div>
         <div className="text-sm text-slate-300 leading-relaxed">
-          Use this PDF as a reference companion while drilling questions. If you
-          don’t have a module PDF yet, the fallback manual is shown—drop your PDF
-          at <span className="font-mono text-slate-200">{primary}</span>.
+          Use this PDF as a reference companion while drilling questions. If you don’t have a module PDF yet, the fallback manual is shown—drop your PDF at{" "}
+          <span className="font-mono text-slate-200">{primary}</span>.
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -499,14 +477,9 @@ function ModuleManualViewer({
 
       <div className="rounded-2xl border border-slate-800 bg-slate-950/30 overflow-hidden">
         <div className="p-3 border-b border-slate-800 flex items-center justify-between">
-          <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-            Preview
-          </div>
-          <div className="text-[10px] font-mono uppercase tracking-widest text-slate-600">
-            {resolvedPdf}
-          </div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Preview</div>
+          <div className="text-[10px] font-mono uppercase tracking-widest text-slate-600">{resolvedPdf}</div>
         </div>
-
         <div className="h-[62vh] bg-black">
           <iframe title={`${category} manual`} src={resolvedPdf} className="w-full h-full" />
         </div>
@@ -542,11 +515,7 @@ export default function StudyPage() {
 
   // keep weakest domain + severity in sync (used elsewhere in app)
   useEffect(() => {
-    const { weakestDomain, weakestSeverity } = computeWeakestDomain(
-      license,
-      endorsements,
-      masteredIds
-    );
+    const { weakestDomain, weakestSeverity } = computeWeakestDomain(license, endorsements, masteredIds);
     localStorage.setItem("weakestDomain", weakestDomain);
     localStorage.setItem("weakestSeverity", String(weakestSeverity));
   }, [license, endorsements, masteredIds]);
@@ -601,8 +570,7 @@ export default function StudyPage() {
 
   const overall = useMemo(() => {
     const total = relevantQuestions.length;
-    const mastered = relevantQuestions.filter((q) => masteredIds.includes(q.id))
-      .length;
+    const mastered = relevantQuestions.filter((q) => masteredIds.includes(q.id)).length;
     const pct = total ? Math.round((mastered / total) * 100) : 0;
     return { total, mastered, pct };
   }, [relevantQuestions, masteredIds]);
@@ -650,9 +618,7 @@ export default function StudyPage() {
             <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
               Training Console
             </div>
-            <h1 className="text-3xl font-black tracking-tight text-white mb-2">
-              Technical Manuals
-            </h1>
+            <h1 className="text-3xl font-black tracking-tight text-white mb-2">Technical Manuals</h1>
             <p className="text-sm text-slate-400 font-mono">
               RIG CONFIGURATION:{" "}
               <span className="text-amber-500">CLASS {license}</span>{" "}
@@ -671,16 +637,12 @@ export default function StudyPage() {
 
           {/* Overall progress badge */}
           <div className="shrink-0 text-right">
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-              Overall Mastery
-            </div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Overall Mastery</div>
             <div className="mt-1 flex items-center justify-end gap-2">
               <div className="w-28">
                 <ProgressBar value={overall.pct} />
               </div>
-              <div className="text-sm font-mono font-black text-amber-400">
-                {overall.pct}%
-              </div>
+              <div className="text-sm font-mono font-black text-amber-400">{overall.pct}%</div>
             </div>
             <div className="text-[10px] font-mono text-slate-500 mt-1">
               {overall.mastered}/{overall.total} mastered
@@ -691,9 +653,7 @@ export default function StudyPage() {
         {/* Controls row */}
         <div className="mt-6 flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">
-              ⌕
-            </div>
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">⌕</div>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -731,33 +691,23 @@ export default function StudyPage() {
               <div className="flex items-center gap-3">
                 <div className="text-2xl">{ICONS[weakestDomain] || "📍"}</div>
                 <div>
-                  <div className="font-black text-white text-lg leading-tight">
-                    {weakestDomain}
-                  </div>
-                  <div className="text-sm text-slate-400">
-                    Highest impact module right now.
-                  </div>
+                  <div className="font-black text-white text-lg leading-tight">{weakestDomain}</div>
+                  <div className="text-sm text-slate-400">Highest impact module right now.</div>
                 </div>
               </div>
             </div>
 
             <div className="sm:text-right">
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                Severity
-              </div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Severity</div>
               <div className="mt-1 flex items-center gap-2 sm:justify-end">
                 <div className="w-28">
                   <ProgressBar value={weakestSeverity} />
                 </div>
-                <div className="text-sm font-mono font-black text-amber-400">
-                  {weakestSeverity}%
-                </div>
+                <div className="text-sm font-mono font-black text-amber-400">{weakestSeverity}%</div>
               </div>
 
               <Link
-                href={`/station?mode=study&category=${encodeURIComponent(
-                  weakestDomain
-                )}`}
+                href={`/station?mode=study&category=${encodeURIComponent(weakestDomain)}`}
                 className="inline-block mt-3 px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-widest hover:bg-amber-400 transition-colors"
               >
                 Start Focus Module →
@@ -776,13 +726,12 @@ export default function StudyPage() {
             <div className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">
               JURISDICTION DATA
             </div>
-            <div className="font-bold text-white text-sm truncate">
-              {userState} DMV Quick Sheet
-            </div>
+            <div className="font-bold text-white text-sm truncate">{userState} DMV Quick Sheet</div>
             <div className="text-[11px] text-emerald-200/70 mt-0.5">
               PDF quick-reference pack that mirrors state exam phrasing.
             </div>
           </div>
+
           <button
             onClick={() => setStatePdfOpen(true)}
             className="shrink-0 px-3 py-1.5 bg-emerald-500/20 text-emerald-300 text-xs font-black rounded-xl hover:bg-emerald-500/30 border border-emerald-500/30"
@@ -810,10 +759,7 @@ export default function StudyPage() {
                     className="group relative block overflow-hidden bg-slate-900 border border-slate-800 p-5 rounded-2xl hover:border-amber-500/50 transition-all"
                   >
                     {/* Progress wash */}
-                    <div
-                      className="absolute inset-y-0 left-0 bg-slate-800/50"
-                      style={{ width: `${st.pct}%` }}
-                    />
+                    <div className="absolute inset-y-0 left-0 bg-slate-800/50" style={{ width: `${st.pct}%` }} />
                     {/* Top accent */}
                     <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-50" />
 
@@ -824,17 +770,13 @@ export default function StudyPage() {
                         </div>
 
                         <div className="min-w-0">
-                          <div className="font-black text-slate-200 group-hover:text-white truncate">
-                            {cat}
-                          </div>
+                          <div className="font-black text-slate-200 group-hover:text-white truncate">{cat}</div>
                           <div className="mt-1 flex flex-wrap items-center gap-2">
                             <div className="text-[10px] font-mono text-slate-500">
-                              MASTERY:{" "}
-                              <span className="text-slate-300">{st.pct}%</span>{" "}
-                              <span className="text-slate-600">
-                                ({st.mastered}/{st.total})
-                              </span>
+                              MASTERY: <span className="text-slate-300">{st.pct}%</span>{" "}
+                              <span className="text-slate-600">({st.mastered}/{st.total})</span>
                             </div>
+
                             {st.pct >= 80 ? (
                               <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[10px] font-black uppercase tracking-widest text-emerald-400">
                                 Ready
@@ -864,9 +806,7 @@ export default function StudyPage() {
 
                         {/* micro “ring” */}
                         <div className="relative w-10 h-10 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center">
-                          <div className="text-[10px] font-mono text-slate-400">
-                            {st.pct}
-                          </div>
+                          <div className="text-[10px] font-mono text-slate-400">{st.pct}</div>
                           <motion.div
                             className="absolute inset-0 rounded-full"
                             style={{
@@ -909,12 +849,8 @@ export default function StudyPage() {
 
           {filteredCats.length === 0 && (
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center">
-              <div className="text-slate-300 font-black">
-                No manuals match that filter.
-              </div>
-              <div className="text-sm text-slate-500 mt-1">
-                Try a different keyword or turn off Focus Mode.
-              </div>
+              <div className="text-slate-300 font-black">No manuals match that filter.</div>
+              <div className="text-sm text-slate-500 mt-1">Try a different keyword or turn off Focus Mode.</div>
             </div>
           )}
         </div>
