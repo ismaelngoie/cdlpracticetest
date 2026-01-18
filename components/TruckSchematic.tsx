@@ -1,92 +1,138 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
 
-export default function TruckSchematic() {
-  const [weakDomain, setWeakDomain] = useState("Air Brakes");
-  
-  // Logic: Map the weak domain to a part of the truck
-  // Head = Cab (General Knowledge)
-  // Engine = Pre-Trip / Air Brakes
-  // Trailer = Combination / Hazmat
-  const [activeZone, setActiveZone] = useState<"cab" | "engine" | "trailer">("engine");
+interface TruckSchematicProps {
+  highlight?: string;
+}
 
-  useEffect(() => {
-    const wd = localStorage.getItem("weakestDomain") || "Air Brakes";
-    setWeakDomain(wd);
-    
-    const lower = wd.toLowerCase();
-    if (lower.includes("combination") || lower.includes("hazmat") || lower.includes("tanker")) {
-      setActiveZone("trailer");
-    } else if (lower.includes("general") || lower.includes("passenger")) {
-      setActiveZone("cab");
-    } else {
-      setActiveZone("engine"); // Default for Air Brakes / Pre-Trip
+export default function TruckSchematic({ highlight = "" }: TruckSchematicProps) {
+  // Normalize the highlight string to match keys easily
+  const activeSystem = highlight.toLowerCase();
+
+  const isBrakes = activeSystem.includes("brake");
+  const isLights = activeSystem.includes("light") || activeSystem.includes("signal");
+  const isEngine = activeSystem.includes("engine") || activeSystem.includes("general");
+  const isCoupling = activeSystem.includes("coupling") || activeSystem.includes("trailer");
+
+  // Animation variants for the "Problem Areas"
+  const pulseVariant = {
+    initial: { opacity: 0.3, fill: "transparent" },
+    animate: { 
+      opacity: [0.4, 1, 0.4], 
+      fill: ["rgba(239, 68, 68, 0)", "rgba(239, 68, 68, 0.3)", "rgba(239, 68, 68, 0)"],
+      stroke: ["#ef4444", "#f87171", "#ef4444"],
+      transition: { duration: 1.5, repeat: Infinity } 
     }
-  }, []);
+  };
 
-  const strokeColor = "#F59E0B"; // Amber-500
-  const glowColor = "rgba(245, 158, 11, 0.5)";
-
-  const isZone = (z: string) => activeZone === z;
+  const normalVariant = {
+    initial: { opacity: 0.5, stroke: "#475569" }, // slate-600
+    animate: { opacity: 0.5, stroke: "#475569" }
+  };
 
   return (
-    <div className="relative w-full h-[300px] flex items-center justify-center">
-      
-      {/* Scanner Effect */}
-      <motion.div
-        animate={{ top: ["10%", "90%", "10%"] }}
-        transition={{ duration: 6, ease: "linear", repeat: Infinity }}
-        className="absolute left-0 right-0 h-[1px] bg-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.8)] z-20 pointer-events-none"
-      />
-
-      <svg width="300" height="150" viewBox="0 0 300 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-2xl">
-        
-        {/* TRAILER (Rear) */}
+    <div className="w-full h-full flex items-center justify-center p-4">
+      <svg
+        viewBox="0 0 600 300"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="w-full h-auto max-h-[220px]"
+      >
+        {/* --- CABIN (The Tractor) --- */}
         <motion.path
-          d="M110 20 H 280 V 110 H 110 V 20 Z"
-          stroke={isZone("trailer") ? strokeColor : "#334155"}
-          strokeWidth={isZone("trailer") ? 3 : 1}
-          fill={isZone("trailer") ? "rgba(245, 158, 11, 0.1)" : "transparent"}
-          animate={isZone("trailer") ? { opacity: [0.7, 1, 0.7] } : {}}
-          transition={{ duration: 2, repeat: Infinity }}
+          d="M50,220 L50,100 L110,100 L140,60 L240,60 L240,220 Z"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          variants={isEngine ? pulseVariant : normalVariant}
+          initial="initial"
+          animate="animate"
         />
-        {/* Trailer Wheels */}
-        <circle cx="230" cy="110" r="12" stroke="#334155" strokeWidth="2" />
-        <circle cx="260" cy="110" r="12" stroke="#334155" strokeWidth="2" />
+        {/* Window */}
+        <path d="M145,65 L235,65 L235,110 L145,110 Z" stroke="currentColor" className="text-slate-800" fill="rgba(255,255,255,0.05)" />
 
-        {/* CAB (Front) */}
+        {/* --- WHEELS (Tractor) --- */}
+        <motion.circle 
+          cx="90" cy="220" r="25" 
+          strokeWidth="3"
+          variants={isBrakes ? pulseVariant : normalVariant}
+          initial="initial" animate="animate"
+        />
+        <motion.circle 
+          cx="200" cy="220" r="25" 
+          strokeWidth="3"
+          variants={isBrakes ? pulseVariant : normalVariant}
+          initial="initial" animate="animate"
+        />
+
+        {/* --- TRAILER --- */}
         <motion.path
-          d="M20 110 H 90 V 60 L 70 60 L 70 30 L 20 30 V 110 Z"
-          stroke={isZone("cab") ? strokeColor : "#334155"}
-          strokeWidth={isZone("cab") ? 3 : 1}
-          fill={isZone("cab") ? "rgba(245, 158, 11, 0.1)" : "transparent"}
-          animate={isZone("cab") ? { opacity: [0.7, 1, 0.7] } : {}}
-          transition={{ duration: 2, repeat: Infinity }}
+          d="M260,220 L260,40 L550,40 L550,220 Z"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          variants={isCoupling ? pulseVariant : normalVariant}
+          initial="initial" animate="animate"
         />
         
-        {/* ENGINE / CONNECTOR (Middle) */}
-        <motion.path
-          d="M90 110 H 110 V 80 H 90 V 110 Z"
-          stroke={isZone("engine") ? strokeColor : "#334155"}
-          strokeWidth={isZone("engine") ? 3 : 1}
-          fill={isZone("engine") ? "rgba(245, 158, 11, 0.1)" : "transparent"}
-          animate={isZone("engine") ? { opacity: [0.7, 1, 0.7] } : {}}
-          transition={{ duration: 2, repeat: Infinity }}
+        {/* --- WHEELS (Trailer) --- */}
+        <motion.circle 
+          cx="480" cy="220" r="25" 
+          strokeWidth="3"
+          variants={isBrakes ? pulseVariant : normalVariant}
+          initial="initial" animate="animate"
         />
-        
-        {/* Tractor Wheels */}
-        <circle cx="45" cy="110" r="12" stroke={isZone("engine") ? strokeColor : "#334155"} strokeWidth="2" />
-        <circle cx="85" cy="110" r="12" stroke={isZone("engine") ? strokeColor : "#334155"} strokeWidth="2" />
+        <motion.circle 
+          cx="530" cy="220" r="25" 
+          strokeWidth="3"
+          variants={isBrakes ? pulseVariant : normalVariant}
+          initial="initial" animate="animate"
+        />
 
+        {/* --- COUPLING (Connection) --- */}
+        <motion.rect 
+            x="240" y="180" width="20" height="10" 
+            variants={isCoupling ? pulseVariant : normalVariant}
+            initial="initial" animate="animate"
+        />
+
+        {/* --- LIGHTS (Headlights & Marker Lights) --- */}
+        {/* Headlight */}
+        <motion.path 
+            d="M240,160 L245,160" 
+            strokeWidth="4" 
+            strokeLinecap="round"
+            className={isLights ? "text-amber-400 animate-pulse" : "text-slate-700"}
+            stroke="currentColor"
+        />
+        {/* Beam (Only if lights active) */}
+        {isLights && (
+             <motion.path 
+             d="M245,160 L300,130 L300,190 Z" 
+             fill="url(#lightBeam)"
+             initial={{ opacity: 0 }}
+             animate={{ opacity: 0.4 }}
+             transition={{ yoyo: Infinity, duration: 0.8 }}
+            />
+        )}
+
+        {/* --- DECORATIVE GRIDS --- */}
+        <defs>
+          <linearGradient id="lightBeam" x1="0" y1="0" x2="1" y2="0">
+             <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.5" />
+             <stop offset="100%" stopColor="#fbbf24" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
+        {/* --- LABELS (Only show if active) --- */}
+        {isBrakes && (
+             <text x="90" y="270" fill="#ef4444" fontSize="12" fontFamily="monospace" textAnchor="middle">BRAKE SYSTEM FAULT</text>
+        )}
+        {isEngine && (
+             <text x="145" y="40" fill="#ef4444" fontSize="12" fontFamily="monospace">ENGINE DIAGNOSTICS</text>
+        )}
       </svg>
-
-      {/* HUD Label */}
-      <div className="absolute bottom-4 right-4 text-right">
-        <div className="text-[9px] text-slate-500 font-mono mb-1">SYSTEM ALERT</div>
-        <div className="text-sm font-black text-amber-500 uppercase">{weakDomain}</div>
-      </div>
     </div>
   );
 }
