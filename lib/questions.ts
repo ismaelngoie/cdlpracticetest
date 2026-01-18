@@ -5886,5 +5886,2851 @@ export const questions: Question[] = [
     ],
     correctIndex: 3,
     explanation: "Routing restrictions exist to reduce risk in populated or confined areas.",
+  },
+  // ===== NEXT 200 QUESTIONS (IDs 411-610) =====
+  {
+    id: 411,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "You are approaching a curve with an advisory speed sign. The safest action is to:",
+    options: [
+      "Downshift repeatedly mid-curve",
+      "Accelerate to 'plant' the tires",
+      "Brake hard while in the curve",
+      "Slow to a safe speed before entering the curve",
+    ],
+    correctIndex: 3,
+    explanation: "Set your speed before turning; hard braking in a curve can cause skids or rollovers."
+  },
+  {
+    id: 412,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "A vehicle ahead stops suddenly. Your best defense to avoid a rear-end crash is to:",
+    options: [
+      "Stare only at the car directly ahead",
+      "Wait to brake until the last second",
+      "Tailgate so others cannot cut in",
+      "Maintain a safe following distance and scan far ahead",
+    ],
+    correctIndex: 3,
+    explanation: "Space and scanning give you time to react smoothly."
+  },
+  {
+    id: 413,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "In heavy rain, to reduce hydroplaning risk you should:",
+    options: [
+      "Speed up to get through quickly",
+      "Brake hard to 'cut through' water",
+      "Use cruise control",
+      "Reduce speed and avoid standing water when possible",
+    ],
+    correctIndex: 3,
+    explanation: "Hydroplaning happens when tires lose contact with the road; slower speed helps."
+  },
+  {
+    id: 414,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "You feel your steering suddenly become light in a downpour. This most likely means:",
+    options: [
+      "Your brakes are overheating",
+      "Your transmission is slipping",
+      "Your steering gear is broken",
+      "Your tires are beginning to hydroplane",
+    ],
+    correctIndex: 3,
+    explanation: "A light steering feel can indicate loss of traction on water."
+  },
+  {
+    id: 415,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "A strong crosswind hits as you pass an opening between buildings. You should:",
+    options: [
+      "Steer sharply into the wind",
+      "Accelerate to stabilize",
+      "Anticipate gusts, keep a firm grip, and reduce speed",
+      "Drive closer to the centerline",
+    ],
+    correctIndex: 2,
+    explanation: "Gusts can push you sideways; slower speed and smooth steering help."
+  },
+  {
+    id: 416,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "You are driving at night and cannot see the road as far as you can stop. This is called:",
+    options: [
+      "Tailgating",
+      "Overdriving your headlights",
+      "Target fixation",
+      "Lane drift",
+    ],
+    correctIndex: 1,
+    explanation: "You must be able to stop within the distance you can see."
+  },
+  {
+    id: 417,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "If you must make an emergency lane change, the safest technique is to:",
+    options: [
+      "Accelerate hard during the maneuver",
+      "Brake hard while turning",
+      "Turn the wheel slowly for several seconds",
+      "Steer quickly but smoothly, then counter-steer to stabilize",
+    ],
+    correctIndex: 3,
+    explanation: "Quick, controlled steering reduces rollover/skid risk."
+  },
+  {
+    id: 418,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "When your right wheels drop off the pavement edge, you should:",
+    options: [
+      "Steer sharply back immediately",
+      "Brake hard while steering back",
+      "Accelerate to climb back quickly",
+      "Ease off the accelerator, slow down, then return to the pavement gently",
+    ],
+    correctIndex: 3,
+    explanation: "Sudden steering can cause a rollover or loss of control."
+  },
+  {
+    id: 419,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "On black ice, the best approach is to:",
+    options: [
+      "Accelerate to 'break through'",
+      "Brake hard to test traction",
+      "Make no sudden moves and slow down gradually",
+      "Steer sharply to the shoulder",
+    ],
+    correctIndex: 2,
+    explanation: "Smooth inputs prevent skids on extremely low traction."
+  },
+  {
+    id: 420,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "You are entering a work zone with lane shifts. The safest action is to:",
+    options: [
+      "Reduce speed and merge early with plenty of space",
+      "Pass vehicles on the shoulder",
+      "Wait until the last cone to merge",
+      "Follow closely so nobody cuts in",
+    ],
+    correctIndex: 0,
+    explanation: "Work zones change quickly; early planning reduces risk."
+  },
+  {
+    id: 421,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "If you miss your exit on a limited-access highway, you should:",
+    options: [
+      "Go to the next exit and turn around safely",
+      "Make a U-turn in the median",
+      "Stop in your lane and wait",
+      "Back up on the shoulder",
+    ],
+    correctIndex: 0,
+    explanation: "Never back or turn around on a highway."
+  },
+  {
+    id: 422,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "When passing a bicyclist, you should:",
+    options: [
+      "Honk continuously as you pass",
+      "Cut back quickly in front of them",
+      "Give extra space and be ready for them to wobble or swerve",
+      "Pass within inches to avoid oncoming traffic",
+    ],
+    correctIndex: 2,
+    explanation: "Bicyclists are vulnerable and can be affected by wind/road hazards."
+  },
+  {
+    id: 423,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "In fog, the best headlight setting is:",
+    options: [
+      "Parking lights only",
+      "High beams",
+      "No lights to reduce glare",
+      "Low beams",
+    ],
+    correctIndex: 3,
+    explanation: "High beams reflect off fog and reduce visibility."
+  },
+  {
+    id: 424,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "If a vehicle is merging into your lane, the safest response is to:",
+    options: [
+      "Hold your lane and force them to stop",
+      "Move without checking mirrors",
+      "Adjust speed to create a safe gap and avoid sudden braking",
+      "Speed up aggressively",
+    ],
+    correctIndex: 2,
+    explanation: "Cooperate and manage space to avoid conflicts."
+  },
+  {
+    id: 425,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "When approaching a railroad crossing with poor visibility, you should:",
+    options: [
+      "Stop only if you see a train",
+      "Speed up to clear it faster",
+      "Weave left-right at the last second",
+      "Slow down, look and listen, and be prepared to stop",
+    ],
+    correctIndex: 3,
+    explanation: "Trains can be hard to see; reduce speed and scan."
+  },
+  {
+    id: 426,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "If your vehicle begins to skid, your first priority is to:",
+    options: [
+      "Accelerate to pull out",
+      "Brake harder to stop",
+      "Regain traction by reducing inputs and steering smoothly",
+      "Turn sharply opposite the skid",
+    ],
+    correctIndex: 2,
+    explanation: "Sudden braking/steering worsens skids; smooth correction restores control."
+  },
+  {
+    id: 427,
+    licenseClasses: ["A", "B", "C"],
+    category: "Vehicle Control",
+    text: "You are starting down a long steep downgrade in a heavy vehicle. The safest plan is to:",
+    options: [
+      "Ride the brakes lightly the whole way",
+      "Shift to a higher gear for more speed",
+      "Select a low gear before starting down",
+      "Coast in neutral",
+    ],
+    correctIndex: 2,
+    explanation: "Use engine braking and proper gear selection to prevent brake fade."
+  },
+  {
+    id: 428,
+    licenseClasses: ["A", "B", "C"],
+    category: "Vehicle Control",
+    text: "A major cause of brake fade on long downgrades is:",
+    options: [
+      "Using engine braking",
+      "Checking mirrors",
+      "Using a low gear early",
+      "Riding the brakes continuously",
+    ],
+    correctIndex: 3,
+    explanation: "Continuous light braking overheats brakes and reduces stopping power."
+  },
+  {
+    id: 429,
+    licenseClasses: ["A", "B", "C"],
+    category: "Vehicle Control",
+    text: "Compared with a passenger car, a loaded commercial vehicle generally:",
+    options: [
+      "Stops in the same distance",
+      "Stops shorter with ABS",
+      "Stops shorter due to weight",
+      "Needs a longer distance to stop",
+    ],
+    correctIndex: 3,
+    explanation: "More weight means more momentum and longer stopping distance."
+  },
+  {
+    id: 430,
+    licenseClasses: ["A", "B", "C"],
+    category: "Vehicle Control",
+    text: "When backing a large vehicle, the safest habit is to:",
+    options: [
+      "Back quickly to reduce traffic",
+      "Rely only on one mirror",
+      "Never stop once you start",
+      "Back slowly and use G.O.A.L. if unsure",
+    ],
+    correctIndex: 3,
+    explanation: "Backing crashes are common; slow speed and checking prevent collisions."
+  },
+  {
+    id: 431,
+    licenseClasses: ["A", "B", "C"],
+    category: "Vehicle Control",
+    text: "In a heavy vehicle, the most common cause of rollovers is:",
+    options: [
+      "Driving too slowly",
+      "Driving with ABS",
+      "Entering a curve too fast",
+      "Using turn signals",
+    ],
+    correctIndex: 2,
+    explanation: "High center of gravity + speed in curves leads to rollovers."
+  },
+  {
+    id: 432,
+    licenseClasses: ["A", "B", "C"],
+    category: "Vehicle Control",
+    text: "When turning in a heavy vehicle, you must watch for:",
+    options: [
+      "The truck shrinking in turns",
+      "Offtracking (rear wheels cutting inside)",
+      "Trailer 'auto-steering' outward",
+      "Rear wheels always tracking wider",
+    ],
+    correctIndex: 1,
+    explanation: "Rear wheels track inside the turn path and can strike curbs/objects."
+  },
+  {
+    id: 433,
+    licenseClasses: ["A", "B", "C"],
+    category: "Vehicle Control",
+    text: "If your vehicle starts to sway at highway speed, you should:",
+    options: [
+      "Accelerate to pull it straight",
+      "Brake hard immediately",
+      "Ease off the accelerator and keep steering straight",
+      "Turn sharply to correct",
+    ],
+    correctIndex: 2,
+    explanation: "Smoothly reduce speed; sudden braking/steering can worsen sway."
+  },
+  {
+    id: 434,
+    licenseClasses: ["A", "B", "C"],
+    category: "Vehicle Control",
+    text: "When driving a heavy vehicle in high winds, the safest practice is to:",
+    options: [
+      "Drive faster to reduce exposure",
+      "Steer constantly with big corrections",
+      "Drive as close to the shoulder as possible",
+      "Reduce speed and be prepared for gusts when passing openings",
+    ],
+    correctIndex: 3,
+    explanation: "Wind can push you sideways; slower speed improves control."
+  },
+  {
+    id: 435,
+    licenseClasses: ["A", "B", "C"],
+    category: "Vehicle Control",
+    text: "If the vehicle ahead is throwing spray and you cannot see well, you should:",
+    options: [
+      "Move closer so you can pass sooner",
+      "Use high beams",
+      "Turn off headlights",
+      "Increase following distance or change lanes when safe",
+    ],
+    correctIndex: 3,
+    explanation: "Spray reduces visibility; more space increases reaction time."
+  },
+  {
+    id: 436,
+    licenseClasses: ["A", "B", "C"],
+    category: "Vehicle Control",
+    text: "A safe way to avoid being trapped in traffic is to:",
+    options: [
+      "Drive on the shoulder",
+      "Tailgate closely",
+      "Keep a space cushion and plan escape routes",
+      "Block lane changes",
+    ],
+    correctIndex: 2,
+    explanation: "Space gives options when hazards appear."
+  },
+  {
+    id: 437,
+    licenseClasses: ["D"],
+    category: "Vehicle Control",
+    text: "As a Class D driver, you approach a flashing red signal. You should:",
+    options: [
+      "Slow and go without stopping",
+      "Treat it like a green light",
+      "Speed up to clear quickly",
+      "Stop completely, then proceed when it is safe",
+    ],
+    correctIndex: 3,
+    explanation: "Flashing red is treated like a stop sign."
+  },
+  {
+    id: 438,
+    licenseClasses: ["D"],
+    category: "Vehicle Control",
+    text: "As a Class D driver, a school bus ahead has red lights flashing on a two-lane road. You should:",
+    options: [
+      "Honk and go",
+      "Proceed if no children are visible",
+      "Pass quickly on the left",
+      "Stop and remain stopped until the lights stop",
+    ],
+    correctIndex: 3,
+    explanation: "Most states require stopping for a stopped school bus with red lights."
+  },
+  {
+    id: 439,
+    licenseClasses: ["D"],
+    category: "Vehicle Control",
+    text: "At a four-way stop, you arrive at the same time as another vehicle on your right. You should:",
+    options: [
+      "Go first if you are turning left",
+      "Yield to the vehicle on your right",
+      "Wave them through but go anyway",
+      "Go first because you are stopping",
+    ],
+    correctIndex: 1,
+    explanation: "Right-of-way goes to the driver on the right when arriving at the same time."
+  },
+  {
+    id: 440,
+    licenseClasses: ["D"],
+    category: "Vehicle Control",
+    text: "You are turning right on red where allowed. The correct action is to:",
+    options: [
+      "Stop only if you see a pedestrian",
+      "Come to a complete stop and yield to pedestrians and traffic",
+      "Roll through if clear",
+      "Turn without signaling",
+    ],
+    correctIndex: 1,
+    explanation: "Right on red requires a full stop and yielding."
+  },
+  {
+    id: 441,
+    licenseClasses: ["D"],
+    category: "Vehicle Control",
+    text: "A solid yellow line on your side of a two-lane road means:",
+    options: [
+      "It is a bike lane",
+      "Passing is allowed anytime",
+      "You may not pass",
+      "You must stop",
+    ],
+    correctIndex: 2,
+    explanation: "A solid yellow line means no passing."
+  },
+  {
+    id: 442,
+    licenseClasses: ["D"],
+    category: "Vehicle Control",
+    text: "When entering a roundabout, you should:",
+    options: [
+      "Drive clockwise",
+      "Yield to traffic already in the roundabout",
+      "Stop inside the circle to yield",
+      "Enter at full speed",
+    ],
+    correctIndex: 1,
+    explanation: "Traffic in the circle has the right of way."
+  },
+  {
+    id: 443,
+    licenseClasses: ["D"],
+    category: "Vehicle Control",
+    text: "You approach a crosswalk with pedestrians waiting. You should:",
+    options: [
+      "Speed up to pass first",
+      "Honk to warn them",
+      "Assume they will wait",
+      "Slow down and be prepared to stop",
+    ],
+    correctIndex: 3,
+    explanation: "Pedestrians may enter suddenly; yield when required."
+  },
+  {
+    id: 444,
+    licenseClasses: ["D"],
+    category: "Vehicle Control",
+    text: "If you are being tailgated in a Class D vehicle, the safest response is to:",
+    options: [
+      "Stop in the lane",
+      "Speed up far above the limit",
+      "Brake-check them",
+      "Increase your following distance ahead and avoid sudden braking",
+    ],
+    correctIndex: 3,
+    explanation: "More space ahead lets you brake gradually if needed."
+  },
+  {
+    id: 445,
+    licenseClasses: ["D"],
+    category: "Vehicle Control",
+    text: "If your car starts to skid on ice, you should:",
+    options: [
+      "Brake hard",
+      "Turn the wheel sharply",
+      "Accelerate to pull out",
+      "Take your foot off the gas and steer gently where you want to go",
+    ],
+    correctIndex: 3,
+    explanation: "Smooth steering and reduced throttle help regain traction."
+  },
+  {
+    id: 446,
+    licenseClasses: ["D"],
+    category: "Vehicle Control",
+    text: "At a yield sign, you must:",
+    options: [
+      "Speed up to merge first",
+      "Ignore it if you are late",
+      "Stop every time",
+      "Slow down and yield to traffic/pedestrians with the right-of-way",
+    ],
+    correctIndex: 3,
+    explanation: "Yield means give the right-of-way; stop if necessary."
+  },
+  {
+    id: 447,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "A vehicle ahead is signaling to turn and begins slowing. The safest response is to: (Scenario 1)",
+    options: [
+      "Pass on the shoulder",
+      "Tailgate closely",
+      "Slow down and be ready for it to stop",
+      "Accelerate to squeeze by",
+    ],
+    correctIndex: 2,
+    explanation: "Turning vehicles may slow suddenly; reduce speed and keep space."
+  },
+  {
+    id: 448,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "You are driving in a residential area with many parked cars. The safest approach is to: (Scenario 2)",
+    options: [
+      "Use cruise control",
+      "Drive close to parked cars",
+      "Assume no one will enter the road",
+      "Reduce speed and watch for doors opening and pedestrians",
+    ],
+    correctIndex: 3,
+    explanation: "Urban hazards appear quickly; slower speed improves reaction time."
+  },
+  {
+    id: 449,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "If you must stop on a shoulder, choose a location: (Scenario 3)",
+    options: [
+      "Just after a curve",
+      "At the bottom of a hill",
+      "On a bridge",
+      "Where you are visible and off the travel lane",
+    ],
+    correctIndex: 3,
+    explanation: "Visibility reduces the chance of being struck."
+  },
+  {
+    id: 450,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "A vehicle ahead is signaling to turn and begins slowing. The safest response is to: (Scenario 4)",
+    options: [
+      "Pass on the shoulder",
+      "Accelerate to squeeze by",
+      "Tailgate closely",
+      "Slow down and be ready for it to stop",
+    ],
+    correctIndex: 3,
+    explanation: "Turning vehicles may slow suddenly; reduce speed and keep space."
+  },
+  {
+    id: 451,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "You are driving in a residential area with many parked cars. The safest approach is to: (Scenario 5)",
+    options: [
+      "Assume no one will enter the road",
+      "Reduce speed and watch for doors opening and pedestrians",
+      "Use cruise control",
+      "Drive close to parked cars",
+    ],
+    correctIndex: 1,
+    explanation: "Urban hazards appear quickly; slower speed improves reaction time."
+  },
+  {
+    id: 452,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "If you must stop on a shoulder, choose a location: (Scenario 6)",
+    options: [
+      "On a bridge",
+      "Just after a curve",
+      "At the bottom of a hill",
+      "Where you are visible and off the travel lane",
+    ],
+    correctIndex: 3,
+    explanation: "Visibility reduces the chance of being struck."
+  },
+  {
+    id: 453,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "A vehicle ahead is signaling to turn and begins slowing. The safest response is to: (Scenario 7)",
+    options: [
+      "Accelerate to squeeze by",
+      "Tailgate closely",
+      "Slow down and be ready for it to stop",
+      "Pass on the shoulder",
+    ],
+    correctIndex: 2,
+    explanation: "Turning vehicles may slow suddenly; reduce speed and keep space."
+  },
+  {
+    id: 454,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "You are driving in a residential area with many parked cars. The safest approach is to: (Scenario 8)",
+    options: [
+      "Drive close to parked cars",
+      "Use cruise control",
+      "Reduce speed and watch for doors opening and pedestrians",
+      "Assume no one will enter the road",
+    ],
+    correctIndex: 2,
+    explanation: "Urban hazards appear quickly; slower speed improves reaction time."
+  },
+  {
+    id: 455,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "If you must stop on a shoulder, choose a location: (Scenario 9)",
+    options: [
+      "Just after a curve",
+      "At the bottom of a hill",
+      "Where you are visible and off the travel lane",
+      "On a bridge",
+    ],
+    correctIndex: 2,
+    explanation: "Visibility reduces the chance of being struck."
+  },
+  {
+    id: 456,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "A vehicle ahead is signaling to turn and begins slowing. The safest response is to: (Scenario 10)",
+    options: [
+      "Pass on the shoulder",
+      "Tailgate closely",
+      "Accelerate to squeeze by",
+      "Slow down and be ready for it to stop",
+    ],
+    correctIndex: 3,
+    explanation: "Turning vehicles may slow suddenly; reduce speed and keep space."
+  },
+  {
+    id: 457,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "You are driving in a residential area with many parked cars. The safest approach is to: (Scenario 11)",
+    options: [
+      "Drive close to parked cars",
+      "Assume no one will enter the road",
+      "Reduce speed and watch for doors opening and pedestrians",
+      "Use cruise control",
+    ],
+    correctIndex: 2,
+    explanation: "Urban hazards appear quickly; slower speed improves reaction time."
+  },
+  {
+    id: 458,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "If you must stop on a shoulder, choose a location: (Scenario 12)",
+    options: [
+      "At the bottom of a hill",
+      "On a bridge",
+      "Just after a curve",
+      "Where you are visible and off the travel lane",
+    ],
+    correctIndex: 3,
+    explanation: "Visibility reduces the chance of being struck."
+  },
+  {
+    id: 459,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "A vehicle ahead is signaling to turn and begins slowing. The safest response is to: (Scenario 13)",
+    options: [
+      "Tailgate closely",
+      "Pass on the shoulder",
+      "Accelerate to squeeze by",
+      "Slow down and be ready for it to stop",
+    ],
+    correctIndex: 3,
+    explanation: "Turning vehicles may slow suddenly; reduce speed and keep space."
+  },
+  {
+    id: 460,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Vehicle Control",
+    text: "You are driving in a residential area with many parked cars. The safest approach is to: (Scenario 14)",
+    options: [
+      "Drive close to parked cars",
+      "Use cruise control",
+      "Assume no one will enter the road",
+      "Reduce speed and watch for doors opening and pedestrians",
+    ],
+    correctIndex: 3,
+    explanation: "Urban hazards appear quickly; slower speed improves reaction time."
+  },
+  {
+    id: 461,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Safety Systems",
+    text: "The best way to prevent fatigue on long drives is to:",
+    options: [
+      "Turn up music to stay awake",
+      "Rely on coffee only",
+      "Open a window for hours",
+      "Get adequate sleep and take breaks before you feel tired",
+    ],
+    correctIndex: 3,
+    explanation: "Sleep is the only true cure for fatigue."
+  },
+  {
+    id: 462,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Safety Systems",
+    text: "ABS on a vehicle primarily helps you:",
+    options: [
+      "Stop in a shorter distance every time",
+      "Steer during hard braking by preventing wheel lockup",
+      "Drive faster in rain",
+      "Eliminate the need for following distance",
+    ],
+    correctIndex: 1,
+    explanation: "ABS improves steering control, not physics."
+  },
+  {
+    id: 463,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Safety Systems",
+    text: "If your vehicle catches fire, your first priority is to:",
+    options: [
+      "Throw water on the engine",
+      "Keep driving to a shop",
+      "Stop safely, shut off the engine, and get everyone away from the vehicle",
+      "Open the hood fully immediately",
+    ],
+    correctIndex: 2,
+    explanation: "Fire can spread quickly; evacuate and call for help."
+  },
+  {
+    id: 464,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Safety Systems",
+    text: "To reduce distracted driving, you should:",
+    options: [
+      "Use one hand for the phone",
+      "Text only at stoplights",
+      "Set up GPS/music before moving and keep your eyes on the road",
+      "Read messages quickly",
+    ],
+    correctIndex: 2,
+    explanation: "Any distraction increases crash risk."
+  },
+  {
+    id: 465,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Safety Systems",
+    text: "If you have a breakdown on the shoulder, you should:",
+    options: [
+      "Turn off lights to save battery",
+      "Stay in traffic lane for visibility",
+      "Stand in the lane to wave traffic",
+      "Turn on hazard flashers and set out warning devices when required",
+    ],
+    correctIndex: 3,
+    explanation: "Visibility and warnings prevent secondary crashes."
+  },
+  {
+    id: 466,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Safety Systems",
+    text: "If you are involved in a crash, your first steps should include:",
+    options: [
+      "Admitting fault immediately",
+      "Moving injured people without need",
+      "Leaving to avoid traffic",
+      "Protecting the scene, calling for help, and assisting within your training",
+    ],
+    correctIndex: 3,
+    explanation: "Scene safety and emergency response come first."
+  },
+  {
+    id: 467,
+    licenseClasses: ["A", "B", "C", "D"],
+    category: "Safety Systems",
+    text: "When should you use your turn signals?",
+    options: [
+      "After you start turning",
+      "Only when cars are close",
+      "Before turning or changing lanes, giving others time to react",
+      "Only on highways",
+    ],
+    correctIndex: 2,
+    explanation: "Early signaling communicates your intentions."
+  },
+  {
+    id: 468,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "Using the FMCSA space-ahead guideline below 40 mph, a 60-foot vehicle should keep about:",
+    options: [
+      "2 seconds",
+      "12 seconds",
+      "3 seconds",
+      "6 seconds of following distance",
+    ],
+    correctIndex: 3,
+    explanation: "A common guideline is 1 second for every 10 feet of vehicle length below 40 mph."
+  },
+  {
+    id: 469,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "Using the FMCSA space-ahead guideline over 40 mph, a 70-foot vehicle should keep about:",
+    options: [
+      "5 seconds",
+      "6 seconds",
+      "8 seconds of following distance",
+      "3 seconds",
+    ],
+    correctIndex: 2,
+    explanation: "Rule of thumb: 1 second per 10 feet + 1 extra second over 40 mph."
+  },
+  {
+    id: 470,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "On a divided highway breakdown, warning triangles are generally placed:",
+    options: [
+      "Only one triangle at the bumper",
+      "All in front of the vehicle",
+      "10, 100, and 200 feet behind the vehicle toward approaching traffic",
+      "Triangles are optional with flashers",
+    ],
+    correctIndex: 2,
+    explanation: "Divided/one-way roads typically use 10/100/200-foot placement behind."
+  },
+  {
+    id: 471,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "Hazard flashers should be used when:",
+    options: [
+      "Only in daylight",
+      "Only when passing",
+      "Stopped or moving so slowly you may be a hazard",
+      "Only when speeding",
+    ],
+    correctIndex: 2,
+    explanation: "Flashers warn other drivers of a hazard."
+  },
+  {
+    id: 472,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "If you are being tailgated in a commercial vehicle, you should:",
+    options: [
+      "Brake-check",
+      "Speed far above the limit",
+      "Increase your space cushion ahead and avoid sudden braking",
+      "Stay close to the vehicle ahead",
+    ],
+    correctIndex: 2,
+    explanation: "More space ahead reduces rear-end risk."
+  },
+  {
+    id: 473,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "If you see smoke or smell burning in the cab, you should:",
+    options: [
+      "Ignore it if gauges look normal",
+      "Open windows and continue",
+      "Drive faster to cool it",
+      "Stop safely and investigate immediately",
+    ],
+    correctIndex: 3,
+    explanation: "Smoke may indicate fire or mechanical failure."
+  },
+  {
+    id: 474,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "When parking a commercial vehicle, wheel chocks are most important when:",
+    options: [
+      "Only when the engine is off",
+      "Only on flat ground",
+      "Only in summer",
+      "There is any chance the vehicle could roll",
+    ],
+    correctIndex: 3,
+    explanation: "Chocks prevent rollaways."
+  },
+  {
+    id: 475,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "If you must use a fire extinguisher, you should aim:",
+    options: [
+      "Into the air to disperse",
+      "At the top of the flames",
+      "At the smoke",
+      "At the base of the fire",
+    ],
+    correctIndex: 3,
+    explanation: "Aim low at the base for best effect."
+  },
+  {
+    id: 476,
+    licenseClasses: ["D"],
+    category: "Safety Systems",
+    text: "As a Class D driver, if your headlights fail at night, you should:",
+    options: [
+      "Keep driving at normal speed",
+      "Turn on high beams",
+      "Stop in your lane immediately",
+      "Turn on hazard flashers, slow down, and pull off safely",
+    ],
+    correctIndex: 3,
+    explanation: "Use hazards and leave the roadway if possible."
+  },
+  {
+    id: 477,
+    licenseClasses: ["D"],
+    category: "Safety Systems",
+    text: "As a Class D driver, the safest way to use a phone is to:",
+    options: [
+      "Read messages at stoplights",
+      "Hold it on speaker while steering",
+      "Text while driving slowly",
+      "Pull over safely before using it",
+    ],
+    correctIndex: 3,
+    explanation: "Distracted driving is a major crash cause."
+  },
+  {
+    id: 478,
+    licenseClasses: ["D"],
+    category: "Safety Systems",
+    text: "If you feel yourself getting angry at other drivers, you should:",
+    options: [
+      "Use the horn repeatedly",
+      "Weave through lanes",
+      "Stay calm and avoid aggressive driving",
+      "Tailgate to make a point",
+    ],
+    correctIndex: 2,
+    explanation: "Aggressive driving increases crash risk."
+  },
+  {
+    id: 479,
+    licenseClasses: ["D"],
+    category: "Safety Systems",
+    text: "If your vehicle starts overheating, you should:",
+    options: [
+      "Keep driving until it cools",
+      "Pour cold water on hot engine",
+      "Remove radiator cap immediately",
+      "Pull over safely and shut off the engine",
+    ],
+    correctIndex: 3,
+    explanation: "Overheating can cause damage and burns if handled poorly."
+  },
+  {
+    id: 480,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 1)",
+    options: [
+      "Within 30 minutes",
+      "No need if hazards are on",
+      "Only at night",
+      "Within 10 minutes",
+    ],
+    correctIndex: 3,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 481,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 2)",
+    options: [
+      "Within 30 minutes",
+      "Only at night",
+      "Within 10 minutes",
+      "No need if hazards are on",
+    ],
+    correctIndex: 2,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 482,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 3)",
+    options: [
+      "Only at night",
+      "No need if hazards are on",
+      "Within 10 minutes",
+      "Within 30 minutes",
+    ],
+    correctIndex: 2,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 483,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 4)",
+    options: [
+      "Only at night",
+      "No need if hazards are on",
+      "Within 30 minutes",
+      "Within 10 minutes",
+    ],
+    correctIndex: 3,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 484,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 5)",
+    options: [
+      "No need if hazards are on",
+      "Within 30 minutes",
+      "Only at night",
+      "Within 10 minutes",
+    ],
+    correctIndex: 3,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 485,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 6)",
+    options: [
+      "Only at night",
+      "Within 30 minutes",
+      "No need if hazards are on",
+      "Within 10 minutes",
+    ],
+    correctIndex: 3,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 486,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 7)",
+    options: [
+      "Within 30 minutes",
+      "Only at night",
+      "Within 10 minutes",
+      "No need if hazards are on",
+    ],
+    correctIndex: 2,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 487,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 8)",
+    options: [
+      "Within 30 minutes",
+      "Only at night",
+      "Within 10 minutes",
+      "No need if hazards are on",
+    ],
+    correctIndex: 2,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 488,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 9)",
+    options: [
+      "No need if hazards are on",
+      "Within 30 minutes",
+      "Within 10 minutes",
+      "Only at night",
+    ],
+    correctIndex: 2,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 489,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 10)",
+    options: [
+      "Within 30 minutes",
+      "No need if hazards are on",
+      "Only at night",
+      "Within 10 minutes",
+    ],
+    correctIndex: 3,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 490,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 11)",
+    options: [
+      "Within 30 minutes",
+      "Only at night",
+      "Within 10 minutes",
+      "No need if hazards are on",
+    ],
+    correctIndex: 2,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 491,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 12)",
+    options: [
+      "Within 30 minutes",
+      "Only at night",
+      "Within 10 minutes",
+      "No need if hazards are on",
+    ],
+    correctIndex: 2,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 492,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 13)",
+    options: [
+      "No need if hazards are on",
+      "Within 30 minutes",
+      "Only at night",
+      "Within 10 minutes",
+    ],
+    correctIndex: 3,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 493,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 14)",
+    options: [
+      "Within 30 minutes",
+      "Within 10 minutes",
+      "No need if hazards are on",
+      "Only at night",
+    ],
+    correctIndex: 1,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 494,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 15)",
+    options: [
+      "Only at night",
+      "No need if hazards are on",
+      "Within 30 minutes",
+      "Within 10 minutes",
+    ],
+    correctIndex: 3,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 495,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 16)",
+    options: [
+      "Within 30 minutes",
+      "Only at night",
+      "No need if hazards are on",
+      "Within 10 minutes",
+    ],
+    correctIndex: 3,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 496,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 17)",
+    options: [
+      "Only at night",
+      "No need if hazards are on",
+      "Within 30 minutes",
+      "Within 10 minutes",
+    ],
+    correctIndex: 3,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 497,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 18)",
+    options: [
+      "Only at night",
+      "Within 30 minutes",
+      "No need if hazards are on",
+      "Within 10 minutes",
+    ],
+    correctIndex: 3,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 498,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 19)",
+    options: [
+      "No need if hazards are on",
+      "Within 30 minutes",
+      "Only at night",
+      "Within 10 minutes",
+    ],
+    correctIndex: 3,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 499,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 20)",
+    options: [
+      "Within 30 minutes",
+      "Only at night",
+      "No need if hazards are on",
+      "Within 10 minutes",
+    ],
+    correctIndex: 3,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 500,
+    licenseClasses: ["A", "B", "C"],
+    category: "Safety Systems",
+    text: "You are stopped due to a breakdown. How soon should warning devices generally be placed? (Variant 21)",
+    options: [
+      "No need if hazards are on",
+      "Within 30 minutes",
+      "Only at night",
+      "Within 10 minutes",
+    ],
+    correctIndex: 3,
+    explanation: "CDL guidance typically expects warning devices to be placed promptly (commonly within 10 minutes)."
+  },
+  {
+    id: 501,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, a tire is unsafe if it has:",
+    options: [
+      "Normal sidewall markings",
+      "A cut or bulge exposing cord/belt material",
+      "A valve cap installed",
+      "Even tread wear",
+    ],
+    correctIndex: 1,
+    explanation: "Exposed cord/belt indicates serious tire damage."
+  },
+  {
+    id: 502,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "Rust streaks around lug nuts can indicate:",
+    options: [
+      "Normal operation",
+      "Proper torque",
+      "Loose lug nuts",
+      "A clean wheel",
+    ],
+    correctIndex: 2,
+    explanation: "Rust trails can signal movement/looseness."
+  },
+  {
+    id: 503,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "If brake hoses are rubbing against other parts, the correct action is:",
+    options: [
+      "Add grease",
+      "Ignore if brakes work",
+      "Repair before driving",
+      "Tape them temporarily",
+    ],
+    correctIndex: 2,
+    explanation: "Rubbing can wear through and cause brake failure."
+  },
+  {
+    id: 504,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "Oil/grease on brake linings is:",
+    options: [
+      "Good for braking",
+      "Only a problem in winter",
+      "Normal lubrication",
+      "A serious defect",
+    ],
+    correctIndex: 3,
+    explanation: "Contamination reduces braking power."
+  },
+  {
+    id: 505,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "A hub seal leak is often noticed as:",
+    options: [
+      "A loud horn",
+      "A clean rim",
+      "Oil/grease around the hub or inside of the wheel",
+      "A shiny steering wheel",
+    ],
+    correctIndex: 2,
+    explanation: "Leaks can indicate bearing or seal problems."
+  },
+  {
+    id: 506,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "On a CMV, steering components should be checked for:",
+    options: [
+      "A clean dashboard",
+      "A full coffee cup",
+      "A warm engine",
+      "Loose, worn, or missing parts",
+    ],
+    correctIndex: 3,
+    explanation: "Steering defects can cause loss of control."
+  },
+  {
+    id: 507,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "Suspension defects to look for include:",
+    options: [
+      "A quiet cabin",
+      "A clean mudflap",
+      "Broken leaf springs or shifted spring mounts",
+      "A bright license plate",
+    ],
+    correctIndex: 2,
+    explanation: "Suspension problems affect stability."
+  },
+  {
+    id: 508,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "A cracked windshield in the driver’s view is:",
+    options: [
+      "Only cosmetic",
+      "A sign of good aerodynamics",
+      "Required for glare reduction",
+      "A defect that can obstruct vision",
+    ],
+    correctIndex: 3,
+    explanation: "Clear vision is required."
+  },
+  {
+    id: 509,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a walk-around, you should check that lights are:",
+    options: [
+      "Optional if reflectors exist",
+      "Only on at night",
+      "Bright enough to read by",
+      "Clean, not broken, and operating",
+    ],
+    correctIndex: 3,
+    explanation: "Lights are required for visibility and legality."
+  },
+  {
+    id: 510,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "If the ABS warning light stays on after startup, it indicates:",
+    options: [
+      "The brakes are stronger",
+      "ABS is working extra well",
+      "An ABS fault that needs attention",
+      "You can follow closer",
+    ],
+    correctIndex: 2,
+    explanation: "A warning light suggests a system problem."
+  },
+  {
+    id: 511,
+    licenseClasses: ["D"],
+    category: "Pre-Trip Inspection",
+    text: "Before a long trip in a Class D vehicle, you should check:",
+    options: [
+      "Only the seat fabric",
+      "Tires, lights, and windshield wipers",
+      "Only the air freshener",
+      "Only the stereo",
+    ],
+    correctIndex: 1,
+    explanation: "Basic checks reduce breakdowns and crashes."
+  },
+  {
+    id: 512,
+    licenseClasses: ["D"],
+    category: "Pre-Trip Inspection",
+    text: "If the brake pedal feels spongy or sinks, you should:",
+    options: [
+      "Drive slowly and ignore",
+      "Add washer fluid",
+      "Not drive and have the brakes inspected",
+      "Pump it and continue",
+    ],
+    correctIndex: 2,
+    explanation: "Brake problems are critical."
+  },
+  {
+    id: 513,
+    licenseClasses: ["D"],
+    category: "Pre-Trip Inspection",
+    text: "If a low tire pressure warning appears, you should:",
+    options: [
+      "Deflate other tires to match",
+      "Drive faster to warm tires",
+      "Ignore until oil change",
+      "Check pressure soon and address any leak",
+    ],
+    correctIndex: 3,
+    explanation: "Underinflation increases crash risk."
+  },
+  {
+    id: 514,
+    licenseClasses: ["D"],
+    category: "Pre-Trip Inspection",
+    text: "Before backing out of a parking space, you should:",
+    options: [
+      "Rely only on the backup camera",
+      "Accelerate quickly",
+      "Turn the wheel fully and go",
+      "Look around, use mirrors, and back slowly",
+    ],
+    correctIndex: 3,
+    explanation: "Backing collisions are common; go slowly and scan."
+  },
+  {
+    id: 515,
+    licenseClasses: ["D"],
+    category: "Pre-Trip Inspection",
+    text: "Proper mirror adjustment helps you:",
+    options: [
+      "Drive faster safely",
+      "Eliminate the need to look over your shoulder",
+      "Ignore lane markings",
+      "Minimize blind spots",
+    ],
+    correctIndex: 3,
+    explanation: "Mirrors improve awareness but do not remove all blind spots."
+  },
+  {
+    id: 516,
+    licenseClasses: ["D"],
+    category: "Pre-Trip Inspection",
+    text: "If windshield wipers smear and reduce visibility, you should:",
+    options: [
+      "Ignore it",
+      "Drive faster",
+      "Turn off headlights",
+      "Replace wiper blades and use washer fluid as needed",
+    ],
+    correctIndex: 3,
+    explanation: "Clear visibility is required for safe driving."
+  },
+  {
+    id: 517,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 1)",
+    options: [
+      "Repair or replace it before driving",
+      "Spray it with lubricant",
+      "Wrap it with tape and drive",
+      "Ignore it if no leak is heard",
+    ],
+    correctIndex: 0,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 518,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 2)",
+    options: [
+      "Wrap it with tape and drive",
+      "Spray it with lubricant",
+      "Repair or replace it before driving",
+      "Ignore it if no leak is heard",
+    ],
+    correctIndex: 2,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 519,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 3)",
+    options: [
+      "Ignore it if no leak is heard",
+      "Spray it with lubricant",
+      "Wrap it with tape and drive",
+      "Repair or replace it before driving",
+    ],
+    correctIndex: 3,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 520,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 4)",
+    options: [
+      "Spray it with lubricant",
+      "Wrap it with tape and drive",
+      "Ignore it if no leak is heard",
+      "Repair or replace it before driving",
+    ],
+    correctIndex: 3,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 521,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 5)",
+    options: [
+      "Wrap it with tape and drive",
+      "Spray it with lubricant",
+      "Ignore it if no leak is heard",
+      "Repair or replace it before driving",
+    ],
+    correctIndex: 3,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 522,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 6)",
+    options: [
+      "Ignore it if no leak is heard",
+      "Spray it with lubricant",
+      "Wrap it with tape and drive",
+      "Repair or replace it before driving",
+    ],
+    correctIndex: 3,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 523,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 7)",
+    options: [
+      "Ignore it if no leak is heard",
+      "Repair or replace it before driving",
+      "Wrap it with tape and drive",
+      "Spray it with lubricant",
+    ],
+    correctIndex: 1,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 524,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 8)",
+    options: [
+      "Spray it with lubricant",
+      "Wrap it with tape and drive",
+      "Repair or replace it before driving",
+      "Ignore it if no leak is heard",
+    ],
+    correctIndex: 2,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 525,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 9)",
+    options: [
+      "Wrap it with tape and drive",
+      "Repair or replace it before driving",
+      "Spray it with lubricant",
+      "Ignore it if no leak is heard",
+    ],
+    correctIndex: 1,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 526,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 10)",
+    options: [
+      "Wrap it with tape and drive",
+      "Spray it with lubricant",
+      "Repair or replace it before driving",
+      "Ignore it if no leak is heard",
+    ],
+    correctIndex: 2,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 527,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 11)",
+    options: [
+      "Wrap it with tape and drive",
+      "Spray it with lubricant",
+      "Ignore it if no leak is heard",
+      "Repair or replace it before driving",
+    ],
+    correctIndex: 3,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 528,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 12)",
+    options: [
+      "Wrap it with tape and drive",
+      "Ignore it if no leak is heard",
+      "Repair or replace it before driving",
+      "Spray it with lubricant",
+    ],
+    correctIndex: 2,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 529,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 13)",
+    options: [
+      "Spray it with lubricant",
+      "Wrap it with tape and drive",
+      "Ignore it if no leak is heard",
+      "Repair or replace it before driving",
+    ],
+    correctIndex: 3,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 530,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 14)",
+    options: [
+      "Wrap it with tape and drive",
+      "Ignore it if no leak is heard",
+      "Repair or replace it before driving",
+      "Spray it with lubricant",
+    ],
+    correctIndex: 2,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 531,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 15)",
+    options: [
+      "Ignore it if no leak is heard",
+      "Spray it with lubricant",
+      "Repair or replace it before driving",
+      "Wrap it with tape and drive",
+    ],
+    correctIndex: 2,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 532,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 16)",
+    options: [
+      "Ignore it if no leak is heard",
+      "Spray it with lubricant",
+      "Repair or replace it before driving",
+      "Wrap it with tape and drive",
+    ],
+    correctIndex: 2,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 533,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 17)",
+    options: [
+      "Ignore it if no leak is heard",
+      "Spray it with lubricant",
+      "Repair or replace it before driving",
+      "Wrap it with tape and drive",
+    ],
+    correctIndex: 2,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 534,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 18)",
+    options: [
+      "Wrap it with tape and drive",
+      "Spray it with lubricant",
+      "Ignore it if no leak is heard",
+      "Repair or replace it before driving",
+    ],
+    correctIndex: 3,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 535,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 19)",
+    options: [
+      "Repair or replace it before driving",
+      "Ignore it if no leak is heard",
+      "Wrap it with tape and drive",
+      "Spray it with lubricant",
+    ],
+    correctIndex: 0,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 536,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 20)",
+    options: [
+      "Repair or replace it before driving",
+      "Spray it with lubricant",
+      "Wrap it with tape and drive",
+      "Ignore it if no leak is heard",
+    ],
+    correctIndex: 0,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 537,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 21)",
+    options: [
+      "Wrap it with tape and drive",
+      "Spray it with lubricant",
+      "Repair or replace it before driving",
+      "Ignore it if no leak is heard",
+    ],
+    correctIndex: 2,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 538,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 22)",
+    options: [
+      "Ignore it if no leak is heard",
+      "Wrap it with tape and drive",
+      "Repair or replace it before driving",
+      "Spray it with lubricant",
+    ],
+    correctIndex: 2,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 539,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 23)",
+    options: [
+      "Ignore it if no leak is heard",
+      "Spray it with lubricant",
+      "Wrap it with tape and drive",
+      "Repair or replace it before driving",
+    ],
+    correctIndex: 3,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 540,
+    licenseClasses: ["A", "B", "C"],
+    category: "Pre-Trip Inspection",
+    text: "During a CMV pre-trip, you find an air line with a cut or abrasion. The correct action is to: (Check 24)",
+    options: [
+      "Ignore it if no leak is heard",
+      "Repair or replace it before driving",
+      "Wrap it with tape and drive",
+      "Spray it with lubricant",
+    ],
+    correctIndex: 1,
+    explanation: "Damaged air lines can fail and cause loss of braking."
+  },
+  {
+    id: 541,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "The air compressor governor usually cuts out at around:",
+    options: [
+      "90–100 psi",
+      "60–80 psi",
+      "120–140 psi",
+      "175–200 psi",
+    ],
+    correctIndex: 2,
+    explanation: "Many CDL handbooks teach cut-out in the 120–140 psi range."
+  },
+  {
+    id: 542,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "The governor typically cuts in again at around:",
+    options: [
+      "About 180 psi",
+      "About 40 psi",
+      "About 150 psi",
+      "About 100 psi",
+    ],
+    correctIndex: 3,
+    explanation: "Cut-in is commonly around 100 psi."
+  },
+  {
+    id: 543,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "In a static air leak test (brakes released) for a combination vehicle, the maximum drop is about:",
+    options: [
+      "8 psi per minute",
+      "1 psi per minute",
+      "5 psi per minute",
+      "3 psi per minute",
+    ],
+    correctIndex: 3,
+    explanation: "Typical guidance: 3 psi/min for combination vehicles with brakes released."
+  },
+  {
+    id: 544,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "In a static air leak test (brakes released) for a single vehicle, the maximum drop is about:",
+    options: [
+      "4 psi per minute",
+      "6 psi per minute",
+      "2 psi per minute",
+      "1 psi per minute",
+    ],
+    correctIndex: 2,
+    explanation: "Typical guidance: 2 psi/min for single vehicles with brakes released."
+  },
+  {
+    id: 545,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "With brakes applied, the maximum air loss for a combination vehicle is about:",
+    options: [
+      "2 psi per minute",
+      "10 psi per minute",
+      "4 psi per minute",
+      "6 psi per minute",
+    ],
+    correctIndex: 2,
+    explanation: "After initial drop, hold the brake and check allowed loss."
+  },
+  {
+    id: 546,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "With brakes applied, the maximum air loss for a single vehicle is about:",
+    options: [
+      "1 psi per minute",
+      "9 psi per minute",
+      "5 psi per minute",
+      "3 psi per minute",
+    ],
+    correctIndex: 3,
+    explanation: "After initial drop, hold the brake and check allowed loss."
+  },
+  {
+    id: 547,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "At 55 mph, air brake lag distance adds about:",
+    options: [
+      "60 feet",
+      "150 feet",
+      "10 feet",
+      "32 feet",
+    ],
+    correctIndex: 3,
+    explanation: "Air brakes have time lag; handbooks commonly cite ~32 feet at 55 mph."
+  },
+  {
+    id: 548,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "Spring brakes are:",
+    options: [
+      "Applied only by the foot pedal",
+      "Held off by electricity",
+      "Held off by air pressure and apply when air pressure is lost",
+      "Used only for ABS",
+    ],
+    correctIndex: 2,
+    explanation: "Spring (parking/emergency) brakes apply when air pressure drops."
+  },
+  {
+    id: 549,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "If the low air pressure warning activates while driving, you should:",
+    options: [
+      "Disable ABS",
+      "Continue to the next stop",
+      "Stop safely as soon as possible",
+      "Pump brakes rapidly",
+    ],
+    correctIndex: 2,
+    explanation: "Low air can cause spring brakes to apply and loss of braking."
+  },
+  {
+    id: 550,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "Air tanks should be drained to remove:",
+    options: [
+      "Extra air",
+      "Moisture and oil",
+      "Fuel vapors",
+      "Brake dust",
+    ],
+    correctIndex: 1,
+    explanation: "Moisture can freeze and cause brake problems."
+  },
+  {
+    id: 551,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "During an air brake check, the 'build-up rate' test checks that air pressure rises from about 50 to 90 psi within:",
+    options: [
+      "15 minutes",
+      "30 seconds",
+      "10 minutes",
+      "3 minutes",
+    ],
+    correctIndex: 3,
+    explanation: "Many handbooks use 3 minutes as a guideline for build-up rate."
+  },
+  {
+    id: 552,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "The safety valve in an air system is designed to open at approximately:",
+    options: [
+      "90 psi",
+      "150 psi",
+      "120 psi",
+      "200 psi",
+    ],
+    correctIndex: 1,
+    explanation: "The safety valve protects against too much pressure."
+  },
+  {
+    id: 553,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "If you park an air-brake vehicle without setting the parking brake, the biggest risk is:",
+    options: [
+      "Vehicle rollaway",
+      "Fuel contamination",
+      "Headlight failure",
+      "ABS failure",
+    ],
+    correctIndex: 0,
+    explanation: "Parking brakes prevent rollaways."
+  },
+  {
+    id: 554,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "When using the service brakes on a long downgrade, the safest method is to:",
+    options: [
+      "Ride the brakes lightly",
+      "Coast in neutral",
+      "Brake only at the bottom",
+      "Use controlled, intermittent braking and a low gear",
+    ],
+    correctIndex: 3,
+    explanation: "Low gear and controlled braking reduce overheating."
+  },
+  {
+    id: 555,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "If ABS activates on a slippery road, you should:",
+    options: [
+      "Let off the brake completely",
+      "Pump rapidly",
+      "Turn off the engine",
+      "Maintain firm pressure and steer where you want to go",
+    ],
+    correctIndex: 3,
+    explanation: "ABS prevents lockup; steady pressure allows steering."
+  },
+  {
+    id: 556,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "During an air brake test, after building to cut-out and shutting off engine, you monitor air pressure for one minute. What are you checking? (Test 1)",
+    options: [
+      "That air pressure loss stays within the allowed leak rate",
+      "That RPM increases",
+      "That oil pressure rises",
+      "That coolant temperature drops",
+    ],
+    correctIndex: 0,
+    explanation: "Leak-rate checks help confirm system integrity before driving."
+  },
+  {
+    id: 557,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "During an air brake test, after building to cut-out and shutting off engine, you monitor air pressure for one minute. What are you checking? (Test 2)",
+    options: [
+      "That oil pressure rises",
+      "That RPM increases",
+      "That coolant temperature drops",
+      "That air pressure loss stays within the allowed leak rate",
+    ],
+    correctIndex: 3,
+    explanation: "Leak-rate checks help confirm system integrity before driving."
+  },
+  {
+    id: 558,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "During an air brake test, after building to cut-out and shutting off engine, you monitor air pressure for one minute. What are you checking? (Test 3)",
+    options: [
+      "That coolant temperature drops",
+      "That RPM increases",
+      "That oil pressure rises",
+      "That air pressure loss stays within the allowed leak rate",
+    ],
+    correctIndex: 3,
+    explanation: "Leak-rate checks help confirm system integrity before driving."
+  },
+  {
+    id: 559,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "During an air brake test, after building to cut-out and shutting off engine, you monitor air pressure for one minute. What are you checking? (Test 4)",
+    options: [
+      "That RPM increases",
+      "That coolant temperature drops",
+      "That oil pressure rises",
+      "That air pressure loss stays within the allowed leak rate",
+    ],
+    correctIndex: 3,
+    explanation: "Leak-rate checks help confirm system integrity before driving."
+  },
+  {
+    id: 560,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "During an air brake test, after building to cut-out and shutting off engine, you monitor air pressure for one minute. What are you checking? (Test 5)",
+    options: [
+      "That RPM increases",
+      "That coolant temperature drops",
+      "That air pressure loss stays within the allowed leak rate",
+      "That oil pressure rises",
+    ],
+    correctIndex: 2,
+    explanation: "Leak-rate checks help confirm system integrity before driving."
+  },
+  {
+    id: 561,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "During an air brake test, after building to cut-out and shutting off engine, you monitor air pressure for one minute. What are you checking? (Test 6)",
+    options: [
+      "That RPM increases",
+      "That coolant temperature drops",
+      "That air pressure loss stays within the allowed leak rate",
+      "That oil pressure rises",
+    ],
+    correctIndex: 2,
+    explanation: "Leak-rate checks help confirm system integrity before driving."
+  },
+  {
+    id: 562,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "During an air brake test, after building to cut-out and shutting off engine, you monitor air pressure for one minute. What are you checking? (Test 7)",
+    options: [
+      "That RPM increases",
+      "That coolant temperature drops",
+      "That air pressure loss stays within the allowed leak rate",
+      "That oil pressure rises",
+    ],
+    correctIndex: 2,
+    explanation: "Leak-rate checks help confirm system integrity before driving."
+  },
+  {
+    id: 563,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "During an air brake test, after building to cut-out and shutting off engine, you monitor air pressure for one minute. What are you checking? (Test 8)",
+    options: [
+      "That coolant temperature drops",
+      "That RPM increases",
+      "That air pressure loss stays within the allowed leak rate",
+      "That oil pressure rises",
+    ],
+    correctIndex: 2,
+    explanation: "Leak-rate checks help confirm system integrity before driving."
+  },
+  {
+    id: 564,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "During an air brake test, after building to cut-out and shutting off engine, you monitor air pressure for one minute. What are you checking? (Test 9)",
+    options: [
+      "That oil pressure rises",
+      "That RPM increases",
+      "That air pressure loss stays within the allowed leak rate",
+      "That coolant temperature drops",
+    ],
+    correctIndex: 2,
+    explanation: "Leak-rate checks help confirm system integrity before driving."
+  },
+  {
+    id: 565,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "During an air brake test, after building to cut-out and shutting off engine, you monitor air pressure for one minute. What are you checking? (Test 10)",
+    options: [
+      "That RPM increases",
+      "That coolant temperature drops",
+      "That oil pressure rises",
+      "That air pressure loss stays within the allowed leak rate",
+    ],
+    correctIndex: 3,
+    explanation: "Leak-rate checks help confirm system integrity before driving."
+  },
+  {
+    id: 566,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "During an air brake test, after building to cut-out and shutting off engine, you monitor air pressure for one minute. What are you checking? (Test 11)",
+    options: [
+      "That oil pressure rises",
+      "That RPM increases",
+      "That coolant temperature drops",
+      "That air pressure loss stays within the allowed leak rate",
+    ],
+    correctIndex: 3,
+    explanation: "Leak-rate checks help confirm system integrity before driving."
+  },
+  {
+    id: 567,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "During an air brake test, after building to cut-out and shutting off engine, you monitor air pressure for one minute. What are you checking? (Test 12)",
+    options: [
+      "That oil pressure rises",
+      "That RPM increases",
+      "That coolant temperature drops",
+      "That air pressure loss stays within the allowed leak rate",
+    ],
+    correctIndex: 3,
+    explanation: "Leak-rate checks help confirm system integrity before driving."
+  },
+  {
+    id: 568,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "During an air brake test, after building to cut-out and shutting off engine, you monitor air pressure for one minute. What are you checking? (Test 13)",
+    options: [
+      "That oil pressure rises",
+      "That coolant temperature drops",
+      "That RPM increases",
+      "That air pressure loss stays within the allowed leak rate",
+    ],
+    correctIndex: 3,
+    explanation: "Leak-rate checks help confirm system integrity before driving."
+  },
+  {
+    id: 569,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "During an air brake test, after building to cut-out and shutting off engine, you monitor air pressure for one minute. What are you checking? (Test 14)",
+    options: [
+      "That RPM increases",
+      "That air pressure loss stays within the allowed leak rate",
+      "That oil pressure rises",
+      "That coolant temperature drops",
+    ],
+    correctIndex: 1,
+    explanation: "Leak-rate checks help confirm system integrity before driving."
+  },
+  {
+    id: 570,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Air Brakes"],
+    category: "Air Brakes",
+    text: "During an air brake test, after building to cut-out and shutting off engine, you monitor air pressure for one minute. What are you checking? (Test 15)",
+    options: [
+      "That RPM increases",
+      "That coolant temperature drops",
+      "That oil pressure rises",
+      "That air pressure loss stays within the allowed leak rate",
+    ],
+    correctIndex: 3,
+    explanation: "Leak-rate checks help confirm system integrity before driving."
+  },
+  {
+    id: 571,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "After coupling, the best way to confirm the kingpin is locked is to:",
+    options: [
+      "Drive fast to seat it",
+      "Assume it is locked if it 'felt' right",
+      "Perform a tug test and visually check the locking jaws if possible",
+      "Rely only on the electrical line",
+    ],
+    correctIndex: 2,
+    explanation: "A tug test verifies the fifth wheel has locked."
+  },
+  {
+    id: 572,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "When coupling, why should the trailer be at the correct height?",
+    options: [
+      "So the trailer does not need landing gear",
+      "So you can skip connecting air lines",
+      "So the tractor lifts the trailer slightly and avoids missed coupling",
+      "So you can back faster",
+    ],
+    correctIndex: 2,
+    explanation: "Too high/low can prevent proper locking or cause damage."
+  },
+  {
+    id: 573,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "Before you back under a trailer, you should make sure:",
+    options: [
+      "The landing gear is fully raised",
+      "The electrical line is disconnected",
+      "The tractor brakes are released",
+      "The trailer brakes are applied/locked",
+    ],
+    correctIndex: 3,
+    explanation: "A secure trailer prevents rollaway during coupling."
+  },
+  {
+    id: 574,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "A major cause of jackknife is:",
+    options: [
+      "Braking too hard or too fast for conditions",
+      "Driving with ABS",
+      "Checking mirrors",
+      "Using turn signals",
+    ],
+    correctIndex: 0,
+    explanation: "Hard braking can cause trailer wheels to lock and swing."
+  },
+  {
+    id: 575,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "To prevent a trailer swing collision during a turn, you should:",
+    options: [
+      "Ignore mirrors once you start turning",
+      "Turn sharply to stay tight",
+      "Check mirrors and allow extra clearance for the trailer and rear overhang",
+      "Accelerate mid-turn",
+    ],
+    correctIndex: 2,
+    explanation: "Trailer swing can strike objects beside you."
+  },
+  {
+    id: 576,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "If you are not sure the trailer is coupled correctly, you should:",
+    options: [
+      "Drive slowly and hope it seats",
+      "Ask another driver later",
+      "Rely on the sound it made",
+      "Stop and check before moving",
+    ],
+    correctIndex: 3,
+    explanation: "A dropped trailer can cause severe damage/injury."
+  },
+  {
+    id: 577,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "The 'glad hands' connect:",
+    options: [
+      "The fuel lines",
+      "The electrical battery cables",
+      "The steering linkage",
+      "The service and emergency air lines between tractor and trailer",
+    ],
+    correctIndex: 3,
+    explanation: "Glad hands are air line connectors."
+  },
+  {
+    id: 578,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "If the trailer is too low during coupling, you risk:",
+    options: [
+      "No issue at all",
+      "Improved coupling",
+      "Hitting the trailer or damaging the tractor frame/fifth wheel",
+      "Extra braking power",
+    ],
+    correctIndex: 2,
+    explanation: "Incorrect height can cause impact and damage."
+  },
+  {
+    id: 579,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "Before coupling, you should inspect the fifth wheel for:",
+    options: [
+      "A shiny paint job",
+      "A loose steering wheel",
+      "A warm fuel tank",
+      "Proper lubrication and no cracks or missing parts",
+    ],
+    correctIndex: 3,
+    explanation: "Defects can lead to coupling failure."
+  },
+  {
+    id: 580,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "During a tug test, you should:",
+    options: [
+      "Release all brakes and accelerate hard",
+      "Back up quickly",
+      "Apply trailer brakes and gently pull against them to test the lock",
+      "Turn sharply while pulling",
+    ],
+    correctIndex: 2,
+    explanation: "A controlled tug test confirms locking jaws engagement."
+  },
+  {
+    id: 581,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "Trailer offtracking is greatest when:",
+    options: [
+      "Cruising at constant speed",
+      "Reversing in a straight line",
+      "Turning sharply at low speed",
+      "Driving straight on a highway",
+    ],
+    correctIndex: 2,
+    explanation: "Offtracking increases in tight turns."
+  },
+  {
+    id: 582,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "If you must park a combination vehicle on a grade, you should:",
+    options: [
+      "Leave it in neutral",
+      "Park facing downhill only",
+      "Rely on service brakes only",
+      "Set parking brakes and chock wheels when necessary",
+    ],
+    correctIndex: 3,
+    explanation: "Prevent rollaway in both tractor and trailer."
+  },
+  {
+    id: 583,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "A major reason to avoid hard braking in a curve with a combination vehicle is:",
+    options: [
+      "It shortens stopping distance dramatically",
+      "It cools brakes",
+      "It improves traction",
+      "It can cause the trailer to push and increase rollover risk",
+    ],
+    correctIndex: 3,
+    explanation: "Braking in curves can destabilize the combination."
+  },
+  {
+    id: 584,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "When coupling, if the trailer is too low, the most likely problem is:",
+    options: [
+      "The tractor will not be able to turn",
+      "The trailer brakes will automatically release",
+      "The fifth wheel can hit the trailer apron and prevent a proper coupling",
+      "The kingpin will lock more tightly",
+    ],
+    correctIndex: 2,
+    explanation: "Incorrect trailer height can cause missed coupling or equipment damage."
+  },
+  {
+    id: 585,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "Before you back under a trailer to couple, you should make sure:",
+    options: [
+      "The trailer service brakes are released",
+      "The trailer is on a slight slope",
+      "The trailer wheels are blocked from rolling (trailer brakes set/chocked as needed)",
+      "The landing gear is fully raised",
+    ],
+    correctIndex: 2,
+    explanation: "Prevent trailer movement while coupling by ensuring it is secured."
+  },
+  {
+    id: 586,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "When connecting air lines (glad hands), the best practice is to:",
+    options: [
+      "Connect lines and ignore minor leaks",
+      "Connect the service line first, then the emergency line",
+      "Connect the emergency line first, then the service line, and check for leaks",
+      "Leave lines disconnected until after you drive forward",
+    ],
+    correctIndex: 2,
+    explanation: "Connecting the emergency line first supplies air and helps keep trailer brakes controlled; always check for leaks."
+  },
+  {
+    id: 587,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "After raising the landing gear, you should also:",
+    options: [
+      "Leave the crank handle hanging freely",
+      "Lower the landing gear one turn so it can settle",
+      "Secure the crank handle and confirm the gear is fully up",
+      "Disconnect the electrical line to reduce strain",
+    ],
+    correctIndex: 2,
+    explanation: "Landing gear can catch on the road if not fully raised and secured."
+  },
+  {
+    id: 588,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "If the tractor protection valve closes while driving, it usually means:",
+    options: [
+      "Your headlights are malfunctioning",
+      "The trailer has too much air pressure",
+      "There is a major trailer air supply loss and the trailer brakes may apply",
+      "Your fuel filter is clogged",
+    ],
+    correctIndex: 2,
+    explanation: "The tractor protection system helps protect tractor air by shutting off flow when pressure drops too low."
+  },
+  {
+    id: 589,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "To reduce jackknife risk when braking in a combination vehicle, you should:",
+    options: [
+      "Brake hard and late so the trailer stays straight",
+      "Use only the trailer brakes on slippery roads",
+      "Brake early and smoothly while keeping the tractor and trailer aligned",
+      "Downshift in neutral while braking",
+    ],
+    correctIndex: 2,
+    explanation: "Smooth, early braking helps prevent the trailer from pushing the tractor out of line."
+  },
+  {
+    id: 590,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "Before you pull the tractor out from under a trailer to uncouple, you should first:",
+    options: [
+      "Release the trailer parking brake",
+      "Disconnect the electrical line while moving",
+      "Lower the landing gear until it firmly supports the trailer",
+      "Drive forward to see if it will hold",
+    ],
+    correctIndex: 2,
+    explanation: "The trailer must be supported so it does not drop when the tractor is removed."
+  },
+  {
+    id: 591,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "After coupling, the fifth wheel locking lever should be:",
+    options: [
+      "Halfway out so it can self-adjust",
+      "Tied with a rope",
+      "Fully in the locked position with the safety latch engaged",
+      "Removed to prevent damage",
+    ],
+    correctIndex: 2,
+    explanation: "A properly secured lock prevents uncoupling while driving."
+  },
+  {
+    id: 592,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "If you hear air rushing continuously after connecting the glad hands, you should:",
+    options: [
+      "Ignore it because air systems always hiss",
+      "Spray water on the brake drums",
+      "Stop and fix the leak (check gaskets, connections, and line damage)",
+      "Drive faster so the compressor keeps up",
+    ],
+    correctIndex: 2,
+    explanation: "A continuous leak can reduce braking power and must be corrected before driving."
+  },
+  {
+    id: 593,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "One safe way to check trailer service brakes after coupling is to:",
+    options: [
+      "Drive at highway speed and slam the brakes",
+      "Test only the parking brake",
+      "Move slowly and apply the trailer hand valve (if equipped) to feel the trailer brakes grab",
+      "Disconnect the service line and listen for air",
+    ],
+    correctIndex: 2,
+    explanation: "A slow roll test helps confirm the trailer service brakes respond without risking a skid."
+  },
+  {
+    id: 594,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "You feel the trailer start to swing wide during a turn (trailer swing). The best correction is to:",
+    options: [
+      "Accelerate hard to pull it straight",
+      "Brake hard in the middle of the turn",
+      "Slow down, steer smoothly, and widen the turn path if safe",
+      "Turn the wheel quickly back and forth",
+    ],
+    correctIndex: 2,
+    explanation: "Trailer swing increases with speed and sudden inputs; smooth control reduces risk."
+  },
+  {
+    id: 595,
+    licenseClasses: ["A"],
+    category: "Combination Vehicles",
+    text: "After connecting electrical and air lines, you should ensure they:",
+    options: [
+      "Are wrapped tightly around the frame",
+      "Have no slack at all",
+      "Have enough slack for turns but will not drag or kink",
+      "Are touching the catwalk to reduce vibration",
+    ],
+    correctIndex: 2,
+    explanation: "Proper slack prevents line damage during turns while avoiding dragging."
+  },
+  {
+    id: 596,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Hazmat"],
+    category: "Hazardous Materials",
+    text: "While driving placarded hazardous materials, shipping papers must be:",
+    options: [
+      "In the sleeper berth",
+      "In the trailer with cargo",
+      "Within immediate reach while seat-belted and readily visible to responders",
+      "Under other papers in the glove box",
+    ],
+    correctIndex: 2,
+    explanation: "Regulations require quick access for the driver and responders."
+  },
+  {
+    id: 597,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Hazmat"],
+    category: "Hazardous Materials",
+    text: "Placards on a placarded vehicle must generally be displayed:",
+    options: [
+      "Only on the doors",
+      "Only inside the cab",
+      "On the front, rear, and both sides (four sides)",
+      "Only on the rear",
+    ],
+    correctIndex: 2,
+    explanation: "Placards must be visible from all directions."
+  },
+  {
+    id: 598,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Hazmat"],
+    category: "Hazardous Materials",
+    text: "If you discover a hazmat leak, your first action is to:",
+    options: [
+      "Keep driving to a terminal",
+      "Cover it and continue",
+      "Park safely, secure the area, and notify according to procedures",
+      "Wash it off immediately",
+    ],
+    correctIndex: 2,
+    explanation: "Leaks are emergencies—protect people and call for help."
+  },
+  {
+    id: 599,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Hazmat"],
+    category: "Hazardous Materials",
+    text: "Why must hazmat papers be easy to find?",
+    options: [
+      "So billing is easier",
+      "So cargo weighs less",
+      "So unloading is faster",
+      "So responders can identify hazards quickly",
+    ],
+    correctIndex: 3,
+    explanation: "Fast hazard identification reduces injuries and damage."
+  },
+  {
+    id: 600,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Hazmat"],
+    category: "Hazardous Materials",
+    text: "When transporting hazmat, smoking is dangerous because:",
+    options: [
+      "Some vapors can ignite",
+      "It reduces static",
+      "It improves ventilation",
+      "It cools the load",
+    ],
+    correctIndex: 0,
+    explanation: "Ignition sources can cause fires/explosions."
+  },
+  {
+    id: 601,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Hazmat"],
+    category: "Hazardous Materials",
+    text: "If you must park a placarded hazmat vehicle, you should:",
+    options: [
+      "Always park in tunnels",
+      "Leave it unattended with engine running",
+      "Park next to open flames",
+      "Follow restrictions and avoid places that endanger the public",
+    ],
+    correctIndex: 3,
+    explanation: "Hazmat parking must minimize risk and follow rules."
+  },
+  {
+    id: 602,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Hazmat"],
+    category: "Hazardous Materials",
+    text: "If shipping papers are carried with other papers, they must be:",
+    options: [
+      "Hidden under invoices",
+      "Kept only digitally without access",
+      "Stored in the trailer",
+      "Clearly distinguished (tabbed or on top)",
+    ],
+    correctIndex: 3,
+    explanation: "They must be quickly identifiable in emergencies."
+  },
+  {
+    id: 603,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Hazmat"],
+    category: "Hazardous Materials",
+    text: "Before moving a placarded hazmat load, the driver should verify:",
+    options: [
+      "Only tire shine",
+      "Correct placards and required papers are present",
+      "Only radio settings",
+      "Only fuel level",
+    ],
+    correctIndex: 1,
+    explanation: "Driver responsibility includes compliance checks."
+  },
+  {
+    id: 604,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Hazmat"],
+    category: "Hazardous Materials",
+    text: "In an emergency, the best source to identify the exact hazardous material is the:",
+    options: [
+      "Truck color",
+      "Driver’s personal notes",
+      "Shipping paper description",
+      "License plate",
+    ],
+    correctIndex: 2,
+    explanation: "Shipping papers list the proper shipping name/ID/response info."
+  },
+  {
+    id: 605,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Hazmat"],
+    category: "Hazardous Materials",
+    text: "If you discover a hazmat package is leaking at a rest stop, your first priority is to:",
+    options: [
+      "Cover it quickly and keep driving",
+      "Move the leak into the travel lane for visibility",
+      "Protect people: secure the area and notify emergency response using procedures",
+      "Wash it off with water and continue",
+    ],
+    correctIndex: 2,
+    explanation: "A leak is an emergency—keep people away, secure the scene, and get help."
+  },
+  {
+    id: 606,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Hazmat"],
+    category: "Hazardous Materials",
+    text: "If a required placard becomes damaged or unreadable during a trip, you should:",
+    options: [
+      "Continue; placards are only checked at the shipper",
+      "Remove all other placards to match",
+      "Replace or repair it so it is readable before continuing when possible",
+      "Write the material name on paper and tape it to the door",
+    ],
+    correctIndex: 2,
+    explanation: "Placards must remain visible/readable so others can identify the hazard."
+  },
+  {
+    id: 607,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Hazmat"],
+    category: "Hazardous Materials",
+    text: "How close can you smoke to a placarded vehicle containing explosives, flammables, or oxidizers?",
+    options: [
+      "As close as you like if the cab windows are closed",
+      "Not within 10 feet",
+      "Not within 100 feet",
+      "Not within 25 feet",
+    ],
+    correctIndex: 3,
+    explanation: "Smoking (or carrying lighted smoking materials) is prohibited within 25 feet of certain hazmat loads."
+  },
+  {
+    id: 608,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Hazmat"],
+    category: "Hazardous Materials",
+    text: "When refueling a placarded vehicle carrying hazardous materials, you must:",
+    options: [
+      "Leave the engine running so the fuel pumps work faster",
+      "Use a flare to warn others while fueling",
+      "Turn off the engine and keep someone at the nozzle controlling fuel flow",
+      "Fuel only at night when traffic is light",
+    ],
+    correctIndex: 2,
+    explanation: "Fueling requires extra caution: engine off, no ignition sources, and active control of the nozzle."
+  },
+  {
+    id: 609,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Hazmat"],
+    category: "Hazardous Materials",
+    text: "A power unit pulling a placarded hazmat load must have a fire extinguisher with a minimum UL rating of:",
+    options: [
+      "Any size extinguisher is acceptable",
+      "5 B:C or more",
+      "15 B:C or more",
+      "10 B:C or more",
+    ],
+    correctIndex: 3,
+    explanation: "Placarded vehicles require at least a 10 B:C-rated fire extinguisher in the power unit."
+  },
+  {
+    id: 610,
+    licenseClasses: ["A", "B", "C"],
+    endorsements: ["Hazmat"],
+    category: "Hazardous Materials",
+    text: "If you break down while hauling a cargo tank used for Class 3 flammable liquids (loaded or empty), the safest warning devices are:",
+    options: [
+      "Liquid-burning flares only",
+      "Fusees (burning signals) because they are brighter",
+      "Reflective triangles or red electric lights (avoid burning signals)",
+      "No warning devices are allowed for hazmat",
+    ],
+    correctIndex: 2,
+    explanation: "Never use burning signals (flares/fusees) around certain hazmat cargo tanks; use triangles or electric lights."
   }
 ];
