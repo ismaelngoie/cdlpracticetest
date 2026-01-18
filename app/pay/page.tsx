@@ -311,7 +311,7 @@ function PaywallContent() {
   };
 
   const ValueChip = ({ children }: { children: React.ReactNode }) => (
-  <span className="px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-300 whitespace-nowrap">
+  <span className="px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-[9px] font-black uppercase tracking-widest text-slate-300 whitespace-nowrap">
     {children}
   </span>
 );
@@ -328,7 +328,7 @@ function PaywallContent() {
       <main className="relative z-10 max-w-lg mx-auto px-4 pt-10">
         {/* HEADER / HOOK */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-7">
-          <div className="flex flex-nowrap justify-center gap-2 mb-4">
+          <div className="flex flex-nowrap justify-center gap-1.5 mb-4">
   <ValueChip>Secure checkout</ValueChip>
   <ValueChip>Instant access</ValueChip>
   <ValueChip>Pass Guarantee</ValueChip>
