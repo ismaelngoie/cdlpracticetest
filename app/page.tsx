@@ -196,7 +196,7 @@ export default function Home() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
             </span>
-            Updated for 2026 • Works offline
+            Updated for 2026 • All 50 States
           </div>
 
           <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white leading-[0.95] mb-4">
@@ -224,16 +224,9 @@ export default function Home() {
             >
               Start Free Diagnostic →
             </button>
-            <button
-              onClick={startDiagnostic}
-              className="px-6 py-4 rounded-2xl bg-slate-900/80 hover:bg-slate-900 text-white font-black uppercase tracking-widest border border-slate-800 transition-transform active:scale-95"
-              title="If you're already configured, jump straight in."
-            >
-              Jump In Now →
-            </button>
           </div>
 
-          <div className="mt-3 text-[11px] text-slate-500 font-mono">Takes ~60 seconds • No credit card • Mobile-first</div>
+          <div className="mt-3 text-[11px] text-slate-500 font-mono">Takes ~60 seconds • No credit card • 5 questions</div>
         </motion.div>
 
         {/* VALUE STRIP */}
