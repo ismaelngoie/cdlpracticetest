@@ -1,14 +1,19 @@
+// app/simulator/page.tsx
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import type { ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { questions, type Question, type LicenseClass, type Endorsement } from "@/lib/questions";
 
 // --- EXAM CONFIGURATION ---
-const EXAM_LENGTH = 70; // Standard Full Simulation
-const EXAM_DURATION_SEC = 7200; // 2 Hours (120 Minutes)
-const PASS_THRESHOLD = 80; // 80% Required to Pass
+const EXAM_LENGTH = 70;
+const EXAM_DURATION_SEC = 7200; // 2 hours
+const PASS_THRESHOLD = 80;
+
+// Keep in sync with paywall/dashboard
+const CONFIG_KEY = "haulOS.config.v1";
 
 // --- TYPES ---
 type ExamState = "boot" | "manifest" | "active" | "submitting" | "results";
@@ -18,11 +23,19 @@ type ExamSession = {
   endorsements: Endorsement[];
   state: string;
   questionIds: number[];
-  answers: Record<number, number>; // { qIdx: optIdx }
+  answers: Record<number, number>; // key = question index
   flags: number[];
   currentIdx: number;
   endAt: number;
   startedAt: number;
+  examId: string;
+};
+
+type HaulConfig = {
+  name?: string;
+  license?: LicenseClass | string;
+  userState?: string;
+  endorsements?: Endorsement[] | string[];
 };
 
 // --- HELPERS ---
@@ -37,6 +50,208 @@ function shuffle<T>(arr: T[]) {
   return [...arr].sort(() => Math.random() - 0.5);
 }
 
+function clamp(n: number, a: number, b: number) {
+  return Math.max(a, Math.min(b, n));
+}
+
+function makeExamId() {
+  const partA = Math.floor(100 + Math.random() * 900);
+  const partB = Math.floor(1000 + Math.random() * 9000);
+  const partC = Math.floor(10 + Math.random() * 90);
+  return `DMV-${partA}-${partB}-${partC}`;
+}
+
+function safeParseJSON<T>(value: string | null): T | null {
+  if (!value) return null;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return null;
+  }
+}
+
+function computeResults(qs: Question[], answers: Record<number, number>, timeLeft: number) {
+  const total = qs.length || 1;
+
+  let correctCount = 0;
+  for (let i = 0; i < qs.length; i++) {
+    if (answers[i] !== undefined && answers[i] === qs[i]?.correctIndex) correctCount++;
+  }
+
+  const score = Math.round((correctCount / total) * 100);
+  const passed = score >= PASS_THRESHOLD;
+  const elapsedMin = Math.ceil((EXAM_DURATION_SEC - timeLeft) / 60);
+
+  return { correctCount, score, passed, elapsedMin };
+}
+
+function computeWeakestDomain(qs: Question[], answers: Record<number, number>) {
+  const counts: Record<string, number> = {};
+  for (let i = 0; i < qs.length; i++) {
+    const q = qs[i];
+    const a = answers[i];
+    const correct = a !== undefined && a === q.correctIndex;
+    if (!correct) counts[q.category] = (counts[q.category] || 0) + 1;
+  }
+  let worst = "General Knowledge";
+  let max = -1;
+  for (const [cat, c] of Object.entries(counts)) {
+    if (c > max) {
+      max = c;
+      worst = cat;
+    }
+  }
+  return worst;
+}
+
+// --- UI PRIMITIVES ---
+function Pill({
+  children,
+  tone = "slate",
+}: {
+  children: ReactNode;
+  tone?: "amber" | "emerald" | "red" | "slate" | "blue";
+}) {
+  const cls =
+    tone === "amber"
+      ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
+      : tone === "emerald"
+      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+      : tone === "red"
+      ? "bg-red-500/10 border-red-500/30 text-red-400"
+      : tone === "blue"
+      ? "bg-blue-500/10 border-blue-500/30 text-blue-400"
+      : "bg-white/5 border-white/10 text-slate-300";
+
+  return <span className={`px-2 py-1 rounded border text-[10px] font-black uppercase tracking-widest ${cls}`}>{children}</span>;
+}
+
+function ProgressBar({ value }: { value: number }) {
+  const pct = clamp(value, 0, 100);
+  return (
+    <div className="h-2 rounded-full bg-slate-800/70 border border-slate-700 overflow-hidden">
+      <motion.div
+        initial={{ width: 0 }}
+        animate={{ width: `${pct}%` }}
+        transition={{ type: "spring", stiffness: 120, damping: 20 }}
+        className="h-full bg-gradient-to-r from-amber-600 to-amber-400"
+      />
+    </div>
+  );
+}
+
+function Modal({
+  open,
+  title,
+  subtitle,
+  children,
+  onClose,
+}: {
+  open: boolean;
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+  onClose: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.button
+            aria-label="Close modal"
+            onClick={onClose}
+            className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          />
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            className="fixed z-[90] left-1/2 top-1/2 w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2"
+            initial={{ opacity: 0, y: 12, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.98 }}
+            transition={{ duration: 0.18 }}
+          >
+            <div className="bg-slate-950 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden">
+              <div className="p-6 border-b border-slate-800">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Secure Prompt</div>
+                    <h3 className="text-xl font-black text-white mt-1">{title}</h3>
+                    {subtitle && <p className="text-sm text-slate-400 mt-1">{subtitle}</p>}
+                  </div>
+                  <button
+                    onClick={onClose}
+                    className="w-10 h-10 rounded-2xl border border-slate-800 bg-slate-900/60 hover:bg-slate-900 flex items-center justify-center text-slate-300"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+              <div className="p-6">{children}</div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function Sheet({
+  open,
+  title,
+  children,
+  onClose,
+}: {
+  open: boolean;
+  title: string;
+  children: ReactNode;
+  onClose: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.button
+            aria-label="Close sheet"
+            onClick={onClose}
+            className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          />
+          <motion.div
+            className="fixed z-[75] left-0 right-0 bottom-0"
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", stiffness: 140, damping: 22 }}
+          >
+            <div className="mx-auto max-w-3xl bg-slate-950 border border-slate-800 rounded-t-3xl shadow-2xl overflow-hidden">
+              <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Exam Review</div>
+                  <div className="text-white font-black">{title}</div>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="w-10 h-10 rounded-2xl border border-slate-800 bg-slate-900/60 hover:bg-slate-900 flex items-center justify-center text-slate-300"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="p-5 max-h-[70vh] overflow-auto">{children}</div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// --- MAIN ---
 export default function SimulatorPage() {
   // --- STATE ---
   const [state, setState] = useState<ExamState>("boot");
@@ -46,208 +261,456 @@ export default function SimulatorPage() {
   const [flags, setFlags] = useState<Set<number>>(new Set());
   const [timeLeft, setTimeLeft] = useState(EXAM_DURATION_SEC);
   const [endAt, setEndAt] = useState<number>(0);
-  
-  // User Configuration (The "Rig")
+
   const [license, setLicense] = useState<LicenseClass>("A");
   const [endorsements, setEndorsements] = useState<Endorsement[]>([]);
   const [jurisdiction, setJurisdiction] = useState("TX");
 
-  // --- INITIALIZATION ---
-  useEffect(() => {
-    // 1. Load Driver Profile
-    const l = (localStorage.getItem("userLevel") as LicenseClass) || "A";
-    const e = JSON.parse(localStorage.getItem("userEndorsements") || "[]");
-    const s = localStorage.getItem("userState") || "TX";
-    
-    setLicense(l);
-    setEndorsements(e);
-    setJurisdiction(s);
+  const [examId, setExamId] = useState<string>("DMV-000-0000-00");
 
-    // 2. Check for Interrupted Session (Silent Resume)
-    const savedSession = localStorage.getItem("haul-active-session");
-    if (savedSession) {
-      try {
-        const session: ExamSession = JSON.parse(savedSession);
-        // Only resume if valid and not expired
-        if (session.endAt > Date.now()) {
-          const restoredQs = session.questionIds
-            .map(id => questions.find(q => q.id === id))
-            .filter(Boolean) as Question[];
-          
-          if (restoredQs.length > 0) {
-            setActiveQuestions(restoredQs);
-            setAnswers(session.answers);
-            setFlags(new Set(session.flags));
-            setCurrentIdx(session.currentIdx);
-            setEndAt(session.endAt);
-            setTimeLeft(Math.floor((session.endAt - Date.now()) / 1000));
-            
-            // Fast boot to manifest if resuming
-            setTimeout(() => setState("manifest"), 800); 
-            return;
-          }
-        }
-      } catch (err) {
-        localStorage.removeItem("haul-active-session");
-      }
-    }
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [submitPromptOpen, setSubmitPromptOpen] = useState(false);
 
-    // 3. Build New Exam Pool (If no resume)
-    const pool = questions.filter((q) => {
-      // Must match license
-      if (!q.licenseClasses.includes(l)) return false;
-      // Must match endorsements (if question requires one)
-      if (q.endorsements && q.endorsements.length > 0) {
-        const hasReq = q.endorsements.some((req) => e.includes(req));
-        if (!hasReq) return false;
-      }
-      return true;
-    });
+  const currentQ = activeQuestions[currentIdx];
 
-    // Shuffle and cut to exam length
-    const finalSet = shuffle(pool).slice(0, EXAM_LENGTH);
-    setActiveQuestions(finalSet);
+  const isResuming = useMemo(() => endAt > Date.now(), [endAt]);
 
-    // Boot Sequence Effect
-    setTimeout(() => setState("manifest"), 1500);
-  }, []);
+  const answeredCount = useMemo(() => Object.keys(answers).length, [answers]);
+  const flaggedCount = useMemo(() => flags.size, [flags]);
+  const unansweredCount = useMemo(
+    () => Math.max(0, activeQuestions.length - answeredCount),
+    [activeQuestions.length, answeredCount]
+  );
 
-  // --- PERSISTENCE ENGINE ---
-  useEffect(() => {
-    if (state !== "active") return;
-    
-    const session: ExamSession = {
-      license,
-      endorsements,
-      state: jurisdiction,
-      questionIds: activeQuestions.map(q => q.id),
-      answers,
-      flags: Array.from(flags),
-      currentIdx,
-      endAt,
-      startedAt: endAt - (EXAM_DURATION_SEC * 1000)
-    };
-    
-    localStorage.setItem("haul-active-session", JSON.stringify(session));
-  }, [state, answers, flags, currentIdx, endAt, activeQuestions, license, endorsements, jurisdiction]);
+  const progressPct = useMemo(() => {
+    if (!activeQuestions.length) return 0;
+    return Math.round(((currentIdx + 1) / activeQuestions.length) * 100);
+  }, [currentIdx, activeQuestions.length]);
 
-  // --- CLOCK ---
-  useEffect(() => {
-    if (state !== "active") return;
-    
-    const timer = setInterval(() => {
-      const remaining = Math.floor((endAt - Date.now()) / 1000);
-      if (remaining <= 0) {
-        finishExam();
-      } else {
-        setTimeLeft(remaining);
-      }
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, [state, endAt]);
+  const timeTone = useMemo(() => {
+    if (timeLeft <= 120) return "red";
+    if (timeLeft <= 300) return "amber";
+    return "slate";
+  }, [timeLeft]);
 
   // --- ACTIONS ---
-  const startExam = () => {
-    // Only set new end time if not resuming
-    if (endAt < Date.now()) {
-        const newEnd = Date.now() + (EXAM_DURATION_SEC * 1000);
-        setEndAt(newEnd);
-        setTimeLeft(EXAM_DURATION_SEC);
-    }
-    setState("active");
-  };
+  const handleSelect = useCallback(
+    (optIdx: number) => {
+      setAnswers((prev) => ({ ...prev, [currentIdx]: optIdx }));
+    },
+    [currentIdx]
+  );
 
-  const handleSelect = (idx: number) => {
-    setAnswers(prev => ({ ...prev, [currentIdx]: idx }));
-  };
-
-  const toggleFlag = () => {
-    setFlags(prev => {
+  const toggleFlag = useCallback(() => {
+    setFlags((prev) => {
       const next = new Set(prev);
       if (next.has(currentIdx)) next.delete(currentIdx);
       else next.add(currentIdx);
       return next;
     });
-  };
+  }, [currentIdx]);
 
-  const finishExam = () => {
+  const finalizeToLocalStorage = useCallback(
+    (qs: Question[], ans: Record<number, number>, tLeft: number) => {
+      if (!qs.length) return;
+
+      const res = computeResults(qs, ans, tLeft);
+      const weakest = computeWeakestDomain(qs, ans);
+
+      // Power the dashboard + paywall personalization
+      localStorage.setItem("diagnosticScore", String(res.score));
+      localStorage.setItem("weakestDomain", weakest);
+      localStorage.setItem("userState", jurisdiction);
+
+      // For "last miss" card on dashboard
+      const diagnosticAnswers = qs.map((q, i) => ({
+        isCorrect: ans[i] !== undefined && ans[i] === q.correctIndex,
+        text: q.text,
+        category: q.category,
+      }));
+      localStorage.setItem("diagnosticAnswers", JSON.stringify(diagnosticAnswers));
+
+      // Optional: auto-grow mastery with correct question IDs
+      const existing = safeParseJSON<number[]>(localStorage.getItem("mastered-ids")) || [];
+      const mastered = new Set<number>(Array.isArray(existing) ? existing : []);
+      qs.forEach((q, i) => {
+        if (ans[i] !== undefined && ans[i] === q.correctIndex) mastered.add(q.id);
+      });
+      localStorage.setItem("mastered-ids", JSON.stringify(Array.from(mastered)));
+
+      // Last exam summary (nice for future)
+      localStorage.setItem(
+        "haul-last-exam",
+        JSON.stringify({
+          examId,
+          score: res.score,
+          correct: res.correctCount,
+          total: qs.length,
+          passed: res.passed,
+          weakestDomain: weakest,
+          endedAt: Date.now(),
+        })
+      );
+    },
+    [examId, jurisdiction]
+  );
+
+  const finishExam = useCallback(() => {
+    setSubmitPromptOpen(false);
+    setReviewOpen(false);
+
+    // Persist summary before wiping session keys
+    finalizeToLocalStorage(activeQuestions, answers, timeLeft);
+
     setState("submitting");
     setTimeout(() => {
       localStorage.removeItem("haul-active-session");
+      localStorage.removeItem("haul-exam-id"); // new run => new ID
       setState("results");
-    }, 1500); // Fake processing delay for realism
-  };
+    }, 1400);
+  }, [activeQuestions, answers, finalizeToLocalStorage, timeLeft]);
+
+  const startExam = useCallback(() => {
+    // Only set new end time if not resuming
+    if (endAt < Date.now()) {
+      const newEnd = Date.now() + EXAM_DURATION_SEC * 1000;
+      setEndAt(newEnd);
+      setTimeLeft(EXAM_DURATION_SEC);
+      localStorage.setItem("haul-exam-id", examId);
+    }
+    setState("active");
+  }, [endAt, examId]);
+
+  // --- INITIALIZATION ---
+  useEffect(() => {
+    // Prefer unified config, fallback to legacy keys
+    const saved = safeParseJSON<HaulConfig>(localStorage.getItem(CONFIG_KEY));
+
+    const legacyLicense = (localStorage.getItem("userLevel") as LicenseClass) || "A";
+    const legacyState = localStorage.getItem("userState") || "TX";
+
+    const l = (saved?.license as LicenseClass) || legacyLicense || "A";
+    const s = saved?.userState || legacyState || "TX";
+
+    const legacyEnd = safeParseJSON<Endorsement[]>(localStorage.getItem("userEndorsements")) || [];
+    const e = Array.isArray(saved?.endorsements) ? (saved!.endorsements as Endorsement[]) : legacyEnd;
+
+    setLicense(l);
+    setEndorsements(Array.isArray(e) ? e : []);
+    setJurisdiction(s);
+
+    // Exam ID (persist across resume)
+    const savedExamId = localStorage.getItem("haul-exam-id");
+    const id = savedExamId || makeExamId();
+    setExamId(id);
+    if (!savedExamId) localStorage.setItem("haul-exam-id", id);
+
+    // Silent resume
+    const savedSession = localStorage.getItem("haul-active-session");
+    if (savedSession) {
+      try {
+        const session: ExamSession = JSON.parse(savedSession);
+        if (session.endAt > Date.now()) {
+          const restoredQs = session.questionIds
+            .map((qid) => questions.find((q) => q.id === qid))
+            .filter(Boolean) as Question[];
+
+          if (restoredQs.length > 0) {
+            setActiveQuestions(restoredQs);
+
+            // answers keys come back as strings; still indexable, but keep shape
+            setAnswers((session.answers || {}) as Record<number, number>);
+            setFlags(new Set(session.flags || []));
+            setCurrentIdx(session.currentIdx || 0);
+            setEndAt(session.endAt);
+            setTimeLeft(Math.floor((session.endAt - Date.now()) / 1000));
+            setExamId(session.examId || id);
+
+            setTimeout(() => setState("manifest"), 700);
+            return;
+          }
+        }
+      } catch {
+        localStorage.removeItem("haul-active-session");
+      }
+    }
+
+    // Build new pool
+    const pool = questions.filter((q) => {
+      if (!q.licenseClasses.includes(l)) return false;
+
+      // If question requires endorsements, user must have at least one
+      if (q.endorsements && q.endorsements.length > 0) {
+        const hasReq = q.endorsements.some((req) => (Array.isArray(e) ? e : []).includes(req));
+        if (!hasReq) return false;
+      }
+
+      return true;
+    });
+
+    const finalSet = shuffle(pool).slice(0, EXAM_LENGTH);
+    setActiveQuestions(finalSet);
+
+    setTimeout(() => setState("manifest"), 1400);
+  }, []);
+
+  // --- PERSISTENCE ENGINE ---
+  useEffect(() => {
+    if (state !== "active") return;
+    if (!activeQuestions.length) return;
+
+    const session: ExamSession = {
+      license,
+      endorsements,
+      state: jurisdiction,
+      questionIds: activeQuestions.map((q) => q.id),
+      answers,
+      flags: Array.from(flags),
+      currentIdx,
+      endAt,
+      startedAt: endAt - EXAM_DURATION_SEC * 1000,
+      examId,
+    };
+
+    localStorage.setItem("haul-active-session", JSON.stringify(session));
+  }, [state, answers, flags, currentIdx, endAt, activeQuestions, license, endorsements, jurisdiction, examId]);
+
+  // --- CLOCK ---
+  useEffect(() => {
+    if (state !== "active") return;
+
+    const timer = setInterval(() => {
+      const remaining = Math.floor((endAt - Date.now()) / 1000);
+      if (remaining <= 0) finishExam();
+      else setTimeLeft(remaining);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [state, endAt, finishExam]);
+
+  // --- KEYBOARD SHORTCUTS ---
+  useEffect(() => {
+    if (state !== "active") return;
+
+    const onKey = (e: KeyboardEvent) => {
+      if (submitPromptOpen) return;
+
+      const key = e.key.toLowerCase();
+
+      if (key === "escape") {
+        setReviewOpen(false);
+        setSubmitPromptOpen(false);
+      }
+
+      if (key === "r") setReviewOpen((p) => !p);
+      if (key === "f") toggleFlag();
+
+      if (key === "arrowleft") setCurrentIdx((p) => Math.max(0, p - 1));
+      if (key === "arrowright") setCurrentIdx((p) => Math.min(activeQuestions.length - 1, p + 1));
+
+      const map: Record<string, number> = { a: 0, b: 1, c: 2, d: 3 };
+      if (map[key] !== undefined && currentQ?.options?.[map[key]] !== undefined) {
+        handleSelect(map[key]);
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [state, activeQuestions.length, currentQ, handleSelect, toggleFlag, submitPromptOpen]);
+
+  // --- RESULTS COMPUTATION ---
+  const results = useMemo(() => {
+    if (!activeQuestions.length) return null;
+    return computeResults(activeQuestions, answers, timeLeft);
+  }, [answers, activeQuestions, timeLeft]);
+
+  // --- REVIEW GRID (navigator) ---
+  const QuestionNavigator = useCallback(
+    ({ onPick }: { onPick: (i: number) => void }) => {
+      const total = activeQuestions.length;
+      const cells = Array.from({ length: total }, (_, i) => i);
+
+      const cellClass = (i: number) => {
+        const isCurrent = i === currentIdx;
+        const isFlagged = flags.has(i);
+        const isAnswered = answers[i] !== undefined;
+
+        if (isCurrent) return "bg-amber-500 text-slate-950 border-amber-500";
+        if (isFlagged && isAnswered) return "bg-amber-500/10 text-amber-400 border-amber-500/30";
+        if (isFlagged) return "bg-amber-500/10 text-amber-400 border-amber-500/30";
+        if (isAnswered) return "bg-emerald-500/10 text-emerald-300 border-emerald-500/20";
+        return "bg-slate-900/60 text-slate-400 border-slate-800 hover:border-slate-600";
+      };
+
+      return (
+        <div className="grid grid-cols-7 gap-2">
+          {cells.map((i) => (
+            <button
+              key={i}
+              onClick={() => onPick(i)}
+              className={`h-10 rounded-xl border text-[11px] font-black font-mono transition-colors ${cellClass(i)}`}
+              title={`Question ${i + 1}${flags.has(i) ? " • Flagged" : ""}${answers[i] !== undefined ? " • Answered" : " • Unanswered"}`}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+      );
+    },
+    [activeQuestions.length, answers, currentIdx, flags]
+  );
 
   // --- RENDERERS ---
-  const currentQ = activeQuestions[currentIdx];
 
-  // 1. BOOT SEQUENCE
+  // 1) BOOT
   if (state === "boot") {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center font-mono">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-3 h-3 bg-amber-500 animate-pulse" />
-          <div className="text-amber-500 text-xs tracking-[0.2em]">SYSTEM INITIALIZATION</div>
-        </div>
-        <div className="text-slate-500 text-[10px]">
-          CONNECTING TO FMCSA DATABASE...
-        </div>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center font-mono relative overflow-hidden">
+        <div className="fixed inset-0 pointer-events-none opacity-10 bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.25),transparent_60%)]" />
+        <div className="fixed inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:28px_28px]" />
+
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center">
+          <div className="inline-flex items-center gap-3 mb-4 px-4 py-2 rounded-2xl border border-slate-800 bg-slate-900/60">
+            <div className="w-3 h-3 bg-amber-500 animate-pulse rounded-sm" />
+            <div className="text-amber-500 text-xs tracking-[0.22em] font-black uppercase">Secure Exam Environment</div>
+          </div>
+          <div className="text-slate-500 text-[10px] tracking-[0.2em] uppercase">Connecting to state rule pack…</div>
+          <div className="mt-6 w-56 h-1.5 bg-slate-900 border border-slate-800 rounded-full overflow-hidden mx-auto">
+            <motion.div
+              className="h-full bg-gradient-to-r from-amber-600 to-amber-400"
+              initial={{ x: "-100%" }}
+              animate={{ x: "100%" }}
+              transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+            />
+          </div>
+          <div className="mt-6 text-[10px] text-slate-600 uppercase tracking-widest">
+            ID <span className="text-slate-300 font-bold">{examId}</span>
+          </div>
+        </motion.div>
       </div>
     );
   }
 
-  // 2. EXAM MANIFEST (The "Start" Screen)
+  // 2) MANIFEST
   if (state === "manifest") {
-    const isResuming = endAt > Date.now();
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
-        <div className="max-w-xl w-full bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl relative overflow-hidden">
-          {/* Top Bar Decoration */}
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="fixed inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:28px_28px]" />
+        <div className="fixed inset-0 pointer-events-none opacity-10 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.25),transparent_60%)]" />
+
+        <div className="max-w-2xl w-full bg-slate-900/70 backdrop-blur-xl border border-slate-800 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 to-amber-400" />
 
           <div className="flex justify-between items-end mb-8 border-b border-slate-800 pb-6">
             <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Official Testing Protocol</div>
-              <h1 className="text-3xl font-black text-white">EXAM MANIFEST</h1>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Official Testing Protocol</div>
+              <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">EXAM MANIFEST</h1>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <Pill tone="blue">{jurisdiction} DMV</Pill>
+                <Pill tone="slate">Secure Mode</Pill>
+                <Pill tone={isResuming ? "amber" : "emerald"}>{isResuming ? "Resume Available" : "Fresh Session"}</Pill>
+              </div>
             </div>
+
             <div className="text-right">
-              <div className="text-xs font-mono text-amber-500">{jurisdiction} DMV</div>
-              <div className="text-[10px] text-slate-600 font-mono">ID: {Math.floor(Math.random() * 99999)}</div>
+              <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Candidate ID</div>
+              <div className="text-sm font-mono font-bold text-slate-200">{examId}</div>
+              <div className="text-[10px] text-slate-600 font-mono uppercase tracking-widest mt-1">
+                Window: <span className="text-slate-300 font-bold">{formatTime(timeLeft)}</span>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="p-4 bg-slate-950 rounded border border-slate-800">
-              <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">License Class</div>
-              <div className="text-xl font-mono font-bold text-white">CLASS {license}</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="p-4 bg-slate-950/60 rounded-2xl border border-slate-800">
+              <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">License Class</div>
+              <div className="text-2xl font-mono font-black text-white">CLASS {license}</div>
             </div>
-            <div className="p-4 bg-slate-950 rounded border border-slate-800">
-              <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">Time Allotted</div>
-              <div className="text-xl font-mono font-bold text-white">120 MIN</div>
+            <div className="p-4 bg-slate-950/60 rounded-2xl border border-slate-800">
+              <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Questions</div>
+              <div className="text-2xl font-mono font-black text-white">{EXAM_LENGTH}</div>
+            </div>
+            <div className="p-4 bg-slate-950/60 rounded-2xl border border-slate-800">
+              <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Time Allotted</div>
+              <div className="text-2xl font-mono font-black text-white">120 MIN</div>
             </div>
           </div>
 
           <div className="mb-8">
-            <div className="text-[10px] text-slate-500 font-bold uppercase mb-2">Active Modules</div>
+            <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2">Active Modules</div>
             <div className="flex flex-wrap gap-2">
-              <span className="px-2 py-1 bg-white/5 border border-white/10 text-xs font-mono text-slate-300 rounded">GENERAL KNOWLEDGE</span>
-              {endorsements.map(e => (
-                <span key={e} className="px-2 py-1 bg-amber-500/10 border border-amber-500/30 text-xs font-mono text-amber-500 rounded uppercase">{e}</span>
+              <Pill>General Knowledge</Pill>
+              {endorsements.map((e) => (
+                <Pill key={e} tone="amber">
+                  {e}
+                </Pill>
               ))}
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Rules</div>
+
+              <ul className="text-sm text-slate-300 space-y-2 leading-relaxed">
+                <li className="flex gap-2">
+                  <span className="text-amber-400 shrink-0">•</span>
+                  <span className="min-w-0">No feedback during the exam. Review flagged items at the end.</span>
+                </li>
+
+                <li className="flex gap-2">
+                  <span className="text-amber-400 shrink-0">•</span>
+                  <span className="min-w-0">Timer continues once started. Session auto-submits at 0:00.</span>
+                </li>
+
+                {/* ✅ FIXED WRAP: shortcuts list will never overflow the box */}
+                <li className="flex gap-2">
+                  <span className="text-amber-400 shrink-0">•</span>
+                  <div className="min-w-0">
+                    <div className="text-slate-300">
+                      Shortcuts:
+                      <span className="ml-2 inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="inline-flex items-center gap-1">
+                          <span className="font-mono text-slate-200">A/B/C/D</span>
+                          <span className="text-slate-500">select</span>
+                        </span>
+
+                        <span className="text-slate-600">•</span>
+
+                        <span className="inline-flex items-center gap-1">
+                          <span className="font-mono text-slate-200">F</span>
+                          <span className="text-slate-500">flag</span>
+                        </span>
+
+                        <span className="text-slate-600">•</span>
+
+                        <span className="inline-flex items-center gap-1">
+                          <span className="font-mono text-slate-200">R</span>
+                          <span className="text-slate-500">review</span>
+                        </span>
+
+                        <span className="text-slate-600">•</span>
+
+                        <span className="inline-flex items-center gap-1">
+                          <span className="font-mono text-slate-200">←/→</span>
+                          <span className="text-slate-500">navigate</span>
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+              </ul>
             </div>
           </div>
 
-          <button 
+          <button
             onClick={startExam}
-            className="w-full py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm uppercase tracking-widest rounded-xl shadow-lg transition-all active:scale-[0.98]"
+            className="w-full py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm uppercase tracking-widest rounded-2xl shadow-[0_18px_40px_-18px_rgba(245,158,11,0.9)] transition-all active:scale-[0.98]"
           >
-            {isResuming ? `RESUME SESSION (${formatTime(timeLeft)})` : "BEGIN EXAMINATION"}
+            {isResuming ? `RESUME SECURE SESSION (${formatTime(timeLeft)})` : "BEGIN EXAMINATION"}
           </button>
-          
+
           <div className="mt-4 text-center">
             <Link href="/dashboard" className="text-[10px] text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-colors">
-              Return to Command Center
+              Back to Dashboard
             </Link>
           </div>
         </div>
@@ -255,197 +718,487 @@ export default function SimulatorPage() {
     );
   }
 
-  // 3. SUBMITTING LOADING SCREEN
+  // 3) SUBMITTING
   if (state === "submitting") {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center">
-        <div className="w-12 h-12 border-4 border-slate-800 border-t-amber-500 rounded-full animate-spin mb-6" />
-        <div className="text-amber-500 font-mono text-xs tracking-widest uppercase animate-pulse">Processing Results...</div>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center relative overflow-hidden">
+        <div className="fixed inset-0 pointer-events-none opacity-10 bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.25),transparent_60%)]" />
+        <div className="fixed inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:28px_28px]" />
+
+        <div className="max-w-md w-full mx-auto text-center">
+          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-2xl border border-slate-800 bg-slate-900/60 mb-6">
+            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-300">Submitting exam to scoring engine</div>
+          </div>
+
+          <div className="w-14 h-14 border-4 border-slate-800 border-t-amber-500 rounded-full animate-spin mx-auto mb-6" />
+          <div className="text-amber-500 font-mono text-xs tracking-widest uppercase animate-pulse">Processing Results…</div>
+          <div className="mt-3 text-[10px] text-slate-600 uppercase tracking-widest">
+            Do not refresh • ID <span className="text-slate-300 font-bold">{examId}</span>
+          </div>
+        </div>
       </div>
     );
   }
 
-  // 4. RESULTS
-  if (state === "results") {
-    const correctCount = Object.keys(answers).filter(idx => 
-      answers[parseInt(idx)] === activeQuestions[parseInt(idx)].correctIndex
-    ).length;
-    const score = Math.round((correctCount / activeQuestions.length) * 100);
-    const passed = score >= PASS_THRESHOLD;
+  // 4) RESULTS
+  if (state === "results" && results) {
+    const { correctCount, score, passed, elapsedMin } = results;
 
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
-        <div className="max-w-lg w-full bg-slate-900 border border-slate-800 p-8 rounded-3xl relative overflow-hidden shadow-2xl text-center">
-          
-          <div className="mb-8">
-            <div className="inline-block px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">
-              Official Score Report
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="fixed inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:28px_28px]" />
+        <div
+          className={`fixed inset-0 pointer-events-none opacity-10 ${
+            passed
+              ? "bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.25),transparent_60%)]"
+              : "bg-[radial-gradient(circle_at_top,rgba(239,68,68,0.25),transparent_60%)]"
+          }`}
+        />
+
+        <div className="max-w-lg w-full bg-slate-900/70 backdrop-blur-xl border border-slate-800 p-8 rounded-3xl relative overflow-hidden shadow-2xl text-center">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 to-amber-400" />
+
+          <div className="mb-7">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/60 border border-slate-700 text-[10px] font-black uppercase tracking-widest text-slate-300 mb-4">
+              Official Score Report • {jurisdiction} DMV
             </div>
-            <h1 className="text-5xl font-black text-white mb-2">{passed ? "QUALIFIED" : "DISQUALIFIED"}</h1>
-            <p className={`text-sm font-bold uppercase tracking-widest ${passed ? "text-emerald-500" : "text-red-500"}`}>
+
+            <h1 className="text-4xl md:text-5xl font-black text-white mb-2 tracking-tight">{passed ? "QUALIFIED" : "DISQUALIFIED"}</h1>
+            <p className={`text-sm font-black uppercase tracking-widest ${passed ? "text-emerald-400" : "text-red-400"}`}>
               {passed ? "Ready for DMV Certification" : "Requires Additional Training"}
             </p>
+
+            <div className="mt-3 text-[10px] text-slate-500 uppercase tracking-widest">
+              Candidate ID <span className="text-slate-200 font-bold">{examId}</span>
+            </div>
           </div>
 
           <div className="flex justify-center mb-10">
-            <div className={`w-40 h-40 rounded-full border-4 flex items-center justify-center bg-slate-950 ${passed ? "border-emerald-500 text-emerald-400" : "border-red-500 text-red-400"}`}>
+            <div
+              className={`w-44 h-44 rounded-full border-4 flex items-center justify-center bg-slate-950 ${
+                passed ? "border-emerald-500 text-emerald-400" : "border-red-500 text-red-400"
+              }`}
+            >
               <div>
-                <div className="text-5xl font-mono font-bold tracking-tighter">{score}%</div>
-                <div className="text-[10px] text-slate-500 font-bold uppercase mt-1">Final Score</div>
+                <div className="text-6xl font-mono font-black tracking-tighter">{score}%</div>
+                <div className="text-[10px] text-slate-500 font-black uppercase mt-1">Final Score</div>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-8">
-            <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl">
-              <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">Correct Answers</div>
-              <div className="text-xl font-mono font-bold text-white">{correctCount} <span className="text-slate-600 text-sm">/ {activeQuestions.length}</span></div>
+            <div className="p-4 bg-slate-950/60 border border-slate-800 rounded-2xl">
+              <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Correct Answers</div>
+              <div className="text-2xl font-mono font-black text-white">
+                {correctCount} <span className="text-slate-600 text-sm">/ {activeQuestions.length}</span>
+              </div>
             </div>
-            <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl">
-              <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">Time Elapsed</div>
-              <div className="text-xl font-mono font-bold text-white">{Math.ceil((EXAM_DURATION_SEC - timeLeft) / 60)} <span className="text-slate-600 text-sm">MIN</span></div>
+            <div className="p-4 bg-slate-950/60 border border-slate-800 rounded-2xl">
+              <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Time Elapsed</div>
+              <div className="text-2xl font-mono font-black text-white">
+                {elapsedMin} <span className="text-slate-600 text-sm">MIN</span>
+              </div>
             </div>
           </div>
 
-          <Link href="/dashboard" className="block w-full py-4 bg-white text-slate-950 font-black uppercase tracking-widest rounded-xl hover:bg-slate-200 transition-colors">
-            Return to Base
-          </Link>
+          <div className="space-y-3">
+            {!passed && (
+              <Link
+                href="/pay"
+                className="block w-full py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black uppercase tracking-widest rounded-2xl transition-colors"
+              >
+                Unlock Fix Plan →
+              </Link>
+            )}
+
+            <Link
+              href="/dashboard"
+              className="block w-full py-4 bg-white text-slate-950 font-black uppercase tracking-widest rounded-2xl hover:bg-slate-200 transition-colors"
+            >
+              Back to Dashboard
+            </Link>
+
+            <Link
+              href="/simulator"
+              className="block w-full py-3 border border-slate-700 bg-slate-950/40 hover:bg-slate-900 text-slate-200 font-black uppercase tracking-widest rounded-2xl transition-colors text-[11px]"
+            >
+              Run Another Exam
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
-  // 5. ACTIVE SIMULATOR (The Kiosk)
+  // Guard (rare)
+  if (!currentQ) {
+    return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-500 font-mono">LOADING EXAM MODULE…</div>;
+  }
+
+  // 5) ACTIVE SIMULATOR (SECURE KIOSK)
   return (
-    <div className="min-h-screen bg-slate-950 text-white font-sans flex flex-col">
-      
+    <div className="min-h-screen bg-slate-950 text-white font-sans flex flex-col relative overflow-hidden">
+      {/* Background */}
+      <div className="fixed inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:28px_28px]" />
+      <div className="fixed inset-0 pointer-events-none opacity-10 bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.18),transparent_60%)]" />
+
+      {/* Watermark */}
+      <div className="fixed inset-0 pointer-events-none select-none">
+        <div className="absolute -right-20 top-24 rotate-12 text-[120px] font-black tracking-tighter text-white/5">{jurisdiction}</div>
+        <div className="absolute left-8 bottom-20 text-[10px] font-mono uppercase tracking-[0.25em] text-white/10">
+          SECURE EXAM MODE • {examId}
+        </div>
+      </div>
+
+      {/* Submit prompt */}
+      <Modal
+        open={submitPromptOpen}
+        title="Submit Examination?"
+        subtitle="This action finalizes your answers. You cannot return to the simulator after submission."
+        onClose={() => setSubmitPromptOpen(false)}
+      >
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Answered</div>
+                <div className="text-xl font-mono font-black text-white">{answeredCount}</div>
+              </div>
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Flagged</div>
+                <div className="text-xl font-mono font-black text-white">{flaggedCount}</div>
+              </div>
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Unanswered</div>
+                <div className={`text-xl font-mono font-black ${unansweredCount ? "text-amber-400" : "text-emerald-400"}`}>{unansweredCount}</div>
+              </div>
+            </div>
+            <div className="mt-3">
+              <ProgressBar value={(answeredCount / Math.max(1, activeQuestions.length)) * 100} />
+            </div>
+            <div className="mt-2 text-[10px] text-slate-500 uppercase tracking-widest">
+              Tip: press <span className="text-slate-200 font-bold">R</span> to review before submit.
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => setSubmitPromptOpen(false)}
+              className="flex-1 py-3 rounded-2xl border border-slate-800 bg-slate-900/50 hover:bg-slate-900 text-slate-200 font-black uppercase tracking-widest text-[11px]"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={finishExam}
+              className="flex-1 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black uppercase tracking-widest text-[11px] shadow-[0_18px_40px_-18px_rgba(245,158,11,0.9)]"
+            >
+              Submit Now
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Mobile Review Sheet */}
+      <Sheet open={reviewOpen} title={`Questions (${currentIdx + 1}/${activeQuestions.length})`} onClose={() => setReviewOpen(false)}>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex flex-wrap gap-2">
+            <Pill tone="emerald">Answered {answeredCount}</Pill>
+            <Pill tone="amber">Flagged {flaggedCount}</Pill>
+            <Pill tone={unansweredCount ? "red" : "emerald"}>Unanswered {unansweredCount}</Pill>
+          </div>
+          <button onClick={() => setSubmitPromptOpen(true)} className="px-4 py-2 rounded-2xl bg-white text-slate-950 font-black uppercase tracking-widest text-[10px]">
+            Submit
+          </button>
+        </div>
+
+        <QuestionNavigator
+          onPick={(i) => {
+            setCurrentIdx(i);
+            setReviewOpen(false);
+          }}
+        />
+      </Sheet>
+
       {/* Kiosk Header */}
-      <header className="px-6 py-4 bg-slate-900 border-b border-slate-800 flex justify-between items-center sticky top-0 z-30 shadow-md">
-        <div className="flex items-center gap-6">
-          <div>
-            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Time Remaining</div>
-            <div className={`text-xl font-mono font-bold ${timeLeft < 300 ? "text-red-500 animate-pulse" : "text-white"}`}>
+      <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between gap-4">
+          {/* Left: Exam identity */}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="hidden sm:flex items-center justify-center w-11 h-11 rounded-2xl border border-slate-800 bg-slate-900/60">
+              <span className="text-amber-400 text-lg">🛡️</span>
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Secure Exam • {jurisdiction} DMV</div>
+              <div className="text-sm font-mono font-bold text-slate-200 truncate">
+                {examId} <span className="text-slate-600">/</span> CLASS {license}
+              </div>
+              <div className="mt-1 flex items-center gap-2">
+                <Pill tone="slate">No Feedback</Pill>
+                <Pill tone={flags.has(currentIdx) ? "amber" : "slate"}>{flags.has(currentIdx) ? "Flagged" : "Review Ready"}</Pill>
+              </div>
+            </div>
+          </div>
+
+          {/* Center: Timer */}
+          <div className="text-center">
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Time Remaining</div>
+            <div
+              className={`text-2xl md:text-3xl font-mono font-black tracking-tight ${
+                timeTone === "red" ? "text-red-400 animate-pulse" : timeTone === "amber" ? "text-amber-400" : "text-white"
+              }`}
+            >
               {formatTime(timeLeft)}
             </div>
           </div>
-          
-          <div className="h-8 w-px bg-slate-800 hidden md:block" />
-          
-          <div className="hidden md:block">
-            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Examination Progress</div>
-            <div className="text-sm font-mono font-bold text-slate-300">
-              QUESTION {currentIdx + 1} <span className="text-slate-600">/ {activeQuestions.length}</span>
-            </div>
+
+          {/* Right: Controls */}
+          <div className="flex items-center gap-2 md:gap-3">
+            <button
+              onClick={() => setReviewOpen(true)}
+              className="hidden md:inline-flex px-4 py-2 rounded-2xl border border-slate-800 bg-slate-900/50 hover:bg-slate-900 text-slate-200 font-black uppercase tracking-widest text-[10px]"
+              title="Review (R)"
+            >
+              Review
+            </button>
+            <button
+              onClick={toggleFlag}
+              className={`px-4 py-2 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all ${
+                flags.has(currentIdx) ? "bg-amber-500/10 border-amber-500/30 text-amber-400" : "border-slate-800 bg-slate-900/50 hover:bg-slate-900 text-slate-200"
+              }`}
+              title="Flag (F)"
+            >
+              ⚑ Flag
+            </button>
+            <button
+              onClick={() => setSubmitPromptOpen(true)}
+              className="px-4 py-2 rounded-2xl bg-white text-slate-950 font-black uppercase tracking-widest text-[10px] hover:bg-slate-200"
+              title="Submit"
+            >
+              Submit
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={toggleFlag}
-            className={`px-4 py-2 rounded border text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all ${
-              flags.has(currentIdx) 
-                ? "bg-amber-500/10 border-amber-500 text-amber-500" 
-                : "border-slate-700 text-slate-400 hover:text-white"
-            }`}
-          >
-            <span>⚑</span> {flags.has(currentIdx) ? "Flagged" : "Flag"}
-          </button>
-          
-          <button 
-            onClick={() => { if(confirm("Are you sure you want to submit your exam? This cannot be undone.")) finishExam() }}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 rounded text-xs font-bold uppercase tracking-wider transition-colors"
-          >
-            Submit Exam
-          </button>
+        {/* Progress strip */}
+        <div className="max-w-6xl mx-auto px-4 md:px-6 pb-4">
+          <div className="flex items-center justify-between gap-4 mb-2">
+            <div className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+              Question <span className="text-slate-200 font-bold">{currentIdx + 1}</span> / {activeQuestions.length}
+            </div>
+            <div className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+              Answered <span className="text-slate-200 font-bold">{answeredCount}</span> • Flagged{" "}
+              <span className="text-slate-200 font-bold">{flaggedCount}</span>
+            </div>
+          </div>
+          <ProgressBar value={progressPct} />
         </div>
       </header>
 
-      {/* Question Container */}
-      <main className="flex-1 max-w-5xl mx-auto w-full p-4 md:p-8 flex flex-col justify-center">
+      {/* Main Layout */}
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 md:px-6 py-6 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
+        {/* Question Panel */}
         <AnimatePresence mode="wait">
-          <motion.div
+          <motion.section
             key={currentIdx}
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-            transition={{ duration: 0.15 }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.16 }}
+            className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-3xl shadow-2xl overflow-hidden"
           >
-            {/* Question Meta */}
-            <div className="mb-6 flex items-center gap-3">
-              <span className="px-2 py-1 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-widest rounded border border-slate-700">
-                {currentQ.category}
-              </span>
-              {currentQ.endorsements && currentQ.endorsements.length > 0 && (
-                <span className="px-2 py-1 bg-blue-900/20 text-blue-400 text-[10px] font-bold uppercase tracking-widest rounded border border-blue-500/20">
-                  {currentQ.endorsements[0]} Module
-                </span>
-              )}
+            <div className="p-6 border-b border-slate-800">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Pill tone="slate">{currentQ.category}</Pill>
+                  {currentQ.endorsements && currentQ.endorsements.length > 0 && <Pill tone="blue">{currentQ.endorsements[0]} Module</Pill>}
+                  {answers[currentIdx] !== undefined && <Pill tone="emerald">Answer Recorded</Pill>}
+                  {flags.has(currentIdx) && <Pill tone="amber">Marked for Review</Pill>}
+                </div>
+
+                <div className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+                  Candidate <span className="text-slate-200 font-bold">{examId}</span>
+                </div>
+              </div>
             </div>
 
-            {/* The Question */}
-            <h2 className="text-xl md:text-3xl font-medium text-slate-100 leading-snug mb-10">
-              {currentQ.text}
-            </h2>
+            <div className="p-6 md:p-8">
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Prompt</div>
+              <h2 className="text-xl md:text-3xl font-semibold text-slate-100 leading-snug mb-8">{currentQ.text}</h2>
 
-            {/* Options Grid */}
-            <div className="grid gap-3">
-              {currentQ.options.map((opt, i) => {
-                const isSelected = answers[currentIdx] === i;
-                return (
-                  <button
-                    key={i}
-                    onClick={() => handleSelect(i)}
-                    className={`relative w-full text-left p-5 rounded-lg border-2 transition-all group ${
-                      isSelected
-                        ? "bg-amber-500/10 border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]"
-                        : "bg-slate-900 border-slate-800 hover:border-slate-600 hover:bg-slate-800"
-                    }`}
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className={`mt-0.5 w-6 h-6 shrink-0 rounded flex items-center justify-center text-[10px] font-bold border transition-colors ${
-                        isSelected ? "bg-amber-500 border-amber-500 text-slate-950" : "border-slate-700 text-slate-500 group-hover:border-slate-500"
-                      }`}>
-                        {String.fromCharCode(65 + i)}
+              {/* Options */}
+              <div className="grid gap-3">
+                {currentQ.options.map((opt, i) => {
+                  const isSelected = answers[currentIdx] === i;
+
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => handleSelect(i)}
+                      className={`relative w-full text-left p-5 rounded-2xl border-2 transition-all group ${
+                        isSelected
+                          ? "bg-amber-500/10 border-amber-500 shadow-[0_0_25px_rgba(245,158,11,0.12)]"
+                          : "bg-slate-950/40 border-slate-800 hover:border-slate-600 hover:bg-slate-900/60"
+                      }`}
+                      aria-pressed={isSelected}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div
+                          className={`mt-0.5 w-8 h-8 shrink-0 rounded-xl flex items-center justify-center text-[11px] font-black border transition-colors ${
+                            isSelected ? "bg-amber-500 border-amber-500 text-slate-950" : "border-slate-700 text-slate-400 group-hover:border-slate-500"
+                          }`}
+                        >
+                          {String.fromCharCode(65 + i)}
+                        </div>
+
+                        <div className="flex-1">
+                          <div className={`text-base md:text-lg ${isSelected ? "text-white font-bold" : "text-slate-300 group-hover:text-slate-100"}`}>
+                            {opt}
+                          </div>
+                          <div className="mt-1 text-[10px] font-mono uppercase tracking-widest text-slate-600">
+                            Press <span className="text-slate-300 font-bold">{String.fromCharCode(65 + i)}</span>
+                          </div>
+                        </div>
+
+                        {isSelected && (
+                          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-amber-400 font-black">
+                            ✓
+                          </motion.div>
+                        )}
                       </div>
-                      <span className={`text-base ${isSelected ? "text-white font-bold" : "text-slate-400 group-hover:text-slate-200"}`}>
-                        {opt}
-                      </span>
-                    </div>
-                  </button>
-                )
-              })}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Helper row */}
+              <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+                <div className="text-[10px] font-mono uppercase tracking-widest text-slate-600">
+                  Shortcuts: <span className="text-slate-300 font-bold">A/B/C/D</span> select •{" "}
+                  <span className="text-slate-300 font-bold">F</span> flag •{" "}
+                  <span className="text-slate-300 font-bold">R</span> review •{" "}
+                  <span className="text-slate-300 font-bold">←/→</span> nav
+                </div>
+
+                <button
+                  onClick={() => setReviewOpen(true)}
+                  className="md:hidden px-4 py-2 rounded-2xl border border-slate-800 bg-slate-900/50 hover:bg-slate-900 text-slate-200 font-black uppercase tracking-widest text-[10px]"
+                >
+                  Review
+                </button>
+              </div>
             </div>
-          </motion.div>
+          </motion.section>
         </AnimatePresence>
+
+        {/* Desktop Review Panel */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-[164px] space-y-4">
+            <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-3xl shadow-2xl overflow-hidden">
+              <div className="p-5 border-b border-slate-800">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Review Panel</div>
+                    <div className="text-white font-black">Navigator</div>
+                  </div>
+                  <div className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+                    {answeredCount}/{activeQuestions.length}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-5 space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  <Pill tone="emerald">Answered {answeredCount}</Pill>
+                  <Pill tone="amber">Flagged {flaggedCount}</Pill>
+                  <Pill tone={unansweredCount ? "red" : "emerald"}>Unanswered {unansweredCount}</Pill>
+                </div>
+
+                <QuestionNavigator onPick={(i) => setCurrentIdx(i)} />
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Legend</div>
+                  <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-400">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded bg-amber-500" /> Current
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded bg-emerald-500/30 border border-emerald-500/30" /> Answered
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded bg-amber-500/30 border border-amber-500/30" /> Flagged
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded bg-slate-900 border border-slate-800" /> Unanswered
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setSubmitPromptOpen(true)}
+                  className="w-full py-3 rounded-2xl bg-white text-slate-950 font-black uppercase tracking-widest text-[11px] hover:bg-slate-200"
+                >
+                  Submit Exam
+                </button>
+
+                <div className="text-center">
+                  <Link href="/dashboard" className="text-[10px] text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-colors">
+                    Back to Dashboard
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
       </main>
 
-      {/* Navigation Bar */}
-      <footer className="p-4 md:p-6 bg-slate-900 border-t border-slate-800 flex justify-between items-center sticky bottom-0 z-20">
-        <button
-          onClick={() => setCurrentIdx(p => Math.max(0, p - 1))}
-          disabled={currentIdx === 0}
-          className={`px-6 py-3 rounded-lg font-bold text-xs uppercase tracking-widest transition-colors ${
-            currentIdx === 0 ? "text-slate-700 cursor-not-allowed" : "text-slate-400 hover:text-white hover:bg-slate-800"
-          }`}
-        >
-          ← Previous
-        </button>
+      {/* Bottom Nav */}
+      <footer className="sticky bottom-0 z-30 bg-slate-950/80 backdrop-blur-xl border-t border-slate-800">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between gap-3">
+          <button
+            onClick={() => setCurrentIdx((p) => Math.max(0, p - 1))}
+            disabled={currentIdx === 0}
+            className={`px-5 py-3 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-colors border ${
+              currentIdx === 0 ? "text-slate-700 border-slate-900 bg-slate-950 cursor-not-allowed" : "text-slate-200 border-slate-800 bg-slate-900/40 hover:bg-slate-900"
+            }`}
+          >
+            ← Previous
+          </button>
 
-        {currentIdx < activeQuestions.length - 1 ? (
-          <button
-            onClick={() => setCurrentIdx(p => p + 1)}
-            className="px-8 py-3 bg-white text-slate-950 hover:bg-slate-200 rounded-lg font-black text-xs uppercase tracking-widest shadow-lg transition-colors"
-          >
-            Next Question →
-          </button>
-        ) : (
-          <button
-            onClick={() => { if(confirm("Are you sure you want to submit?")) finishExam() }}
-            className="px-8 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(245,158,11,0.4)] transition-all animate-pulse"
-          >
-            Finish & Submit
-          </button>
-        )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleFlag}
+              className={`px-4 py-3 rounded-2xl font-black text-[11px] uppercase tracking-widest border transition-colors ${
+                flags.has(currentIdx) ? "bg-amber-500/10 border-amber-500/30 text-amber-400" : "bg-slate-900/40 border-slate-800 text-slate-200 hover:bg-slate-900"
+              }`}
+            >
+              ⚑ Flag
+            </button>
+
+            <button
+              onClick={() => setReviewOpen(true)}
+              className="px-4 py-3 rounded-2xl font-black text-[11px] uppercase tracking-widest border border-slate-800 bg-slate-900/40 hover:bg-slate-900 text-slate-200 lg:hidden"
+            >
+              Review
+            </button>
+          </div>
+
+          {currentIdx < activeQuestions.length - 1 ? (
+            <button
+              onClick={() => setCurrentIdx((p) => Math.min(activeQuestions.length - 1, p + 1))}
+              className="px-6 py-3 rounded-2xl bg-white text-slate-950 hover:bg-slate-200 font-black text-[11px] uppercase tracking-widest shadow-lg transition-colors"
+            >
+              Next →
+            </button>
+          ) : (
+            <button
+              onClick={() => setSubmitPromptOpen(true)}
+              className="px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[11px] uppercase tracking-widest shadow-[0_0_25px_rgba(245,158,11,0.35)] transition-all"
+            >
+              Finish & Submit
+            </button>
+          )}
+        </div>
       </footer>
     </div>
   );
