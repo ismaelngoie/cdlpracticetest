@@ -2,10 +2,72 @@
 
 import Dock from "@/components/Dock";
 import TruckSchematic from "@/components/TruckSchematic";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
+// --- ANIMATION VARIANTS ---
+const containerVar = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVar = {
+  hidden: { y: 20, opacity: 0 },
+  show: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 50 } }
+};
+
+// --- UTILITY COMPONENTS ---
+
+// A "CountUp" component makes data feel real and computed live
+const AnimatedNumber = ({ value }) => {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    let start = 0;
+    const duration = 1000;
+    const startTime = performance.now();
+    
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease out quart
+      const ease = 1 - Math.pow(1 - progress, 4); 
+      
+      setDisplay(Math.floor(start + (value - start) * ease));
+      
+      if (progress < 1) requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  }, [value]);
+  
+  return <span>{display.toLocaleString()}</span>;
+};
+
+// A premium "Card" wrapper with subtle gradients and glass effects
+const BentoCard = ({ children, className = "", glowColor = "slate" }) => {
+  const glows = {
+    emerald: "shadow-emerald-500/10 border-emerald-500/20",
+    amber: "shadow-amber-500/10 border-amber-500/20",
+    red: "shadow-red-500/10 border-red-500/20",
+    slate: "shadow-slate-500/10 border-slate-800",
+    blue: "shadow-blue-500/10 border-blue-500/20"
+  };
+
+  return (
+    <motion.div 
+      variants={itemVar}
+      className={`relative bg-slate-900/60 backdrop-blur-md border rounded-2xl overflow-hidden shadow-xl ${glows[glowColor]} ${className}`}
+    >
+      {/* Top Highlight for depth */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      {children}
+    </motion.div>
+  );
+};
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -16,182 +78,232 @@ export default function DashboardPage() {
   const [score, setScore] = useState(0);
   const [userState, setUserState] = useState("TX");
   const [weakDomain, setWeakDomain] = useState("General Knowledge");
-  const [salary, setSalary] = useState("75,000");
+  const [salary, setSalary] = useState(75000);
   const [daysToExam, setDaysToExam] = useState(14);
+  const [mounted, setMounted] = useState(false);
 
   // --- INIT ---
   useEffect(() => {
-    // 1. Hydrate User Data
-    setLicense(localStorage.getItem("userLevel") || "A");
+    setMounted(true);
+    // Simulating data fetch for smoothness
+    const storedLevel = localStorage.getItem("userLevel") || "A";
+    setLicense(storedLevel);
     setUserState(localStorage.getItem("userState") || "TX");
     
-    // 2. Load Performance Data
     const s = parseInt(localStorage.getItem("diagnosticScore") || "45");
     setScore(s);
     setWeakDomain(localStorage.getItem("weakestDomain") || "Air Brakes");
     
-    // 3. Calculate "Salary Potential" based on license (Psychological hook)
-    const base = localStorage.getItem("userLevel") === "A" ? 75000 : 55000;
+    const base = storedLevel === "A" ? 75000 : 55000;
     const ends = JSON.parse(localStorage.getItem("userEndorsements") || "[]").length * 5000;
-    setSalary((base + ends).toLocaleString());
+    setSalary(base + ends);
   }, []);
 
   // --- COMPUTED VISUALS ---
-  const statusColor = score >= 80 ? "text-emerald-400" : score >= 60 ? "text-amber-500" : "text-red-500";
-  const statusBorder = score >= 80 ? "border-emerald-500/50" : score >= 60 ? "border-amber-500/50" : "border-red-500/50";
-  const statusGlow = score >= 80 ? "shadow-emerald-500/20" : score >= 60 ? "shadow-amber-500/20" : "shadow-red-500/20";
-  const statusText = score >= 80 ? "ROAD READY" : "CRITICAL REPAIRS NEEDED";
+  const getStatusTheme = (s) => {
+    if (s >= 80) return { color: "text-emerald-400", bg: "bg-emerald-500", glow: "emerald" };
+    if (s >= 60) return { color: "text-amber-400", bg: "bg-amber-500", glow: "amber" };
+    return { color: "text-red-400", bg: "bg-red-500", glow: "red" };
+  };
+
+  const theme = getStatusTheme(score);
+  const circleCircumference = 2 * Math.PI * 40; // for SVG radius 40
+  const circleOffset = circleCircumference - (score / 100) * circleCircumference;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white pb-32 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-slate-950 text-white pb-32 relative overflow-x-hidden font-sans selection:bg-amber-500/30">
       
-      {/* 1. INDUSTRIAL BACKGROUND FX */}
-      <div className="fixed inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:30px_30px]" />
-      <div className={`fixed top-0 right-0 w-[500px] h-[500px] bg-gradient-to-b ${score >= 80 ? "from-emerald-900/20" : "from-amber-900/20"} to-transparent blur-[120px] pointer-events-none`} />
+      {/* 1. CINEMATIC BACKGROUND */}
+      <div className="fixed inset-0 pointer-events-none">
+        {/* Subtle grid moving slowly */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] opacity-20" />
+        {/* Ambient Glow */}
+        <div className={`absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-${theme.glow}-600/10 blur-[120px] rounded-full mix-blend-screen`} />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-900/10 blur-[120px] rounded-full mix-blend-screen" />
+      </div>
 
-      {/* 2. HUD HEADER */}
-      <header className="relative z-40 px-6 py-5 flex justify-between items-start border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl sticky top-0">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <div className={`w-2 h-2 rounded-full animate-pulse ${score >= 80 ? "bg-emerald-500" : "bg-amber-500"}`} />
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">
-              System Online • v4.2
-            </span>
-          </div>
-          <h1 className="text-xl font-black text-white tracking-tighter">
-            {userName} <span className="text-slate-600 mx-1">/</span> CLASS {license}
-          </h1>
-          <div className="text-[10px] text-slate-500 font-mono mt-1 flex gap-3">
-            <span>JURISDICTION: <span className="text-white">{userState}</span></span>
-            <span>TARGET: <span className="text-white">CDL-{license}</span></span>
-          </div>
-        </div>
-
-        <div className="text-right">
-          <div className="flex flex-col items-end">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Readiness</span>
-            <div className={`text-3xl font-mono font-black ${statusColor} leading-none`}>
-              {score}%
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="p-4 md:p-6 max-w-xl mx-auto relative z-10 space-y-5">
+      <motion.main 
+        variants={containerVar}
+        initial="hidden"
+        animate="show"
+        className="relative z-10 px-4 pt-4 md:px-8 max-w-7xl mx-auto space-y-6"
+      >
         
-        {/* 3. TRUCK SCHEMATIC CARD (Interactive & Dense) */}
-        <section className={`relative bg-slate-900/50 border ${statusBorder} rounded-2xl overflow-hidden shadow-2xl ${statusGlow}`}>
-          {/* Tech lines */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent opacity-50" />
-          <div className="absolute top-4 left-4 flex gap-1">
-            <div className="w-1 h-1 bg-slate-500 rounded-full" />
-            <div className="w-1 h-1 bg-slate-500 rounded-full" />
-            <div className="w-1 h-1 bg-slate-500 rounded-full" />
-          </div>
-
-          <div className="p-4 pb-0 flex justify-between items-start">
-            <div className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">
-              Vehicle Diagnostics
+        {/* 2. HUD HEADER (Redesigned for density) */}
+        <header className="flex flex-col md:flex-row justify-between items-end md:items-center py-4 border-b border-white/5 mb-8">
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-slate-900 border border-slate-800 shadow-inner`}>
+              <span className="font-black text-xl text-slate-500">{license}</span>
             </div>
-            <div className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${score >= 80 ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"}`}>
-              {score >= 80 ? "ALL SYSTEMS GO" : "WARNING"}
-            </div>
-          </div>
-
-          {/* The Truck Viz */}
-          <div className="relative">
-            <TruckSchematic />
-            
-            {/* Context Stats Overlay */}
-            <div className="absolute top-10 left-4 space-y-2 pointer-events-none hidden sm:block">
-              <div className="flex items-center gap-2">
-                <div className={`w-1.5 h-1.5 rounded-full ${weakDomain === "Air Brakes" ? "bg-red-500 animate-pulse" : "bg-emerald-500"}`} />
-                <span className="text-[9px] font-mono text-slate-400">AIR BRAKES</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`w-1.5 h-1.5 rounded-full ${weakDomain === "General Knowledge" ? "bg-amber-500" : "bg-emerald-500"}`} />
-                <span className="text-[9px] font-mono text-slate-400">CONTROLS</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-600" />
-                <span className="text-[9px] font-mono text-slate-600">COUPLING</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 4. MISSION CONTROL (Actionable Buttons) */}
-        <motion.section 
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 p-1 rounded-2xl shadow-xl"
-        >
-          <div className="bg-slate-950/50 rounded-xl p-5 border border-slate-800/50">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">
-                  Daily Manifest
-                </h3>
-                <h2 className="text-lg font-bold text-white">
-                  Fix Priority: <span className="text-amber-500">{weakDomain}</span>
-                </h2>
-              </div>
-              <div className="text-right hidden sm:block">
-                <div className="text-[10px] text-slate-500 font-mono">EST. EXAM DATE</div>
-                <div className="text-sm font-bold text-white">T-MINUS {daysToExam} DAYS</div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3">
-              {/* PRIMARY ACTION: DRILL */}
-              <Link 
-                href={`/station?category=${encodeURIComponent(weakDomain)}`}
-                className="group relative w-full py-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-sm uppercase tracking-wider shadow-[0_4px_20px_rgba(245,158,11,0.3)] transition-all flex items-center justify-between px-6 active:scale-[0.98]"
-              >
-                <span className="flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                  Repair System (15m)
+            <div>
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">
+                {userName}
+              </h1>
+              <div className="flex items-center gap-3 text-xs font-mono text-slate-400">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  ONLINE
                 </span>
-                <span className="opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:translate-x-1">→</span>
-              </Link>
-
-              {/* SECONDARY ACTION: SIMULATOR */}
-              <Link 
-                href="/simulator"
-                className="w-full py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs uppercase tracking-wider border border-slate-700 transition-all flex items-center justify-center gap-2"
-              >
-                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                Run Full Exam Sim
-              </Link>
+                <span>•</span>
+                <span>{userState} JURISDICTION</span>
+              </div>
             </div>
           </div>
-        </motion.section>
 
-        {/* 5. DATA GRID */}
-        <section className="grid grid-cols-2 gap-3">
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl relative overflow-hidden">
-            <div className="absolute right-2 top-2 text-emerald-500/20">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/></svg>
-            </div>
-            <div className="text-[9px] text-slate-500 uppercase tracking-widest mb-1 font-bold">Est. Salary</div>
-            <div className="text-xl font-mono font-black text-emerald-400">${salary}</div>
-            <div className="text-[9px] text-slate-600 mt-1 font-mono">MARKET RATE ({userState})</div>
+          <div className="hidden md:block text-right">
+             <div className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1">Current Objective</div>
+             <div className="text-white font-medium">CDL Class {license} Certification</div>
           </div>
+        </header>
 
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl relative overflow-hidden">
-             <div className="absolute right-2 top-2 text-blue-500/20">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+        {/* 3. BENTO GRID LAYOUT */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
+          
+          {/* A. SCORES (Span 4) - Now with Radial Graph */}
+          <BentoCard className="md:col-span-4 p-6 flex flex-col justify-between" glowColor={theme.glow}>
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Exam Readiness</h3>
+                <p className="text-[10px] text-slate-500 mt-1">BASED ON RECENT SIMS</p>
+              </div>
+              <div className={`px-2 py-1 rounded text-[9px] font-bold uppercase border ${theme.color === 'text-emerald-400' ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-amber-500/30 bg-amber-500/10'} ${theme.color}`}>
+                {score >= 80 ? "PASSING" : "AT RISK"}
+              </div>
             </div>
-            <div className="text-[9px] text-slate-500 uppercase tracking-widest mb-1 font-bold">Knowledge Bank</div>
-            <div className="text-xl font-mono font-black text-white">12<span className="text-slate-600 text-sm font-bold">/300</span></div>
-            <div className="text-[9px] text-slate-600 mt-1 font-mono">MASTERED ITEMS</div>
-          </div>
-        </section>
 
-      </main>
+            <div className="flex items-center gap-6">
+              {/* Radial Progress */}
+              <div className="relative w-24 h-24 flex-shrink-0">
+                <svg className="w-full h-full -rotate-90">
+                  <circle cx="50%" cy="50%" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-slate-800" />
+                  <circle 
+                    cx="50%" cy="50%" r="40" 
+                    stroke="currentColor" strokeWidth="8" fill="transparent" 
+                    strokeDasharray={circleCircumference}
+                    strokeDashoffset={mounted ? circleOffset : circleCircumference}
+                    strokeLinecap="round"
+                    className={`${theme.color} transition-all duration-1000 ease-out`}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center flex-col">
+                  <span className={`text-2xl font-black ${theme.color}`}>
+                    <AnimatedNumber value={score} />%
+                  </span>
+                </div>
+              </div>
+              
+              <div className="space-y-1">
+                <div className="text-sm text-slate-300">Projected Result</div>
+                <div className="text-xs text-slate-500 leading-relaxed">
+                  You need <span className="text-white font-bold">+{(80-score) > 0 ? 80-score : 0}%</span> to guarantee a pass on exam day.
+                </div>
+              </div>
+            </div>
+          </BentoCard>
 
-      <Dock />
+          {/* B. ACTION CENTER (Span 8) - High Contrast */}
+          <BentoCard className="md:col-span-8 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="p-6 h-full flex flex-col justify-center relative z-10">
+               <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xl font-bold text-white mb-2">Daily Priority: {weakDomain}</h2>
+                    <p className="text-slate-400 text-sm max-w-md mb-6">
+                      Our algorithms detected a weakness in <span className="text-white">{weakDomain}</span>. 
+                      Spending 15 minutes now boosts your pass probability by 12%.
+                    </p>
+                  </div>
+                  <div className="text-center hidden sm:block">
+                    <div className="text-3xl font-black text-white">{daysToExam}</div>
+                    <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Days Left</div>
+                  </div>
+               </div>
+
+               <div className="flex gap-3">
+                 <Link 
+                   href={`/station?category=${encodeURIComponent(weakDomain)}`}
+                   className="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm uppercase tracking-wide py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-[1.01] active:scale-[0.98]"
+                 >
+                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                   Start Repair Drill
+                 </Link>
+                 <Link 
+                   href="/simulator"
+                   className="px-6 py-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm uppercase tracking-wide border border-slate-700 transition-colors"
+                 >
+                   Simulate
+                 </Link>
+               </div>
+            </div>
+          </BentoCard>
+
+          {/* C. TRUCK SCHEMATIC (Span 8, Row 2) - The "Toy" */}
+          <BentoCard className="md:col-span-8 h-[300px] bg-slate-900 relative" glowColor="blue">
+            <div className="absolute top-4 left-4 z-10">
+               <div className="text-[10px] font-mono text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                 <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                  </span>
+                 Live Diagnostics
+               </div>
+            </div>
+            
+            {/* Simulated Scanning Line Overlay */}
+            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+               <div className="w-full h-[2px] bg-blue-500/50 blur-[1px] absolute top-0 animate-[scan_3s_ease-in-out_infinite]" />
+            </div>
+
+            <div className="flex items-center justify-center h-full opacity-80 grayscale hover:grayscale-0 transition-all duration-500">
+               {/* Pass props to child to animate parts based on weakDomain */}
+               <TruckSchematic highlight={weakDomain} />
+            </div>
+          </BentoCard>
+
+          {/* D. FINANCIALS (Span 4, Row 2) */}
+          <BentoCard className="md:col-span-4 p-6 flex flex-col justify-center" glowColor="emerald">
+             <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Est. Salary</div>
+                  <div className="text-xs text-emerald-400 font-mono">MARKET RATE ({userState})</div>
+                </div>
+             </div>
+             
+             <div className="text-4xl font-black text-white tracking-tight mb-2">
+               $<AnimatedNumber value={salary} />
+             </div>
+             
+             <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                <motion.div 
+                   initial={{ width: 0 }}
+                   animate={{ width: "75%" }}
+                   transition={{ delay: 0.5, duration: 1 }}
+                   className="h-full bg-emerald-500" 
+                />
+             </div>
+             <p className="text-[10px] text-slate-400 text-right">Top 25% of earners</p>
+          </BentoCard>
+
+        </div>
+
+      </motion.main>
+      
+      {/* 4. FLOATING DOCK */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+        <Dock />
+      </div>
+
+      <style jsx global>{`
+        @keyframes scan {
+          0% { top: 0%; opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { top: 100%; opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }
