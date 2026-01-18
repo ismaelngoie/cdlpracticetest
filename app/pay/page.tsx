@@ -258,7 +258,7 @@ function PaywallContent() {
           <div className="flex flex-wrap justify-center gap-2 mb-4">
             <ValueChip>Secure checkout</ValueChip>
             <ValueChip>Instant access</ValueChip>
-            <ValueChip>Mobile-first</ValueChip>
+            <ValueChip>Pass Guarantee</ValueChip>
           </div>
 
           <div
