@@ -2,10 +2,21 @@
 
 import Dock from "@/components/Dock";
 import TruckSchematic from "@/components/TruckSchematic";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
+// --- TYPES ---
+interface AnimatedNumberProps {
+  value: number;
+}
+
+interface BentoCardProps {
+  children: React.ReactNode;
+  className?: string;
+  glowColor?: "emerald" | "amber" | "red" | "slate" | "blue";
+}
 
 // --- ANIMATION VARIANTS ---
 const containerVar = {
@@ -24,14 +35,14 @@ const itemVar = {
 // --- UTILITY COMPONENTS ---
 
 // A "CountUp" component makes data feel real and computed live
-const AnimatedNumber = ({ value }) => {
+const AnimatedNumber = ({ value }: AnimatedNumberProps) => {
   const [display, setDisplay] = useState(0);
   useEffect(() => {
     let start = 0;
     const duration = 1000;
     const startTime = performance.now();
     
-    const animate = (currentTime) => {
+    const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
       // Ease out quart
@@ -48,7 +59,7 @@ const AnimatedNumber = ({ value }) => {
 };
 
 // A premium "Card" wrapper with subtle gradients and glass effects
-const BentoCard = ({ children, className = "", glowColor = "slate" }) => {
+const BentoCard = ({ children, className = "", glowColor = "slate" }: BentoCardProps) => {
   const glows = {
     emerald: "shadow-emerald-500/10 border-emerald-500/20",
     amber: "shadow-amber-500/10 border-amber-500/20",
@@ -100,10 +111,10 @@ export default function DashboardPage() {
   }, []);
 
   // --- COMPUTED VISUALS ---
-  const getStatusTheme = (s) => {
-    if (s >= 80) return { color: "text-emerald-400", bg: "bg-emerald-500", glow: "emerald" };
-    if (s >= 60) return { color: "text-amber-400", bg: "bg-amber-500", glow: "amber" };
-    return { color: "text-red-400", bg: "bg-red-500", glow: "red" };
+  const getStatusTheme = (s: number) => {
+    if (s >= 80) return { color: "text-emerald-400", bg: "bg-emerald-500", glow: "emerald" as const };
+    if (s >= 60) return { color: "text-amber-400", bg: "bg-amber-500", glow: "amber" as const };
+    return { color: "text-red-400", bg: "bg-red-500", glow: "red" as const };
   };
 
   const theme = getStatusTheme(score);
