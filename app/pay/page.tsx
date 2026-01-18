@@ -1,1004 +1,1131 @@
-// app/profile/page.tsx
+"// app/pay/page.tsx
+
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
-import Dock from "@/components/Dock";
+
+
 import { motion, AnimatePresence } from "framer-motion";
 
-type ExamHistoryItem = {
-  ts: number; // Date.now()
-  score: number; // 0-100
-  passed: boolean;
-  mode: "sim" | "station";
-  durationSec?: number;
-  correct?: number;
-  total?: number;
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+
+import { useRouter, useSearchParams } from "next/navigation";
+
+
+
+// --- CONFIG ---
+
+type PlanKey = "monthly" | "lifetime";
+
+
+
+const STRIPE_LINKS: Record<PlanKey, string> = {
+
+  // ⚠️ Replace with your real Stripe payment links
+
+  monthly: "https://buy.stripe.com/test_monthly",
+
+  lifetime: "https://buy.stripe.com/test_lifetime",
+
 };
 
-type AccessState = "unknown" | "none" | "subscription" | "lifetime";
 
-function clamp(n: number, a: number, b: number) {
-  return Math.max(a, Math.min(b, n));
-}
 
-function formatDate(ts: number) {
+const PRICING = {
+
+  monthly: {
+
+    price: 19.95,
+
+    cadence: "/mo",
+
+    title: "Haul Pass",
+
+    subtitle: "Cancel anytime. Good for quick refreshers.",
+
+    features: ["Full Simulator Access", "Smart Fix Plan", "Unlimited Retakes"],
+
+  },
+
+  lifetime: {
+
+    price: 69.0,
+
+    cadence: " one-time",
+
+    title: "Pass Guarantee",
+
+    subtitle: "Get your CDL or money back. Own it forever.",
+
+    badge: "BEST VALUE",
+
+    features: [
+
+      "Everything in Monthly",
+
+      "Lifetime Updates",
+
+      "100% Money-Back Guarantee",
+
+      "Priority Fix Plan (fast path)",
+
+    ],
+
+  },
+
+} as const;
+
+
+
+const PASSING_SCORE = 80;
+
+
+
+// Optional: keep in sync with your sim page config key
+
+const CONFIG_KEY = "haulOS.config.v1";
+
+
+
+type UserContext = {
+
+  score: number;
+
+  weakDomain: string;
+
+  userState: string;
+
+  license: string;
+
+  endorsements: string[];
+
+};
+
+
+
+function safeParseJSON<T>(value: string | null): T | null {
+
+  if (!value) return null;
+
   try {
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "numeric",
-    }).format(new Date(ts));
+
+    return JSON.parse(value) as T;
+
   } catch {
-    return new Date(ts).toLocaleDateString();
+
+    return null;
+
   }
+
 }
 
-function formatTime(sec: number) {
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return `${m}m ${s}s`;
+
+
+function clamp(n: number, min: number, max: number) {
+
+  return Math.max(min, Math.min(max, n));
+
 }
 
-function shortEndorsements(endorsements: string[]) {
-  const map: Record<string, string> = {
-    Hazmat: "H",
-    "Hazardous Materials": "H",
-    Tank: "N",
-    "Tank Vehicles": "N",
-    Double: "T",
-    Doubles: "T",
-    "Doubles/Triples": "T",
-    Triples: "T",
-    Passenger: "P",
-    "School Bus": "S",
-    "Air Brakes": "A",
+
+
+function riskFromScore(score: number) {
+
+  if (score >= PASSING_SCORE) return { label: "CLEAR", tone: "emerald" as const };
+
+  if (score >= 60) return { label: "ELEVATED", tone: "amber" as const };
+
+  return { label: "HIGH", tone: "red" as const };
+
+}
+
+
+
+function toneClasses(tone: "emerald" | "amber" | "red") {
+
+  if (tone === "emerald")
+
+    return {
+
+      ring: "ring-emerald-500/20",
+
+      pill: "bg-emerald-500/10 border-emerald-500/30 text-emerald-300",
+
+      big: "text-emerald-300",
+
+      bar: "bg-emerald-500",
+
+      glow: "shadow-[0_0_40px_-16px_rgba(16,185,129,0.55)]",
+
+    };
+
+  if (tone === "amber")
+
+    return {
+
+      ring: "ring-amber-500/20",
+
+      pill: "bg-amber-500/10 border-amber-500/30 text-amber-300",
+
+      big: "text-amber-300",
+
+      bar: "bg-amber-500",
+
+      glow: "shadow-[0_0_40px_-16px_rgba(245,158,11,0.55)]",
+
+    };
+
+  return {
+
+    ring: "ring-red-500/20",
+
+    pill: "bg-red-500/10 border-red-500/30 text-red-300",
+
+    big: "text-red-300",
+
+    bar: "bg-red-500",
+
+    glow: "shadow-[0_0_40px_-16px_rgba(239,68,68,0.55)]",
+
   };
-  const letters = endorsements
-    .map((e) => map[e] || e?.[0]?.toUpperCase())
-    .filter(Boolean);
-  return letters.join("") || "NONE";
+
 }
 
-function loadJson<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
+
+
+function classLabel(license: string) {
+
+  if (license === "A") return "Class A";
+
+  if (license === "B") return "Class B";
+
+  if (license === "C") return "Class C";
+
+  return "Class D";
+
+}
+
+
+
+function formatEndorsements(list: string[]) {
+
+  if (!list || list.length === 0) return "None";
+
+  return list.join(", ");
+
+}
+
+
+
+function stepCopy(score: number, weakDomain: string, userState: string) {
+
+  const missing = Math.max(0, PASSING_SCORE - score);
+
+  if (score >= PASSING_SCORE) {
+
+    return {
+
+      headline: "Lock in your pass.",
+
+      sub: `You’re at ${score}%. Fix the last weak spots and walk into the ${userState} test confident.`,
+
+      steps: [
+
+        { k: "1", t: "Confirm mastery", d: "Run targeted sets until your weak domain never misses." },
+
+        { k: "2", t: "Timed reps", d: "Build speed under pressure so test day feels easy." },
+
+        { k: "3", t: "Final sweep", d: "Practice the full simulator until you’re consistently 80%+." },
+
+      ],
+
+    };
+
   }
+
+  return {
+
+    headline: `You’re ${missing}% away from passing.`,
+
+    sub: `Your weakness is ${weakDomain}. Your Fix Plan trains only what fails you in ${userState}.`,
+
+    steps: [
+
+      { k: "1", t: "Diagnose", d: `We map your mistakes to ${weakDomain}.` },
+
+      { k: "2", t: "Fix Plan", d: "Targeted drills + explanations so the rule sticks." },
+
+      { k: "3", t: "Pass Mode", d: "Timed simulator until you clear 80%+ consistently." },
+
+    ],
+
+  };
+
 }
 
-function loadExamHistory(): ExamHistoryItem[] {
-  const hist = loadJson<ExamHistoryItem[]>("haul-exam-history", []);
-  return Array.isArray(hist)
-    ? hist
-        .filter((x) => x && typeof x.ts === "number" && typeof x.score === "number")
-        .sort((a, b) => b.ts - a.ts)
-        .slice(0, 12)
-    : [];
-}
 
-function computeTrend(history: ExamHistoryItem[]) {
-  const last3 = history.slice(0, 3);
-  const prev3 = history.slice(3, 6);
 
-  const avg = (arr: ExamHistoryItem[]) =>
-    arr.length ? Math.round(arr.reduce((s, x) => s + x.score, 0) / arr.length) : 0;
+function PaywallContent() {
 
-  const a = avg(last3);
-  const b = avg(prev3);
-  const delta = a - b;
+  const router = useRouter();
 
-  return { recentAvg: a, priorAvg: b, delta };
-}
+  const searchParams = useSearchParams();
 
-// Centered, scroll-safe modal (for billing email + UX)
-function Modal({
-  open,
-  title,
-  subtitle,
-  children,
-  onClose,
-}: {
-  open: boolean;
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-  onClose: () => void;
-}) {
+
+
+  const [selectedPlan, setSelectedPlan] = useState<PlanKey>("lifetime");
+
+
+
+  // Personalization
+
+  const [ctx, setCtx] = useState<UserContext>({
+
+    score: 42,
+
+    weakDomain: "General Knowledge",
+
+    userState: "TX",
+
+    license: "A",
+
+    endorsements: [],
+
+  });
+
+
+
+  // Restore
+
+  const [restoreEmail, setRestoreEmail] = useState("");
+
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  const [restoreMsg, setRestoreMsg] = useState("");
+
+
+
+  // Sticky CTA behavior
+
+  const [showSticky, setShowSticky] = useState(true);
+
+  const topCtaRef = useRef<HTMLDivElement | null>(null);
+
+
+
   useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+    const s = parseInt(localStorage.getItem("diagnosticScore") || "42", 10);
 
-  return (
-    <AnimatePresence>
-      {open && (
-        <>
-          <motion.button
-            aria-label="Close modal"
-            onClick={onClose}
-            className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          />
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            className="fixed inset-0 z-[90] flex items-center justify-center p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="w-full max-w-lg"
-              initial={{ y: 12, scale: 0.985 }}
-              animate={{ y: 0, scale: 1 }}
-              exit={{ y: 12, scale: 0.985 }}
-              transition={{ duration: 0.18 }}
-            >
-              <div className="bg-slate-950 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden">
-                <div className="p-5 border-b border-slate-800 flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                      Account & Billing
-                    </div>
-                    <h3 className="text-xl font-black text-white mt-1 truncate">{title}</h3>
-                    {subtitle && <p className="text-sm text-slate-400 mt-1">{subtitle}</p>}
-                  </div>
-                  <button
-                    onClick={onClose}
-                    className="w-10 h-10 rounded-2xl border border-slate-800 bg-slate-900/60 hover:bg-slate-900 flex items-center justify-center text-slate-300 shrink-0"
-                    aria-label="Close"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="p-5">{children}</div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-}
+    const weakDomain = localStorage.getItem("weakestDomain") || "General Knowledge";
 
-async function postJson<T>(url: string, body: any): Promise<{ ok: boolean; status: number; data?: T; error?: string }> {
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-      body: JSON.stringify(body),
+    const userState = localStorage.getItem("userState") || "TX";
+
+
+
+    // Load license/endorsements from config if present, else legacy
+
+    const saved = safeParseJSON<{ license?: string; endorsements?: string[]; userState?: string }>(
+
+      localStorage.getItem(CONFIG_KEY)
+
+    );
+
+
+
+    const legacyLicense = localStorage.getItem("userLevel") || "A";
+
+    const legacyEnd = safeParseJSON<string[]>(localStorage.getItem("userEndorsements")) || [];
+
+
+
+    const license = saved?.license || legacyLicense || "A";
+
+    const endorsements = Array.isArray(saved?.endorsements) ? saved.endorsements : legacyEnd;
+
+
+
+    setCtx({
+
+      score: Number.isFinite(s) ? clamp(s, 0, 100) : 42,
+
+      weakDomain,
+
+      userState,
+
+      license,
+
+      endorsements,
+
     });
 
-    const status = res.status;
-    const json = (await res.json().catch(() => null)) as any;
-
-    if (!res.ok) {
-      const msg = json?.error || json?.message || `Request failed (${status})`;
-      return { ok: false, status, error: String(msg) };
-    }
-
-    return { ok: true, status, data: json as T };
-  } catch (e: any) {
-    return { ok: false, status: 0, error: e?.message || "Network error" };
-  }
-}
-
-async function createBillingPortalUrl(email: string): Promise<string> {
-  // Try the newer endpoint first, then fallback.
-  const payload = {
-    email,
-    returnUrl: typeof window !== "undefined" ? `${window.location.origin}/profile` : "/profile",
-  };
-
-  const candidates = ["/api/billing/portal", "/api/billing-portal"];
-
-  let lastErr = "Unable to create billing portal session.";
-
-  for (const path of candidates) {
-    const r = await postJson<{ ok?: boolean; url?: string; error?: string }>(path, payload);
-
-    // Route missing? keep trying next candidate.
-    if (!r.ok && (r.status === 404 || r.status === 405)) {
-      lastErr = r.error || lastErr;
-      continue;
-    }
-
-    if (!r.ok) {
-      lastErr = r.error || lastErr;
-      continue;
-    }
-
-    const data: any = r.data;
-    if (data?.ok && data?.url && typeof data.url === "string") return data.url;
-
-    lastErr = data?.error || "Stripe portal URL missing.";
-  }
-
-  throw new Error(lastErr);
-}
-
-async function checkAccess(email: string): Promise<AccessState> {
-  const r = await postJson<{ ok?: boolean; access?: string; error?: string }>("/api/login", { email });
-  if (!r.ok) return "unknown";
-  const data: any = r.data;
-  if (data?.ok && data?.access === "subscription") return "subscription";
-  if (data?.ok && data?.access === "lifetime") return "lifetime";
-  return "none";
-}
-
-export default function ProfilePage() {
-  const [license, setLicense] = useState("A");
-  const [name, setName] = useState("OPERATOR");
-  const [endorsements, setEndorsements] = useState<string[]>([]);
-  const [userState, setUserState] = useState("TX");
-
-  const [history, setHistory] = useState<ExamHistoryItem[]>([]);
-  const [arm, setArm] = useState<"locked" | "confirm">("locked");
-
-  const [idCode, setIdCode] = useState<string>("—");
-  const [hydrated, setHydrated] = useState(false);
-
-  // Billing
-  const [billingEmail, setBillingEmail] = useState<string>("");
-  const [emailDraft, setEmailDraft] = useState<string>("");
-  const [billingModalOpen, setBillingModalOpen] = useState(false);
-
-  const [access, setAccess] = useState<AccessState>("unknown");
-  const [billingBusy, setBillingBusy] = useState(false);
-  const [banner, setBanner] = useState<{ tone: "ok" | "warn" | "err"; msg: string } | null>(null);
-
-  // Privacy / Disclaimer accordion
-  const [privacyOpen, setPrivacyOpen] = useState(false);
-
-  useEffect(() => {
-    setHydrated(true);
-
-    setLicense(localStorage.getItem("userLevel") || "A");
-    setUserState((localStorage.getItem("userState") || "TX").toUpperCase());
-
-    setName(localStorage.getItem("userName") || "OPERATOR");
-
-    const ends = loadJson<string[]>("userEndorsements", []);
-    setEndorsements(Array.isArray(ends) ? ends : []);
-
-    setHistory(loadExamHistory());
-
-    // Billing email (if previously saved)
-    const be = String(localStorage.getItem("billingEmail") || "").trim().toLowerCase();
-    if (be) {
-      setBillingEmail(be);
-      setEmailDraft(be);
-    }
-
-    // Operator ID (client-side only)
-    try {
-      const existing = localStorage.getItem("haul-operator-id");
-      if (existing) {
-        setIdCode(existing);
-      } else {
-        const val = `CP-${Math.floor(10000 + Math.random() * 89999)}`;
-        localStorage.setItem("haul-operator-id", val);
-        setIdCode(val);
-      }
-    } catch {
-      setIdCode("CP-00000");
-    }
   }, []);
 
-  // Auto-check access when we have an email
+
+
   useEffect(() => {
-    let alive = true;
-    (async () => {
-      if (!hydrated) return;
-      if (!billingEmail || !billingEmail.includes("@")) {
-        setAccess("unknown");
-        return;
-      }
-      const a = await checkAccess(billingEmail);
-      if (!alive) return;
-      setAccess(a);
-    })();
-    return () => {
-      alive = false;
+
+    const onScroll = () => {
+
+      const el = topCtaRef.current;
+
+      if (!el) return;
+
+      const rect = el.getBoundingClientRect();
+
+      const near = rect.top < 140 && rect.bottom > 140;
+
+      setShowSticky(!near);
+
     };
-  }, [hydrated, billingEmail]);
 
-  const stats = useMemo(() => {
-    const exams = history.length;
-    const passed = history.filter((h) => h.passed).length;
-    const passRate = exams ? Math.round((passed / exams) * 100) : 0;
-    const best = exams ? Math.max(...history.map((h) => h.score)) : 0;
-    const lastScore = exams ? history[0]?.score ?? 0 : 0;
+    onScroll();
 
-    let streak = 0;
-    for (const h of history) {
-      if (h.passed) streak += 1;
-      else break;
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", onScroll);
+
+  }, []);
+
+
+
+  // Plan can be set via URL: /pay?plan=monthly
+
+  useEffect(() => {
+
+    const plan = searchParams.get("plan");
+
+    if (plan === "monthly" || plan === "lifetime") setSelectedPlan(plan);
+
+  }, [searchParams]);
+
+
+
+  const checkoutUrl = STRIPE_LINKS[selectedPlan];
+
+
+
+  const { label: risk, tone } = riskFromScore(ctx.score);
+
+  const tc = toneClasses(tone);
+
+
+
+  const copy = useMemo(
+
+    () => stepCopy(ctx.score, ctx.weakDomain, ctx.userState),
+
+    [ctx.score, ctx.weakDomain, ctx.userState]
+
+  );
+
+
+
+  const progressToPass = useMemo(() => {
+
+    // visual progress towards PASSING_SCORE, capped
+
+    const pct = (ctx.score / PASSING_SCORE) * 100;
+
+    return clamp(Math.round(pct), 0, 100);
+
+  }, [ctx.score]);
+
+
+
+  // ✅ NEW: risk-based sticky CTA text
+
+  const stickyCtaText = useMemo(() => {
+
+    if (risk === "HIGH") return "Unlock Fix Plan (fastest path) →";
+
+    if (risk === "ELEVATED") return "Unlock Fix Plan (push to 80%) →";
+
+    return "Unlock Final Sweep Plan →"; // CLEAR
+
+  }, [risk]);
+
+
+
+  const handleRestore = async () => {
+
+    if (!restoreEmail.includes("@")) {
+
+      setRestoreMsg("Please enter a valid email.");
+
+      return;
+
     }
 
-    return { exams, passed, passRate, best, streak, lastScore };
-  }, [history]);
+    setRestoreMsg("");
 
-  const trend = useMemo(() => computeTrend(history), [history]);
+    setIsRestoring(true);
 
-  const readiness = useMemo(() => {
-    // Readiness is driven only by real history.
-    const base = stats.passRate;
-    const bestBonus = clamp(stats.best - 80, 0, 20);
-    const streakBonus = clamp(stats.streak * 4, 0, 12);
-    const score = clamp(Math.round(base * 0.7 + bestBonus + streakBonus), 0, 100);
 
-    if (score >= 85)
-      return {
-        label: "READY",
-        color: "text-emerald-400",
-        border: "border-emerald-500/40",
-        bg: "bg-emerald-500/10",
-        bar: "from-emerald-500 to-emerald-300",
-      };
-    if (score >= 70)
-      return {
-        label: "NEAR READY",
-        color: "text-amber-400",
-        border: "border-amber-500/40",
-        bg: "bg-amber-500/10",
-        bar: "from-amber-500 to-amber-300",
-      };
-    return {
-      label: "IN TRAINING",
-      color: "text-red-400",
-      border: "border-red-500/40",
-      bg: "bg-red-500/10",
-      bar: "from-red-500 to-red-300",
-    };
-  }, [stats]);
 
-  const accessBadge = useMemo(() => {
-    if (access === "subscription")
-      return { text: "SUBSCRIPTION ACTIVE", tone: "emerald" as const, hint: "Manage billing, invoices, or cancel anytime." };
-    if (access === "lifetime")
-      return { text: "LIFETIME ACCESS", tone: "blue" as const, hint: "You’re unlocked permanently for this product." };
-    if (access === "none")
-      return { text: "NO ACTIVE PLAN", tone: "amber" as const, hint: "Use the email you paid with to manage access." };
-    return { text: "STATUS UNKNOWN", tone: "slate" as const, hint: "Add a billing email to check your plan status." };
-  }, [access]);
+    // Placeholder behavior (you’ll wire to real API later)
 
-  const handleReconfigure = () => {
-    window.location.href = "/";
+    setTimeout(() => {
+
+      setRestoreMsg("We couldn’t find that email. If you just purchased, check your inbox for the access link.");
+
+      setIsRestoring(false);
+
+    }, 1100);
+
   };
 
-  const saveName = useCallback(() => {
-    const clean = name.trim().slice(0, 32) || "OPERATOR";
-    setName(clean);
-    try {
-      localStorage.setItem("userName", clean);
-    } catch {}
-    setBanner({ tone: "ok", msg: "Profile updated." });
-    setTimeout(() => setBanner(null), 2200);
-  }, [name]);
 
-  const openBillingFlow = useCallback(async () => {
-    // If we don’t have a valid email, prompt.
-    const e = (billingEmail || "").trim().toLowerCase();
-    if (!e || !e.includes("@")) {
-      setEmailDraft(e);
-      setBillingModalOpen(true);
-      return;
-    }
 
-    setBillingBusy(true);
-    setBanner(null);
-    try {
-      const url = await createBillingPortalUrl(e);
-      window.location.href = url;
-    } catch (err: any) {
-      setBanner({ tone: "err", msg: err?.message || "Could not open billing portal." });
-      setTimeout(() => setBanner(null), 4200);
-    } finally {
-      setBillingBusy(false);
-    }
-  }, [billingEmail]);
+  const ValueChip = ({ children }: { children: React.ReactNode }) => (
 
-  const saveBillingEmailAndContinue = useCallback(async () => {
-    const e = (emailDraft || "").trim().toLowerCase();
-    if (!e || !e.includes("@")) {
-      setBanner({ tone: "warn", msg: "Enter the email you used at checkout." });
-      setTimeout(() => setBanner(null), 2600);
-      return;
-    }
+    <span className="px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-300">
 
-    setBillingEmail(e);
-    try {
-      localStorage.setItem("billingEmail", e);
-    } catch {}
+      {children}
 
-    setBillingModalOpen(false);
+    </span>
 
-    // re-check access in background + open portal
-    setBillingBusy(true);
-    setBanner(null);
-    try {
-      const url = await createBillingPortalUrl(e);
-      window.location.href = url;
-    } catch (err: any) {
-      setBanner({ tone: "err", msg: err?.message || "Could not open billing portal." });
-      setTimeout(() => setBanner(null), 4200);
-    } finally {
-      setBillingBusy(false);
-    }
-  }, [emailDraft]);
+  );
 
-  const refreshAccess = useCallback(async () => {
-    const e = (billingEmail || "").trim().toLowerCase();
-    if (!e || !e.includes("@")) {
-      setBanner({ tone: "warn", msg: "Add your billing email to check subscription status." });
-      setTimeout(() => setBanner(null), 2800);
-      return;
-    }
-    setBillingBusy(true);
-    setBanner(null);
-    try {
-      const a = await checkAccess(e);
-      setAccess(a);
-      setBanner({ tone: "ok", msg: "Billing status refreshed." });
-      setTimeout(() => setBanner(null), 2200);
-    } catch {
-      setBanner({ tone: "err", msg: "Could not refresh status." });
-      setTimeout(() => setBanner(null), 2800);
-    } finally {
-      setBillingBusy(false);
-    }
-  }, [billingEmail]);
 
-  const handleFactoryReset = () => {
-    if (arm === "locked") {
-      setArm("confirm");
-      setTimeout(() => setArm("locked"), 4500);
-      return;
-    }
-    const ok = confirm("Factory Reset will wipe local progress on this device. Confirm?");
-    if (!ok) return;
-    localStorage.clear();
-    window.location.href = "/";
-  };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white pb-32">
+
+    <div className="min-h-screen bg-slate-950 text-white font-sans pb-32">
+
       {/* Background FX */}
-      <div className="fixed inset-0 pointer-events-none opacity-10 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.18),transparent_58%)]" />
-      <div className="fixed inset-0 pointer-events-none opacity-[0.08] bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:28px_28px]" />
-      <div className="fixed inset-0 pointer-events-none opacity-[0.06] bg-[radial-gradient(circle_at_bottom_left,rgba(56,189,248,0.18),transparent_55%)]" />
 
-      {/* Billing modal */}
-      <Modal
-        open={billingModalOpen}
-        title="Manage Subscription"
-        subtitle="Enter the email you used at checkout. We’ll open the secure billing portal."
-        onClose={() => setBillingModalOpen(false)}
-      >
-        <div className="space-y-3">
-          <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Billing Email</div>
-          <input
-            value={emailDraft}
-            onChange={(e) => setEmailDraft(e.target.value)}
-            placeholder="you@example.com"
-            className="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-amber-500/60"
-          />
-          <div className="text-xs text-slate-400 leading-relaxed">
-            If you’re not sure which email you used, search your inbox for your Stripe receipt.
-          </div>
-          <div className="flex items-center gap-2 pt-2">
-            <button
-              onClick={saveBillingEmailAndContinue}
-              disabled={billingBusy}
-              className="flex-1 px-4 py-3 rounded-2xl bg-white text-slate-950 font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-colors disabled:opacity-60"
-            >
-              Continue →
-            </button>
-            <button
-              onClick={() => setBillingModalOpen(false)}
-              className="px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950/40 text-slate-200 font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-          <div className="text-[11px] text-slate-500">
-            Support:{" "}
-            <a
-              className="underline text-white font-bold"
-              href="mailto:contact@cdlpretest.com?subject=Support%20Request%20-%20CDL%20PreTest&body=Please%20include%20the%20email%20you%20paid%20with%20and%20a%20brief%20description%20of%20the%20issue."
-            >
-              contact@cdlpretest.com
-            </a>
-          </div>
-        </div>
-      </Modal>
+      <div className="fixed inset-0 pointer-events-none">
 
-      {/* Header */}
-      <header className="px-6 pt-10 pb-6 max-w-3xl mx-auto">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Profile</div>
-            <h1 className="text-3xl font-black tracking-tight text-white">Driver Logbook</h1>
-            <p className="text-sm text-slate-400 font-mono mt-1">
-              {userState} DMV • <span className="text-amber-400">CLASS {license}</span> • ID:{" "}
-              <span className="text-slate-300">{hydrated ? idCode : "—"}</span>
-            </p>
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.18),transparent_60%)]" />
+
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.12),transparent_55%)]" />
+
+        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:44px_44px]" />
+
+      </div>
+
+
+
+      <main className="relative z-10 max-w-lg mx-auto px-4 pt-10">
+
+        {/* HEADER / HOOK */}
+
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-7">
+
+          <div className="flex flex-wrap justify-center gap-2 mb-4">
+
+            <ValueChip>Secure checkout</ValueChip>
+
+            <ValueChip>Instant access</ValueChip>
+
+            <ValueChip>Pass Guarantee</ValueChip>
+
           </div>
 
-          <div className={`shrink-0 px-3 py-2 rounded-2xl border ${readiness.border} ${readiness.bg}`}>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Readiness</div>
-            <div className={`text-sm font-black tracking-widest ${readiness.color}`}>{readiness.label}</div>
-          </div>
-        </div>
 
-        <AnimatePresence initial={false}>
-          {banner && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              className="mt-4"
-            >
-              <div
-                className={`rounded-2xl border p-4 text-sm ${
-                  banner.tone === "ok"
-                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200"
-                    : banner.tone === "warn"
-                    ? "bg-amber-500/10 border-amber-500/30 text-amber-200"
-                    : "bg-red-500/10 border-red-500/30 text-red-200"
-                }`}
-              >
-                {banner.msg}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </header>
 
-      <main className="px-4 max-w-3xl mx-auto space-y-6">
-        {/* Top row */}
-        <div className="grid md:grid-cols-5 gap-4">
-          {/* Profile Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 120, damping: 18 }}
-            className="md:col-span-3 relative overflow-hidden rounded-3xl p-6 border border-slate-800 bg-slate-900 shadow-2xl"
+          <div
+
+            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border ${tc.pill} text-[10px] font-black uppercase tracking-widest mb-4`}
+
           >
-            <div className="absolute inset-0 opacity-25 bg-[radial-gradient(circle_at_left,rgba(245,158,11,0.18),transparent_60%)]" />
-            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-60" />
 
-            <div className="relative">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Operator</div>
-                  <div className="mt-1 text-2xl font-black tracking-tight text-white truncate">
-                    {name || "OPERATOR"}
-                  </div>
+            ⚠️ Diagnostic Result • {ctx.userState} • {classLabel(ctx.license)}
 
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl bg-slate-950 border border-slate-800 p-3">
-                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">
-                        Endorsements
-                      </div>
-                      <div className="text-lg font-mono font-black text-white">
-                        {shortEndorsements(endorsements)}
-                      </div>
-                      <div className="mt-1 text-[10px] text-slate-500">
-                        {endorsements.length ? endorsements.join(" • ") : "None configured"}
-                      </div>
-                    </div>
+          </div>
 
-                    <div className="rounded-2xl bg-slate-950 border border-slate-800 p-3">
-                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">
-                        Last Score
-                      </div>
-                      <div className="text-lg font-mono font-black text-white">{stats.lastScore}%</div>
-                      <div className="mt-1 text-[10px] text-slate-500">
-                        {history.length ? `Updated ${formatDate(history[0].ts)}` : "No runs yet"}
-                      </div>
-                    </div>
-                  </div>
+
+
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-none mb-3">
+
+            {copy.headline} <span className="text-amber-500">Unlock your Fix Plan.</span>
+
+          </h1>
+
+
+
+          <p className="text-slate-400 text-sm leading-relaxed">{copy.sub}</p>
+
+
+
+          {/* Score + Progress */}
+
+          <div className={`mt-6 rounded-3xl border border-white/10 bg-slate-900/50 backdrop-blur p-5 ring-1 ${tc.ring}`}>
+
+            <div className="flex items-center justify-between mb-2">
+
+              <div className="text-left">
+
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Readiness</div>
+
+                <div className="text-2xl font-black">
+
+                  {ctx.score}% <span className={`text-sm ${tc.big}`}>({risk})</span>
+
                 </div>
 
-                <div className="shrink-0 text-right">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Account</div>
-
-                  <div
-                    className={`mt-2 inline-flex items-center gap-2 px-3 py-2 rounded-2xl border ${
-                      accessBadge.tone === "emerald"
-                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200"
-                        : accessBadge.tone === "blue"
-                        ? "bg-blue-500/10 border-blue-500/30 text-blue-200"
-                        : accessBadge.tone === "amber"
-                        ? "bg-amber-500/10 border-amber-500/30 text-amber-200"
-                        : "bg-white/5 border-white/10 text-slate-200"
-                    }`}
-                  >
-                    <span className="text-[10px] font-black uppercase tracking-widest">{accessBadge.text}</span>
-                  </div>
-
-                  <div className="mt-2 text-[11px] text-slate-400 max-w-[200px]">{accessBadge.hint}</div>
-
-                  <div className="mt-4">
-                    <button
-                      onClick={openBillingFlow}
-                      disabled={billingBusy}
-                      className="w-full px-4 py-2 rounded-2xl bg-white text-slate-950 font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-colors disabled:opacity-60"
-                    >
-                      {billingBusy ? "Opening…" : "Manage Subscription ↗"}
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setEmailDraft(billingEmail || "");
-                        setBillingModalOpen(true);
-                      }}
-                      className="mt-2 w-full px-4 py-2 rounded-2xl border border-slate-800 bg-slate-950/40 text-slate-200 font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-colors"
-                    >
-                      Update Billing Email
-                    </button>
-                  </div>
-                </div>
               </div>
 
-              {/* Inline edit */}
-              <div className="mt-6 rounded-3xl border border-slate-800 bg-slate-950/30 p-4">
-                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
-                  Profile Settings
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="sm:col-span-2">
-                    <input
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Operator name"
-                      className="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-amber-500/60"
-                    />
-                    <div className="mt-1 text-[11px] text-slate-500">
-                      Used only on this device (browser storage).
-                    </div>
-                  </div>
-                  <button
-                    onClick={saveName}
-                    className="px-4 py-3 rounded-2xl bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-widest hover:bg-amber-400 transition-colors"
-                  >
-                    Save
-                  </button>
-                </div>
+              <div className="text-right">
+
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Weak domain</div>
+
+                <div className="text-sm font-black text-white">{ctx.weakDomain}</div>
+
               </div>
 
-              <div className="mt-3 text-[11px] text-slate-500">
-                CDL PreTest is an independent study tool — always follow your official state CDL handbook for exact wording.
-              </div>
             </div>
-          </motion.div>
 
-          {/* Telemetry */}
-          <div className="md:col-span-2 space-y-3">
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5">
-              <div className="flex items-center justify-between">
-                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Telemetry</div>
-                <div className={`text-[10px] font-black uppercase tracking-widest ${readiness.color}`}>
-                  {readiness.label}
+
+
+            <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
+
+              <motion.div
+
+                className={`h-full ${tc.bar}`}
+
+                initial={{ width: 0 }}
+
+                animate={{ width: `${progressToPass}%` }}
+
+                transition={{ type: "spring", stiffness: 120, damping: 18 }}
+
+              />
+
+            </div>
+
+            <div className="mt-2 flex justify-between text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+
+              <span>Now: {ctx.score}%</span>
+
+              <span>Target: {PASSING_SCORE}%</span>
+
+            </div>
+
+          </div>
+
+
+
+          {/* Personalization strip */}
+
+          <div className="mt-4 text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+
+            Config: {ctx.userState} • {classLabel(ctx.license)} • Endorsements: {formatEndorsements(ctx.endorsements)}
+
+          </div>
+
+        </motion.div>
+
+
+
+        {/* WHAT YOU GET */}
+
+        <div className="grid grid-cols-1 gap-3 mb-7">
+
+          {copy.steps.map((s) => (
+
+            <div key={s.k} className="rounded-3xl border border-white/10 bg-white/5 p-5 text-left">
+
+              <div className="flex items-center gap-3">
+
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 grid place-items-center">
+
+                  <span className="text-amber-300 font-black">{s.k}</span>
+
                 </div>
-              </div>
 
-              <div className="mt-4 space-y-4">
                 <div>
-                  <div className="flex items-center justify-between text-[11px] font-mono">
-                    <span className="text-slate-400">Pass Rate</span>
-                    <span className="text-slate-200 font-black">{stats.passRate}%</span>
-                  </div>
-                  <div className="mt-2 h-2 rounded-full bg-slate-950 border border-slate-800 overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${stats.passRate}%` }}
-                      transition={{ type: "spring", stiffness: 120, damping: 18 }}
-                      className={`h-full bg-gradient-to-r ${readiness.bar}`}
-                    />
-                  </div>
+
+                  <div className="font-black text-white">{s.t}</div>
+
+                  <div className="text-sm text-slate-400 mt-0.5 leading-relaxed">{s.d}</div>
+
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-center">
-                    <div className="text-2xl font-black text-white">{stats.exams}</div>
-                    <div className="text-[10px] text-slate-500 uppercase tracking-widest">Runs</div>
-                  </div>
-                  <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-center">
-                    <div className="text-2xl font-black text-emerald-400">{stats.passed}</div>
-                    <div className="text-[10px] text-slate-500 uppercase tracking-widest">Passed</div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-center">
-                    <div className="text-2xl font-black text-amber-400">{stats.best}%</div>
-                    <div className="text-[10px] text-slate-500 uppercase tracking-widest">Best</div>
-                  </div>
-                  <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-center">
-                    <div className="text-2xl font-black text-white">{stats.streak}</div>
-                    <div className="text-[10px] text-slate-500 uppercase tracking-widest">Streak</div>
-                  </div>
-                </div>
-
-                <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Trend (Last 3)</div>
-                    <div
-                      className={`text-xs font-black ${
-                        trend.delta > 0 ? "text-emerald-400" : trend.delta < 0 ? "text-red-400" : "text-slate-400"
-                      }`}
-                    >
-                      {trend.delta > 0 ? `+${trend.delta}` : `${trend.delta}`} pts
-                    </div>
-                  </div>
-                  <div className="mt-2 text-[11px] text-slate-400 font-mono">
-                    Recent Avg: <span className="text-slate-200 font-black">{trend.recentAvg}%</span>{" "}
-                    <span className="text-slate-600">•</span> Prior:{" "}
-                    <span className="text-slate-200 font-black">{trend.priorAvg}%</span>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Billing</div>
-                    <button
-                      onClick={refreshAccess}
-                      disabled={billingBusy}
-                      className="px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-950/40 text-slate-200 text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-colors disabled:opacity-60"
-                    >
-                      {billingBusy ? "…" : "Refresh"}
-                    </button>
-                  </div>
-                  <div className="mt-2 text-[11px] text-slate-400">
-                    Email:{" "}
-                    <span className="text-slate-200 font-mono font-black">
-                      {billingEmail ? billingEmail : "Not set"}
-                    </span>
-                  </div>
-                </div>
               </div>
+
             </div>
 
-            {/* Quick actions */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5">
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Quick Actions</div>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <button
-                  onClick={handleReconfigure}
-                  className="rounded-2xl border border-slate-800 bg-slate-950 hover:bg-slate-900 transition-colors p-4 text-left"
-                >
-                  <div className="text-sm font-black text-slate-200">Reconfigure</div>
-                  <div className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Change Class / State</div>
-                </button>
+          ))}
 
-                <button
-                  onClick={() => (window.location.href = "/study")}
-                  className="rounded-2xl border border-slate-800 bg-slate-950 hover:bg-slate-900 transition-colors p-4 text-left"
-                >
-                  <div className="text-sm font-black text-slate-200">Manuals</div>
-                  <div className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Study Station</div>
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
 
-        {/* Recent Runs */}
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Recent Activity</div>
-              <div className="text-sm text-slate-300 mt-1">Last runs on this device</div>
-            </div>
-            <div className="text-[10px] font-mono text-slate-500">
-              {history.length ? `${history.length} records` : "No history saved yet"}
-            </div>
-          </div>
 
-          <div className="mt-4 space-y-2">
-            {history.length === 0 ? (
-              <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5 text-center">
-                <div className="text-slate-200 font-black">No runs yet.</div>
-                <div className="text-sm text-slate-500 mt-1">
-                  Complete a simulator run or stations to generate score history.
-                </div>
+
+        {/* PLANS */}
+
+        <div ref={topCtaRef} className="space-y-4 mb-10">
+
+          {/* Lifetime */}
+
+          <button
+
+            onClick={() => setSelectedPlan("lifetime")}
+
+            className={`relative w-full p-5 rounded-3xl border-2 text-left transition-all group ${
+
+              selectedPlan === "lifetime"
+
+                ? "bg-amber-500/10 border-amber-500 shadow-[0_0_34px_rgba(245,158,11,0.18)]"
+
+                : "bg-slate-900/60 border-slate-800 hover:border-slate-700"
+
+            }`}
+
+            aria-label="Select Pass Guarantee plan"
+
+          >
+
+            {selectedPlan === "lifetime" && (
+
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wide shadow-lg">
+
+                Recommended • Best value
+
               </div>
-            ) : (
-              history.slice(0, 8).map((h, i) => (
-                <motion.div
-                  key={h.ts + "-" + i}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="rounded-2xl border border-slate-800 bg-slate-950 p-4 flex items-center justify-between"
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                          h.passed
-                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                            : "bg-red-500/10 border-red-500/30 text-red-400"
-                        }`}
-                      >
-                        {h.passed ? "PASS" : "FAIL"}
-                      </span>
 
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                        {h.mode === "sim" ? "Full Simulation" : "Station"}
-                      </span>
-
-                      <span className="text-[10px] font-mono text-slate-600">• {formatDate(h.ts)}</span>
-                    </div>
-
-                    <div className="mt-1 text-sm text-slate-300">
-                      Score: <span className="text-slate-100 font-black">{h.score}%</span>
-                      {typeof h.durationSec === "number" && (
-                        <>
-                          <span className="text-slate-600"> • </span>
-                          <span className="text-slate-400 font-mono">{formatTime(h.durationSec)}</span>
-                        </>
-                      )}
-                      {typeof h.correct === "number" && typeof h.total === "number" && (
-                        <>
-                          <span className="text-slate-600"> • </span>
-                          <span className="text-slate-400 font-mono">
-                            {h.correct}/{h.total}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="shrink-0 w-10 h-10 rounded-2xl border border-slate-800 bg-slate-900 flex items-center justify-center">
-                    <span className={`${h.passed ? "text-emerald-400" : "text-red-400"} font-black`}>{h.score}</span>
-                  </div>
-                </motion.div>
-              ))
             )}
-          </div>
-        </div>
 
-        {/* System Controls */}
-        <div className="space-y-3 pt-2">
-          <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest px-2">System Controls</h3>
 
-          <button
-            onClick={handleReconfigure}
-            className="w-full flex items-center justify-between p-5 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-colors"
-          >
-            <span className="text-sm font-black text-slate-200">Reconfigure Rig (Class / State / Endorsements)</span>
-            <span className="text-slate-500">→</span>
-          </button>
 
-          <button
-            onClick={openBillingFlow}
-            disabled={billingBusy}
-            className="w-full flex items-center justify-between p-5 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-colors disabled:opacity-60"
-          >
-            <span className="text-sm font-black text-slate-200">Manage Subscription</span>
-            <span className="text-slate-500">↗</span>
-          </button>
+            <div className="flex justify-between items-start gap-4">
 
-          {/* Privacy + Disclaimer */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
-            <button
-              onClick={() => setPrivacyOpen((p) => !p)}
-              className="w-full flex items-center justify-between p-5 hover:bg-slate-800 transition-colors"
-            >
-              <div className="text-left">
-                <div className="text-sm font-black text-slate-200">Privacy & Disclaimer</div>
-                <div className="text-[11px] text-slate-400 mt-0.5">
-                  How we store progress • payments • product disclaimer • support
+              <div className="min-w-0">
+
+                <div className="flex items-center gap-2">
+
+                  <h3 className={`text-lg font-black ${selectedPlan === "lifetime" ? "text-white" : "text-slate-200"}`}>
+
+                    {PRICING.lifetime.title}
+
+                  </h3>
+
+                  <span className="px-2 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-[10px] font-black uppercase tracking-widest text-amber-300">
+
+                    {PRICING.lifetime.badge}
+
+                  </span>
+
                 </div>
+
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">{PRICING.lifetime.subtitle}</p>
+
               </div>
-              <span className="text-slate-500">{privacyOpen ? "–" : "+"}</span>
-            </button>
 
-            <AnimatePresence initial={false}>
-              {privacyOpen && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.18 }}
-                >
-                  <div className="px-5 pb-5 text-sm text-slate-300 leading-relaxed space-y-3">
-                    <p className="text-xs text-slate-400 font-mono uppercase tracking-widest">Privacy</p>
 
-                    <p>
-                      CDL PreTest stores your study progress (scores, history, and preferences) primarily on your device using
-                      browser storage. If you clear site data or switch devices, your local progress may be removed.
-                    </p>
 
-                    <p>
-                      Payments are processed by a third-party payment processor (Stripe). We do not store your card numbers or
-                      banking details on our servers.
-                    </p>
+              <div className="text-right shrink-0">
 
-                    <p className="text-xs text-slate-400 font-mono uppercase tracking-widest">Disclaimer</p>
+                <div className="text-3xl font-black text-white">${PRICING.lifetime.price.toFixed(2)}</div>
 
-                    <p>
-                      This product is an independent study tool for CDL written test preparation. It does not replace your
-                      state CDL manual, official FMCSA materials, professional CDL training, or the requirements of your DMV/DOT.
-                    </p>
+                <div className="text-xs text-slate-500 uppercase tracking-widest">one-time</div>
 
-                    <p>
-                      <b>Not affiliated:</b> CDL PreTest is not affiliated with, endorsed by, or sponsored by any state DMV,
-                      state DOT, FMCSA, or any testing provider. “CDL” refers to Commercial Driver License in general usage.
-                    </p>
-
-                    <p className="text-xs text-slate-400 font-mono uppercase tracking-widest">Support</p>
-
-                    <p>
-                      Need help?{" "}
-                      <a
-                        className="underline text-white font-bold"
-                        href="mailto:contact@cdlpretest.com?subject=Support%20Request%20-%20CDL%20PreTest&body=Please%20include%20the%20email%20you%20paid%20with%20and%20a%20brief%20description%20of%20the%20issue."
-                      >
-                        contact@cdlpretest.com
-                      </a>
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Factory Reset (armed) */}
-          <div className="rounded-2xl border border-red-900/30 bg-red-900/10 overflow-hidden">
-            <button
-              onClick={handleFactoryReset}
-              className="w-full flex items-center justify-between p-5 hover:bg-red-900/15 transition-colors"
-            >
-              <div className="text-left">
-                <div className="text-sm font-black text-red-300">{arm === "locked" ? "Factory Reset" : "Tap again to ARM"}</div>
-                <div className="text-[11px] text-red-200/70 mt-0.5">Wipes local progress on this device.</div>
               </div>
-              <span className={`text-red-300 ${arm === "confirm" ? "animate-pulse" : ""}`}>⚠️</span>
-            </button>
+
+            </div>
+
+
 
             <AnimatePresence>
-              {arm === "confirm" && (
+
+              {selectedPlan === "lifetime" && (
+
                 <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="px-5 pb-5"
+
+                  initial={{ opacity: 0, height: 0 }}
+
+                  animate={{ opacity: 1, height: "auto" }}
+
+                  exit={{ opacity: 0, height: 0 }}
+
+                  className="mt-4 pt-4 border-t border-white/10 space-y-2"
+
                 >
-                  <div className="text-[11px] text-red-200/80">
-                    Safety lock active for 4.5 seconds. Tap again to proceed.
+
+                  {PRICING.lifetime.features.map((feat, i) => (
+
+                    <div key={i} className="flex items-center gap-2 text-xs text-slate-200">
+
+                      <span className="text-emerald-400 font-black">✓</span> {feat}
+
+                    </div>
+
+                  ))}
+
+
+
+                  <div className="mt-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-200 leading-relaxed">
+
+                    <span className="font-black">Guarantee:</span> If you don’t pass after completing the Fix Plan, request a refund.
+
                   </div>
+
                 </motion.div>
+
               )}
+
             </AnimatePresence>
-          </div>
+
+          </button>
+
+
+
+          {/* Monthly */}
+
+          <button
+
+            onClick={() => setSelectedPlan("monthly")}
+
+            className={`relative w-full p-5 rounded-3xl border-2 text-left transition-all ${
+
+              selectedPlan === "monthly"
+
+                ? "bg-white/5 border-slate-500"
+
+                : "bg-slate-900/60 border-slate-800 opacity-90 hover:opacity-100 hover:border-slate-700"
+
+            }`}
+
+            aria-label="Select Haul Pass monthly plan"
+
+          >
+
+            <div className="flex justify-between items-start gap-4">
+
+              <div className="min-w-0">
+
+                <h3 className="text-md font-black text-slate-200">{PRICING.monthly.title}</h3>
+
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">{PRICING.monthly.subtitle}</p>
+
+              </div>
+
+              <div className="text-right shrink-0">
+
+                <div className="text-xl font-black text-slate-200">${PRICING.monthly.price.toFixed(2)}</div>
+
+                <div className="text-xs text-slate-500 uppercase tracking-widest">/mo</div>
+
+              </div>
+
+            </div>
+
+
+
+            <AnimatePresence>
+
+              {selectedPlan === "monthly" && (
+
+                <motion.div
+
+                  initial={{ opacity: 0, height: 0 }}
+
+                  animate={{ opacity: 1, height: "auto" }}
+
+                  exit={{ opacity: 0, height: 0 }}
+
+                  className="mt-4 pt-4 border-t border-white/10 space-y-2"
+
+                >
+
+                  {PRICING.monthly.features.map((feat, i) => (
+
+                    <div key={i} className="flex items-center gap-2 text-xs text-slate-200">
+
+                      <span className="text-emerald-400 font-black">✓</span> {feat}
+
+                    </div>
+
+                  ))}
+
+                  <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest mt-2">
+
+                    Cancel anytime • Keep access until your billing date
+
+                  </div>
+
+                </motion.div>
+
+              )}
+
+            </AnimatePresence>
+
+          </button>
+
         </div>
+
+
+
+        {/* TRUST FOOTER */}
+
+        <div className="mb-10 rounded-3xl border border-white/10 bg-slate-900/40 backdrop-blur p-6 text-left">
+
+          <div className="text-xs font-black uppercase tracking-widest text-slate-300 mb-2">What happens after checkout?</div>
+
+          <div className="space-y-3 text-sm text-slate-400 leading-relaxed">
+
+            <div className="flex gap-3">
+
+              <span className="text-emerald-400 font-black">✓</span>
+
+              <span>
+
+                You get instant access to the simulator + your Fix Plan for{" "}
+
+                <span className="font-bold text-white">{ctx.userState}</span>.
+
+              </span>
+
+            </div>
+
+            <div className="flex gap-3">
+
+              <span className="text-emerald-400 font-black">✓</span>
+
+              <span>
+
+                Your plan focuses on <span className="font-bold text-white">{ctx.weakDomain}</span> first—fastest score lift.
+
+              </span>
+
+            </div>
+
+            <div className="flex gap-3">
+
+              <span className="text-emerald-400 font-black">✓</span>
+
+              <span>You can restore access anytime using your email (no password needed).</span>
+
+            </div>
+
+          </div>
+
+
+
+          <div className="mt-5 flex items-center justify-between text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+
+            <span>🔒 Secure checkout</span>
+
+            <span>Instant access</span>
+
+          </div>
+
+
+
+          <div className="mt-4 text-center">
+
+            <button onClick={() => router.push("/sim")} className="text-xs text-slate-500 underline hover:text-slate-300">
+
+              Back to diagnostic
+
+            </button>
+
+          </div>
+
+        </div>
+
+
+
+        {/* RESTORE */}
+
+        <div className="mt-10 p-6 rounded-3xl bg-slate-900/60 border border-slate-800 text-left">
+
+          <div className="flex items-center justify-between gap-3 mb-3">
+
+            <h4 className="text-xs font-black text-slate-300 uppercase tracking-widest">Restore access</h4>
+
+            <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Already paid?</span>
+
+          </div>
+
+
+
+          <div className="flex gap-2">
+
+            <input
+
+              type="email"
+
+              placeholder="Enter purchase email"
+
+              value={restoreEmail}
+
+              onChange={(e) => setRestoreEmail(e.target.value)}
+
+              className="flex-1 bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:border-amber-500 outline-none"
+
+            />
+
+            <button
+
+              onClick={handleRestore}
+
+              disabled={isRestoring}
+
+              className={`px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest border border-white/10 ${
+
+                isRestoring ? "bg-slate-800 text-slate-400" : "bg-white/5 hover:bg-white/10 text-white"
+
+              }`}
+
+            >
+
+              {isRestoring ? "Checking..." : "Restore"}
+
+            </button>
+
+          </div>
+
+
+
+          <AnimatePresence>
+
+            {restoreMsg && (
+
+              <motion.p
+
+                initial={{ opacity: 0, y: 6 }}
+
+                animate={{ opacity: 1, y: 0 }}
+
+                exit={{ opacity: 0, y: 6 }}
+
+                className="text-xs text-amber-300 mt-3"
+
+              >
+
+                {restoreMsg}
+
+              </motion.p>
+
+            )}
+
+          </AnimatePresence>
+
+
+
+          <p className="text-[10px] text-slate-500 font-mono mt-4">
+
+            If you just purchased, check your email for your access link (sometimes in Promotions/Spam).
+
+          </p>
+
+        </div>
+
+
+
+        <div className="h-10" />
+
       </main>
 
-      <Dock />
+
+
+      {/* STICKY CHECKOUT CTA */}
+
+      <AnimatePresence>
+
+        {showSticky && (
+
+          <motion.div
+
+            initial={{ y: 90, opacity: 0 }}
+
+            animate={{ y: 0, opacity: 1 }}
+
+            exit={{ y: 90, opacity: 0 }}
+
+            className="fixed bottom-0 left-0 right-0 p-4 bg-slate-950/80 backdrop-blur-lg border-t border-white/5 z-50"
+
+          >
+
+            <div className="max-w-lg mx-auto">
+
+              <div className="flex items-center justify-between mb-2">
+
+                <div className="text-left">
+
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-300">
+
+                    Selected: {PRICING[selectedPlan].title}
+
+                  </div>
+
+                  <div className="text-xs text-slate-500">
+
+                    {selectedPlan === "lifetime" ? "One-time payment • Lifetime access" : "Monthly • Cancel anytime"}
+
+                  </div>
+
+                </div>
+
+                <div className="text-right">
+
+                  <div className="text-lg font-black text-white">
+
+                    ${PRICING[selectedPlan].price.toFixed(2)}
+
+                    <span className="text-xs text-slate-500">
+
+                      {" "}
+
+                      {selectedPlan === "lifetime" ? "" : PRICING[selectedPlan].cadence}
+
+                    </span>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+
+
+              <a
+
+                href={checkoutUrl}
+
+                className={`block w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black text-lg text-center uppercase tracking-widest transition-transform active:scale-95 ${tc.glow}`}
+
+              >
+
+                {stickyCtaText}
+
+              </a>
+
+
+
+              <p className="text-center text-[10px] text-slate-500 mt-2 flex items-center justify-center gap-2 font-mono uppercase tracking-widest">
+
+                <span>🔒 Secure checkout</span> • <span>Instant access</span>
+
+              </p>
+
+            </div>
+
+          </motion.div>
+
+        )}
+
+      </AnimatePresence>
+
     </div>
+
   );
+
+}
+
+
+
+export default function PayPage() {
+
+  return (
+
+    <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+
+      <PaywallContent />
+
+    </Suspense>
+
+  );
+
 }
