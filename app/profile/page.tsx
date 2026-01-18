@@ -37,7 +37,6 @@ function formatTime(sec: number) {
 }
 
 function shortEndorsements(endorsements: string[]) {
-  // prefer known CDL letters if they exist
   const map: Record<string, string> = {
     Hazmat: "H",
     "Hazardous Materials": "H",
@@ -68,9 +67,7 @@ function loadJson<T>(key: string, fallback: T): T {
 }
 
 function loadExamHistory(): ExamHistoryItem[] {
-  // Supports both: "haul-exam-history" (new) and can fallback to nothing.
   const hist = loadJson<ExamHistoryItem[]>("haul-exam-history", []);
-  // sanitize
   return Array.isArray(hist)
     ? hist
         .filter((x) => x && typeof x.ts === "number" && typeof x.score === "number")
@@ -80,7 +77,6 @@ function loadExamHistory(): ExamHistoryItem[] {
 }
 
 function computeTrend(history: ExamHistoryItem[]) {
-  // Simple: compare avg of last 3 vs previous 3
   const last3 = history.slice(0, 3);
   const prev3 = history.slice(3, 6);
 
@@ -103,21 +99,39 @@ export default function ProfilePage() {
   const [history, setHistory] = useState<ExamHistoryItem[]>([]);
   const [arm, setArm] = useState<"locked" | "confirm">("locked");
 
+  // IMPORTANT: do NOT touch localStorage during render (prevents Next export crash)
+  const [idCode, setIdCode] = useState<string>("—");
+  const [hydrated, setHydrated] = useState(false);
+
   useEffect(() => {
+    setHydrated(true);
+
     setLicense(localStorage.getItem("userLevel") || "A");
     setUserState(localStorage.getItem("userState") || "TX");
 
-    // If you later add profile name capture, swap this line.
     setName(localStorage.getItem("userName") || "OPERATOR");
 
     const endRaw = localStorage.getItem("userEndorsements");
     setEndorsements(endRaw ? JSON.parse(endRaw) : []);
 
     setHistory(loadExamHistory());
+
+    // Operator ID (generated client-side only)
+    try {
+      const existing = localStorage.getItem("haul-operator-id");
+      if (existing) {
+        setIdCode(existing);
+      } else {
+        const val = `HX-${Math.floor(10000 + Math.random() * 89999)}`;
+        localStorage.setItem("haul-operator-id", val);
+        setIdCode(val);
+      }
+    } catch {
+      setIdCode("HX-00000");
+    }
   }, []);
 
   const stats = useMemo(() => {
-    // If no history exists, keep your old demo feel but still realistic.
     if (history.length === 0) {
       return { exams: 12, passed: 8, passRate: 67, best: 92, streak: 3, lastScore: 84 };
     }
@@ -128,7 +142,6 @@ export default function ProfilePage() {
     const best = exams ? Math.max(...history.map((h) => h.score)) : 0;
     const lastScore = history[0]?.score ?? 0;
 
-    // streak: consecutive passed from most recent
     let streak = 0;
     for (const h of history) {
       if (h.passed) streak += 1;
@@ -140,16 +153,35 @@ export default function ProfilePage() {
 
   const trend = useMemo(() => computeTrend(history), [history]);
 
-  const riskLevel = useMemo(() => {
-    // “System confidence” measure
+  const readiness = useMemo(() => {
     const base = stats.passRate;
     const bestBonus = clamp(stats.best - 80, 0, 20);
     const streakBonus = clamp(stats.streak * 4, 0, 12);
     const score = clamp(Math.round(base * 0.7 + bestBonus + streakBonus), 0, 100);
 
-    if (score >= 85) return { label: "READY", color: "text-emerald-400", border: "border-emerald-500/40", bg: "bg-emerald-500/10" };
-    if (score >= 70) return { label: "NEAR READY", color: "text-amber-400", border: "border-amber-500/40", bg: "bg-amber-500/10" };
-    return { label: "IN TRAINING", color: "text-red-400", border: "border-red-500/40", bg: "bg-red-500/10" };
+    if (score >= 85)
+      return {
+        label: "READY",
+        color: "text-emerald-400",
+        border: "border-emerald-500/40",
+        bg: "bg-emerald-500/10",
+        bar: "from-emerald-500 to-emerald-300",
+      };
+    if (score >= 70)
+      return {
+        label: "NEAR READY",
+        color: "text-amber-400",
+        border: "border-amber-500/40",
+        bg: "bg-amber-500/10",
+        bar: "from-amber-500 to-amber-300",
+      };
+    return {
+      label: "IN TRAINING",
+      color: "text-red-400",
+      border: "border-red-500/40",
+      bg: "bg-red-500/10",
+      bar: "from-red-500 to-red-300",
+    };
   }, [stats]);
 
   const handleReconfigure = () => {
@@ -157,7 +189,6 @@ export default function ProfilePage() {
   };
 
   const handleSubscription = () => {
-    // Wire this to Stripe portal later
     alert("Subscription portal coming soon.");
   };
 
@@ -173,21 +204,12 @@ export default function ProfilePage() {
     window.location.href = "/";
   };
 
-  const idCode = useMemo(() => {
-    // stable-ish device id
-    const existing = localStorage.getItem("haul-operator-id");
-    if (existing) return existing;
-
-    const val = `HX-${Math.floor(10000 + Math.random() * 89999)}`;
-    localStorage.setItem("haul-operator-id", val);
-    return val;
-  }, []);
-
   return (
     <div className="min-h-screen bg-slate-950 text-white pb-32">
       {/* Background FX */}
       <div className="fixed inset-0 pointer-events-none opacity-10 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.18),transparent_58%)]" />
       <div className="fixed inset-0 pointer-events-none opacity-[0.08] bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:28px_28px]" />
+      <div className="fixed inset-0 pointer-events-none opacity-[0.06] bg-[radial-gradient(circle_at_bottom_left,rgba(56,189,248,0.18),transparent_55%)]" />
 
       {/* Header */}
       <header className="px-6 pt-10 pb-6 max-w-3xl mx-auto">
@@ -199,13 +221,15 @@ export default function ProfilePage() {
             <h1 className="text-3xl font-black tracking-tight text-white">Driver Logbook</h1>
             <p className="text-sm text-slate-400 font-mono mt-1">
               {userState} DMV • <span className="text-amber-400">CLASS {license}</span> • ID:{" "}
-              <span className="text-slate-300">{idCode}</span>
+              <span className="text-slate-300">{hydrated ? idCode : "—"}</span>
             </p>
           </div>
 
-          <div className={`shrink-0 px-3 py-2 rounded-2xl border ${riskLevel.border} ${riskLevel.bg}`}>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">System Status</div>
-            <div className={`text-sm font-black tracking-widest ${riskLevel.color}`}>{riskLevel.label}</div>
+          <div className={`shrink-0 px-3 py-2 rounded-2xl border ${readiness.border} ${readiness.bg}`}>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+              System Status
+            </div>
+            <div className={`text-sm font-black tracking-widest ${readiness.color}`}>{readiness.label}</div>
           </div>
         </div>
       </header>
@@ -213,16 +237,16 @@ export default function ProfilePage() {
       <main className="px-4 max-w-3xl mx-auto space-y-6">
         {/* CDL Card + Telemetry */}
         <div className="grid md:grid-cols-5 gap-4">
-          {/* CDL Card Visual */}
+          {/* CDL Card */}
           <motion.div
             initial={{ rotateX: 60, opacity: 0 }}
             animate={{ rotateX: 0, opacity: 1 }}
             transition={{ type: "spring", stiffness: 110, damping: 16 }}
             className="md:col-span-3 relative overflow-hidden rounded-3xl p-6 border border-white/10 shadow-2xl"
           >
-            {/* card base */}
             <div className="absolute inset-0 bg-gradient-to-br from-slate-200 via-slate-300 to-slate-400" />
             <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_left,rgba(245,158,11,0.35),transparent_60%)]" />
+            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_bottom_right,rgba(15,23,42,0.7),transparent_58%)]" />
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-600 to-amber-400" />
             <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-white/20" />
 
@@ -288,20 +312,23 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* microprint */}
               <div className="mt-4 text-[9px] text-slate-700/80 font-mono">
                 This is a training simulation profile. Not an official DMV document.
               </div>
             </div>
           </motion.div>
 
-          {/* Telemetry Panel */}
+          {/* Telemetry */}
           <div className="md:col-span-2 space-y-3">
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5">
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Telemetry</div>
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Telemetry</div>
+                <div className={`text-[10px] font-black uppercase tracking-widest ${readiness.color}`}>
+                  {readiness.label}
+                </div>
+              </div>
 
               <div className="mt-4 space-y-4">
-                {/* overall bar */}
                 <div>
                   <div className="flex items-center justify-between text-[11px] font-mono">
                     <span className="text-slate-400">Pass Rate</span>
@@ -312,7 +339,7 @@ export default function ProfilePage() {
                       initial={{ width: 0 }}
                       animate={{ width: `${stats.passRate}%` }}
                       transition={{ type: "spring", stiffness: 120, damping: 18 }}
-                      className="h-full bg-gradient-to-r from-amber-600 to-amber-400"
+                      className={`h-full bg-gradient-to-r ${readiness.bar}`}
                     />
                   </div>
                 </div>
@@ -339,7 +366,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* trend */}
                 <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4">
                   <div className="flex items-center justify-between">
                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
@@ -397,7 +423,6 @@ export default function ProfilePage() {
               <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Recent Activity</div>
               <div className="text-sm text-slate-300 mt-1">Last runs on this device</div>
             </div>
-
             <div className="text-[10px] font-mono text-slate-500">
               {history.length ? `${history.length} records` : "No history saved yet"}
             </div>
@@ -485,7 +510,7 @@ export default function ProfilePage() {
             <span className="text-slate-500">↗</span>
           </button>
 
-          {/* Factory Reset with “arming” */}
+          {/* Factory Reset (armed) */}
           <div className="rounded-2xl border border-red-900/30 bg-red-900/10 overflow-hidden">
             <button
               onClick={handleFactoryReset}
@@ -495,9 +520,7 @@ export default function ProfilePage() {
                 <div className="text-sm font-black text-red-300">
                   {arm === "locked" ? "Factory Reset" : "Tap again to ARM"}
                 </div>
-                <div className="text-[11px] text-red-200/70 mt-0.5">
-                  Wipes local progress on this device.
-                </div>
+                <div className="text-[11px] text-red-200/70 mt-0.5">Wipes local progress on this device.</div>
               </div>
               <span className={`text-red-300 ${arm === "confirm" ? "animate-pulse" : ""}`}>⚠️</span>
             </button>
