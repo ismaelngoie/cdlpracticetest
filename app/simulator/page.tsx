@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
+import type { ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { questions, type Question, type LicenseClass, type Endorsement } from "@/lib/questions";
@@ -108,7 +109,7 @@ function Pill({
   children,
   tone = "slate",
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   tone?: "amber" | "emerald" | "red" | "slate" | "blue";
 }) {
   const cls =
@@ -121,11 +122,8 @@ function Pill({
       : tone === "blue"
       ? "bg-blue-500/10 border-blue-500/30 text-blue-400"
       : "bg-white/5 border-white/10 text-slate-300";
-  return (
-    <span className={`px-2 py-1 rounded border text-[10px] font-black uppercase tracking-widest ${cls}`}>
-      {children}
-    </span>
-  );
+
+  return <span className={`px-2 py-1 rounded border text-[10px] font-black uppercase tracking-widest ${cls}`}>{children}</span>;
 }
 
 function ProgressBar({ value }: { value: number }) {
@@ -152,7 +150,7 @@ function Modal({
   open: boolean;
   title: string;
   subtitle?: string;
-  children: React.ReactNode;
+  children: ReactNode;
   onClose: () => void;
 }) {
   return (
@@ -209,7 +207,7 @@ function Sheet({
 }: {
   open: boolean;
   title: string;
-  children: React.ReactNode;
+  children: ReactNode;
   onClose: () => void;
 }) {
   return (
@@ -563,6 +561,7 @@ export default function SimulatorPage() {
   );
 
   // --- RENDERERS ---
+
   // 1) BOOT
   if (state === "boot") {
     return (
@@ -650,52 +649,54 @@ export default function SimulatorPage() {
 
             <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
               <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Rules</div>
+
               <ul className="text-sm text-slate-300 space-y-2 leading-relaxed">
                 <li className="flex gap-2">
-                  <span className="text-amber-400">•</span> No feedback during the exam. Review flagged items at the end.
+                  <span className="text-amber-400 shrink-0">•</span>
+                  <span className="min-w-0">No feedback during the exam. Review flagged items at the end.</span>
                 </li>
+
                 <li className="flex gap-2">
-                  <span className="text-amber-400">•</span> Timer continues once started. Session auto-submits at 0:00.
+                  <span className="text-amber-400 shrink-0">•</span>
+                  <span className="min-w-0">Timer continues once started. Session auto-submits at 0:00.</span>
                 </li>
-                // ✅ Replace ONLY this <li> in your MANIFEST "Rules" list
-// (keeps bullets aligned + wraps nicely inside the box)
 
-<li className="flex gap-2">
-  <span className="text-amber-400 shrink-0">•</span>
+                {/* ✅ FIXED WRAP: shortcuts list will never overflow the box */}
+                <li className="flex gap-2">
+                  <span className="text-amber-400 shrink-0">•</span>
+                  <div className="min-w-0">
+                    <div className="text-slate-300">
+                      Shortcuts:
+                      <span className="ml-2 inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="inline-flex items-center gap-1">
+                          <span className="font-mono text-slate-200">A/B/C/D</span>
+                          <span className="text-slate-500">select</span>
+                        </span>
 
-  <div className="min-w-0">
-    <div className="text-slate-300">
-      Shortcuts:
-      <span className="ml-2 inline-flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="inline-flex items-center gap-1">
-          <span className="font-mono text-slate-200">A/B/C/D</span>
-          <span className="text-slate-500">select</span>
-        </span>
+                        <span className="text-slate-600">•</span>
 
-        <span className="text-slate-600">•</span>
+                        <span className="inline-flex items-center gap-1">
+                          <span className="font-mono text-slate-200">F</span>
+                          <span className="text-slate-500">flag</span>
+                        </span>
 
-        <span className="inline-flex items-center gap-1">
-          <span className="font-mono text-slate-200">F</span>
-          <span className="text-slate-500">flag</span>
-        </span>
+                        <span className="text-slate-600">•</span>
 
-        <span className="text-slate-600">•</span>
+                        <span className="inline-flex items-center gap-1">
+                          <span className="font-mono text-slate-200">R</span>
+                          <span className="text-slate-500">review</span>
+                        </span>
 
-        <span className="inline-flex items-center gap-1">
-          <span className="font-mono text-slate-200">R</span>
-          <span className="text-slate-500">review</span>
-        </span>
+                        <span className="text-slate-600">•</span>
 
-        <span className="text-slate-600">•</span>
-
-        <span className="inline-flex items-center gap-1">
-          <span className="font-mono text-slate-200">←/→</span>
-          <span className="text-slate-500">navigate</span>
-        </span>
-      </span>
-    </div>
-  </div>
-</li>
+                        <span className="inline-flex items-center gap-1">
+                          <span className="font-mono text-slate-200">←/→</span>
+                          <span className="text-slate-500">navigate</span>
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
               </ul>
             </div>
           </div>
@@ -708,11 +709,8 @@ export default function SimulatorPage() {
           </button>
 
           <div className="mt-4 text-center">
-            <Link
-              href="/dashboard"
-              className="text-[10px] text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-colors"
-            >
-              Back to Home
+            <Link href="/dashboard" className="text-[10px] text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-colors">
+              Back to Dashboard
             </Link>
           </div>
         </div>
@@ -766,9 +764,7 @@ export default function SimulatorPage() {
               Official Score Report • {jurisdiction} DMV
             </div>
 
-            <h1 className="text-4xl md:text-5xl font-black text-white mb-2 tracking-tight">
-              {passed ? "QUALIFIED" : "DISQUALIFIED"}
-            </h1>
+            <h1 className="text-4xl md:text-5xl font-black text-white mb-2 tracking-tight">{passed ? "QUALIFIED" : "DISQUALIFIED"}</h1>
             <p className={`text-sm font-black uppercase tracking-widest ${passed ? "text-emerald-400" : "text-red-400"}`}>
               {passed ? "Ready for DMV Certification" : "Requires Additional Training"}
             </p>
@@ -820,7 +816,7 @@ export default function SimulatorPage() {
               href="/dashboard"
               className="block w-full py-4 bg-white text-slate-950 font-black uppercase tracking-widest rounded-2xl hover:bg-slate-200 transition-colors"
             >
-              Return to Base
+              Back to Dashboard
             </Link>
 
             <Link
@@ -837,11 +833,7 @@ export default function SimulatorPage() {
 
   // Guard (rare)
   if (!currentQ) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-500 font-mono">
-        LOADING EXAM MODULE…
-      </div>
-    );
+    return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-500 font-mono">LOADING EXAM MODULE…</div>;
   }
 
   // 5) ACTIVE SIMULATOR (SECURE KIOSK)
@@ -850,11 +842,10 @@ export default function SimulatorPage() {
       {/* Background */}
       <div className="fixed inset-0 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:28px_28px]" />
       <div className="fixed inset-0 pointer-events-none opacity-10 bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.18),transparent_60%)]" />
+
       {/* Watermark */}
       <div className="fixed inset-0 pointer-events-none select-none">
-        <div className="absolute -right-20 top-24 rotate-12 text-[120px] font-black tracking-tighter text-white/5">
-          {jurisdiction}
-        </div>
+        <div className="absolute -right-20 top-24 rotate-12 text-[120px] font-black tracking-tighter text-white/5">{jurisdiction}</div>
         <div className="absolute left-8 bottom-20 text-[10px] font-mono uppercase tracking-[0.25em] text-white/10">
           SECURE EXAM MODE • {examId}
         </div>
@@ -880,9 +871,7 @@ export default function SimulatorPage() {
               </div>
               <div>
                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Unanswered</div>
-                <div className={`text-xl font-mono font-black ${unansweredCount ? "text-amber-400" : "text-emerald-400"}`}>
-                  {unansweredCount}
-                </div>
+                <div className={`text-xl font-mono font-black ${unansweredCount ? "text-amber-400" : "text-emerald-400"}`}>{unansweredCount}</div>
               </div>
             </div>
             <div className="mt-3">
@@ -911,21 +900,14 @@ export default function SimulatorPage() {
       </Modal>
 
       {/* Mobile Review Sheet */}
-      <Sheet
-        open={reviewOpen}
-        title={`Questions (${currentIdx + 1}/${activeQuestions.length})`}
-        onClose={() => setReviewOpen(false)}
-      >
+      <Sheet open={reviewOpen} title={`Questions (${currentIdx + 1}/${activeQuestions.length})`} onClose={() => setReviewOpen(false)}>
         <div className="flex items-center justify-between gap-3 mb-4">
           <div className="flex flex-wrap gap-2">
             <Pill tone="emerald">Answered {answeredCount}</Pill>
             <Pill tone="amber">Flagged {flaggedCount}</Pill>
             <Pill tone={unansweredCount ? "red" : "emerald"}>Unanswered {unansweredCount}</Pill>
           </div>
-          <button
-            onClick={() => setSubmitPromptOpen(true)}
-            className="px-4 py-2 rounded-2xl bg-white text-slate-950 font-black uppercase tracking-widest text-[10px]"
-          >
+          <button onClick={() => setSubmitPromptOpen(true)} className="px-4 py-2 rounded-2xl bg-white text-slate-950 font-black uppercase tracking-widest text-[10px]">
             Submit
           </button>
         </div>
@@ -963,11 +945,7 @@ export default function SimulatorPage() {
             <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Time Remaining</div>
             <div
               className={`text-2xl md:text-3xl font-mono font-black tracking-tight ${
-                timeTone === "red"
-                  ? "text-red-400 animate-pulse"
-                  : timeTone === "amber"
-                  ? "text-amber-400"
-                  : "text-white"
+                timeTone === "red" ? "text-red-400 animate-pulse" : timeTone === "amber" ? "text-amber-400" : "text-white"
               }`}
             >
               {formatTime(timeLeft)}
@@ -986,9 +964,7 @@ export default function SimulatorPage() {
             <button
               onClick={toggleFlag}
               className={`px-4 py-2 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all ${
-                flags.has(currentIdx)
-                  ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
-                  : "border-slate-800 bg-slate-900/50 hover:bg-slate-900 text-slate-200"
+                flags.has(currentIdx) ? "bg-amber-500/10 border-amber-500/30 text-amber-400" : "border-slate-800 bg-slate-900/50 hover:bg-slate-900 text-slate-200"
               }`}
               title="Flag (F)"
             >
@@ -1035,9 +1011,7 @@ export default function SimulatorPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Pill tone="slate">{currentQ.category}</Pill>
-                  {currentQ.endorsements && currentQ.endorsements.length > 0 && (
-                    <Pill tone="blue">{currentQ.endorsements[0]} Module</Pill>
-                  )}
+                  {currentQ.endorsements && currentQ.endorsements.length > 0 && <Pill tone="blue">{currentQ.endorsements[0]} Module</Pill>}
                   {answers[currentIdx] !== undefined && <Pill tone="emerald">Answer Recorded</Pill>}
                   {flags.has(currentIdx) && <Pill tone="amber">Marked for Review</Pill>}
                 </div>
@@ -1071,20 +1045,14 @@ export default function SimulatorPage() {
                       <div className="flex items-start gap-4">
                         <div
                           className={`mt-0.5 w-8 h-8 shrink-0 rounded-xl flex items-center justify-center text-[11px] font-black border transition-colors ${
-                            isSelected
-                              ? "bg-amber-500 border-amber-500 text-slate-950"
-                              : "border-slate-700 text-slate-400 group-hover:border-slate-500"
+                            isSelected ? "bg-amber-500 border-amber-500 text-slate-950" : "border-slate-700 text-slate-400 group-hover:border-slate-500"
                           }`}
                         >
                           {String.fromCharCode(65 + i)}
                         </div>
 
                         <div className="flex-1">
-                          <div
-                            className={`text-base md:text-lg ${
-                              isSelected ? "text-white font-bold" : "text-slate-300 group-hover:text-slate-100"
-                            }`}
-                          >
+                          <div className={`text-base md:text-lg ${isSelected ? "text-white font-bold" : "text-slate-300 group-hover:text-slate-100"}`}>
                             {opt}
                           </div>
                           <div className="mt-1 text-[10px] font-mono uppercase tracking-widest text-slate-600">
@@ -1174,11 +1142,8 @@ export default function SimulatorPage() {
                 </button>
 
                 <div className="text-center">
-                  <Link
-                    href="/dashboard"
-                    className="text-[10px] text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-colors"
-                  >
-                    Exit to Command Center
+                  <Link href="/dashboard" className="text-[10px] text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-colors">
+                    Back to Dashboard
                   </Link>
                 </div>
               </div>
@@ -1194,9 +1159,7 @@ export default function SimulatorPage() {
             onClick={() => setCurrentIdx((p) => Math.max(0, p - 1))}
             disabled={currentIdx === 0}
             className={`px-5 py-3 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-colors border ${
-              currentIdx === 0
-                ? "text-slate-700 border-slate-900 bg-slate-950 cursor-not-allowed"
-                : "text-slate-200 border-slate-800 bg-slate-900/40 hover:bg-slate-900"
+              currentIdx === 0 ? "text-slate-700 border-slate-900 bg-slate-950 cursor-not-allowed" : "text-slate-200 border-slate-800 bg-slate-900/40 hover:bg-slate-900"
             }`}
           >
             ← Previous
@@ -1206,9 +1169,7 @@ export default function SimulatorPage() {
             <button
               onClick={toggleFlag}
               className={`px-4 py-3 rounded-2xl font-black text-[11px] uppercase tracking-widest border transition-colors ${
-                flags.has(currentIdx)
-                  ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
-                  : "bg-slate-900/40 border-slate-800 text-slate-200 hover:bg-slate-900"
+                flags.has(currentIdx) ? "bg-amber-500/10 border-amber-500/30 text-amber-400" : "bg-slate-900/40 border-slate-800 text-slate-200 hover:bg-slate-900"
               }`}
             >
               ⚑ Flag
