@@ -179,7 +179,10 @@ function Modal({
   );
 }
 
-async function postJson<T>(url: string, body: any): Promise<{ ok: boolean; status: number; data?: T; error?: string }> {
+async function postJson<T>(
+  url: string,
+  body: any
+): Promise<{ ok: boolean; status: number; data?: T; error?: string }> {
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -282,10 +285,20 @@ export default function ProfilePage() {
     setHistory(loadExamHistory());
 
     // Billing email (if previously saved)
-    const be = String(localStorage.getItem("billingEmail") || "").trim().toLowerCase();
+    const be = String(
+      localStorage.getItem("billingEmail") ||
+        localStorage.getItem("haulOS.email.v1") ||
+        localStorage.getItem("userEmail") ||
+        ""
+    )
+      .trim()
+      .toLowerCase();
     if (be) {
       setBillingEmail(be);
       setEmailDraft(be);
+      try {
+        localStorage.setItem("billingEmail", be);
+      } catch {}
     }
 
     // Operator ID (client-side only)
@@ -428,6 +441,8 @@ export default function ProfilePage() {
     setBillingEmail(e);
     try {
       localStorage.setItem("billingEmail", e);
+      localStorage.setItem("haulOS.email.v1", e);
+      localStorage.setItem("userEmail", e);
     } catch {}
 
     setBillingModalOpen(false);
@@ -589,7 +604,7 @@ export default function ProfilePage() {
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-60" />
 
             <div className="relative">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div className="min-w-0">
                   <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Operator</div>
                   <div className="mt-1 text-2xl font-black tracking-tight text-white truncate">
@@ -621,7 +636,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div className="shrink-0 text-right">
+                <div className="w-full sm:w-[240px] sm:shrink-0 text-left sm:text-right">
                   <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Account</div>
 
                   <div
@@ -638,7 +653,9 @@ export default function ProfilePage() {
                     <span className="text-[10px] font-black uppercase tracking-widest">{accessBadge.text}</span>
                   </div>
 
-                  <div className="mt-2 text-[11px] text-slate-400 max-w-[200px]">{accessBadge.hint}</div>
+                  <div className="mt-2 text-[11px] text-slate-400 max-w-none sm:max-w-[200px]">
+                    {accessBadge.hint}
+                  </div>
 
                   <div className="mt-4">
                     <button
@@ -773,7 +790,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="mt-2 text-[11px] text-slate-400">
                     Email:{" "}
-                    <span className="text-slate-200 font-mono font-black">
+                    <span className="text-slate-200 font-mono font-black break-all">
                       {billingEmail ? billingEmail : "Not set"}
                     </span>
                   </div>
@@ -974,7 +991,9 @@ export default function ProfilePage() {
               className="w-full flex items-center justify-between p-5 hover:bg-red-900/15 transition-colors"
             >
               <div className="text-left">
-                <div className="text-sm font-black text-red-300">{arm === "locked" ? "Factory Reset" : "Tap again to ARM"}</div>
+                <div className="text-sm font-black text-red-300">
+                  {arm === "locked" ? "Factory Reset" : "Tap again to ARM"}
+                </div>
                 <div className="text-[11px] text-red-200/70 mt-0.5">Wipes local progress on this device.</div>
               </div>
               <span className={`text-red-300 ${arm === "confirm" ? "animate-pulse" : ""}`}>⚠️</span>
