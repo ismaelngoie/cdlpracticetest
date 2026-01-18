@@ -1,9 +1,7 @@
 // app/study/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
-import type { ReactNode } from "react";
-import { createPortal } from "react-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Dock from "@/components/Dock";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -100,22 +98,7 @@ function getStateName(code: string) {
   return STATE_NAMES[up] || up;
 }
 
-function slugify(input: string) {
-  return input
-    .toLowerCase()
-    .trim()
-    .replace(/&/g, "and")
-    .replace(/\//g, "-")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
-function computeWeakestDomain(
-  license: LicenseClass,
-  endorsements: Endorsement[],
-  masteredIds: number[]
-) {
+function computeWeakestDomain(license: LicenseClass, endorsements: Endorsement[], masteredIds: number[]) {
   // Weakest = lowest mastery % among relevant categories with >= 5 questions
   const relevantQs = questions.filter((q) => {
     if (!q.licenseClasses.includes(license)) return false;
@@ -132,10 +115,8 @@ function computeWeakestDomain(
     const catQs = relevantQs.filter((q) => q.category === cat);
     const total = catQs.length;
     if (total < 5) continue;
-
     const mastered = catQs.filter((q) => masteredIds.includes(q.id)).length;
     const pct = total ? Math.round((mastered / total) * 100) : 0;
-
     if (pct < weakest.pct) weakest = { cat, pct, total };
   }
 
@@ -148,7 +129,7 @@ function Pill({
   children,
   tone = "slate",
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
   tone?: "amber" | "emerald" | "red" | "slate" | "blue";
 }) {
   const cls =
@@ -183,11 +164,7 @@ function ProgressBar({ value }: { value: number }) {
   );
 }
 
-/**
- * ✅ FIX: Centering bug for PDF viewer modal.
- * We portal the modal to document.body so it’s not affected by any transformed parent / stacking contexts,
- * and we center using a fixed flex container (no translate math).
- */
+// Centered, scroll-safe, production modal
 function Modal({
   open,
   title,
@@ -198,13 +175,9 @@ function Modal({
   open: boolean;
   title: string;
   subtitle?: string;
-  children: ReactNode;
+  children: React.ReactNode;
   onClose: () => void;
 }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
-
   // lock scroll
   useEffect(() => {
     if (!open) return;
@@ -215,6 +188,7 @@ function Modal({
     };
   }, [open]);
 
+  // esc to close
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -224,264 +198,440 @@ function Modal({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  if (!mounted) return null;
-
-  return createPortal(
+  return (
     <AnimatePresence>
       {open && (
-        <motion.div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          {/* Backdrop */}
+        <>
           <motion.button
             aria-label="Close modal"
             onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           />
-
-          {/* Panel */}
           <motion.div
             role="dialog"
             aria-modal="true"
-            className="relative w-full max-w-4xl max-h-[92vh] overflow-hidden"
-            initial={{ opacity: 0, y: 12, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.98 }}
-            transition={{ duration: 0.18 }}
+            className="fixed inset-0 z-[90] flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           >
-            <div className="bg-slate-950 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden">
-              <div className="p-5 md:p-6 border-b border-slate-800 flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Manuals Viewer</div>
-                  <h3 className="text-xl md:text-2xl font-black text-white mt-1 truncate">{title}</h3>
-                  {subtitle && <p className="text-sm text-slate-400 mt-1">{subtitle}</p>}
+            <motion.div
+              className="w-full max-w-4xl"
+              initial={{ y: 12, scale: 0.985 }}
+              animate={{ y: 0, scale: 1 }}
+              exit={{ y: 12, scale: 0.985 }}
+              transition={{ duration: 0.18 }}
+            >
+              <div className="bg-slate-950 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden max-h-[88vh] flex flex-col">
+                <div className="p-5 md:p-6 border-b border-slate-800 flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Manuals Console</div>
+                    <h3 className="text-xl md:text-2xl font-black text-white mt-1 truncate">{title}</h3>
+                    {subtitle && <p className="text-sm text-slate-400 mt-1">{subtitle}</p>}
+                  </div>
+                  <button
+                    onClick={onClose}
+                    className="w-10 h-10 rounded-2xl border border-slate-800 bg-slate-900/60 hover:bg-slate-900 flex items-center justify-center text-slate-300 shrink-0"
+                    aria-label="Close"
+                  >
+                    ✕
+                  </button>
                 </div>
-                <button
-                  onClick={onClose}
-                  className="w-10 h-10 rounded-2xl border border-slate-800 bg-slate-900/60 hover:bg-slate-900 flex items-center justify-center text-slate-300 shrink-0"
-                >
-                  ✕
-                </button>
+                <div className="p-5 md:p-6 overflow-auto">{children}</div>
               </div>
-
-              {/* Scrollable content area (keeps panel centered even if tall) */}
-              <div className="p-5 md:p-6 overflow-auto max-h-[calc(92vh-92px)]">{children}</div>
-            </div>
+            </motion.div>
           </motion.div>
-        </motion.div>
+        </>
       )}
-    </AnimatePresence>,
-    document.body
+    </AnimatePresence>
   );
 }
 
-async function urlExists(url: string) {
-  try {
-    // HEAD is cheapest; some servers may block it -> fallback to GET
-    const head = await fetch(url, { method: "HEAD", cache: "no-store" });
-    if (head.ok) return true;
-    if (head.status === 405 || head.status === 403) {
-      const get = await fetch(url, { method: "GET", cache: "no-store" });
-      return get.ok;
-    }
-    return false;
-  } catch {
-    return false;
-  }
+function SectionCard({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
+      <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="text-sm">{icon || "📘"}</div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 truncate">{title}</div>
+        </div>
+        <div className="text-[10px] font-mono uppercase tracking-widest text-slate-600">Quick Sheet</div>
+      </div>
+      <div className="p-4">{children}</div>
+    </div>
+  );
 }
 
-function StateQuickSheet({ stateCode, onClose }: { stateCode: string; onClose: () => void }) {
+function BulletList({ items }: { items: string[] }) {
+  return (
+    <ul className="space-y-2 text-sm text-slate-300 leading-relaxed">
+      {items.map((b, i) => (
+        <li key={i} className="flex gap-2">
+          <span className="text-amber-400">•</span>
+          <span className="min-w-0">{b}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function StateQuickSheet({
+  stateCode,
+  license,
+  endorsements,
+}: {
+  stateCode: string;
+  license: LicenseClass;
+  endorsements: Endorsement[];
+}) {
   const code = (stateCode || "TX").toUpperCase();
   const name = getStateName(code);
 
-  // You’ll place PDFs here:
-  // public/manuals/states/TX.pdf, CA.pdf, ... and a fallback:
-  // public/manuals/states/GENERIC.pdf
-  const primary = `/manuals/states/${code}.pdf`;
-  const fallback = `/manuals/states/GENERIC.pdf`;
+  const headline = useMemo(() => {
+    const end = endorsements.length ? ` + ${endorsements.join(", ")}` : "";
+    return `${name} (${code}) — CDL Quick Sheet • Class ${license}${end}`;
+  }, [name, code, license, endorsements]);
 
-  const [resolvedPdf, setResolvedPdf] = useState<string>(primary);
-  const [status, setStatus] = useState<"checking" | "ok" | "fallback">("checking");
-
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      setStatus("checking");
-      const ok = await urlExists(primary);
-      if (!alive) return;
-      if (ok) {
-        setResolvedPdf(primary);
-        setStatus("ok");
-      } else {
-        setResolvedPdf(fallback);
-        setStatus("fallback");
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [primary, fallback]);
-
-  const bullets = useMemo(() => {
+  const keyFacts = useMemo(() => {
     return [
-      `This is the ${name} (${code}) quick sheet used to mirror DMV-style wording and references.`,
-      `Use it for: penalties & citations phrasing, inspection cues, and state-specific terminology that shows up on exams.`,
-      `If anything here conflicts with an official manual, the official ${name} DMV manual wins.`,
+      "Your state CDL program follows federal FMCSA baseline rules; test wording and admin steps can vary by state.",
+      "Treat this sheet as a high-yield memory aid for common exam phrasing: safety systems, inspection logic, and rule structure.",
+      "If your state handbook uses a different term or emphasis, follow the official wording (the test mirrors the handbook).",
     ];
-  }, [name, code]);
+  }, []);
+
+  const compliance = useMemo(() => {
+    return [
+      "Alcohol & drugs: operating a CMV after consuming alcohol is prohibited; CDL penalties can be severe under federal baseline rules.",
+      "Medical qualification: keep your medical certificate current if required for your type of driving (interstate/intrastate rules may differ).",
+      "Hours-of-Service: most CDL exams expect the structure of daily driving/on-duty limits and the idea of mandatory off-duty time.",
+      "Cell phone & distracted driving: handheld use while driving a CMV is a high-risk violation topic in manuals and test questions.",
+    ];
+  }, []);
+
+  const safety = useMemo(() => {
+    return [
+      "Space management: expect questions on following distance, managing speed, and hazard recognition (rain, fog, night driving).",
+      "Railroad crossings: stop/scan/listen rules and “no shifting on tracks” is a common test theme.",
+      "Work zones: reduce speed early, keep lane discipline, and never tailgate in construction areas.",
+      "Emergency equipment: triangles/flares placement logic is commonly tested (scene safety first, warn traffic, call for help).",
+    ];
+  }, []);
+
+  const inspection = useMemo(() => {
+    return [
+      "Pre-trip mindset: start broad (leaks/lean/tilt), then tires/wheels/brakes, then lights/reflectors, then coupling/cargo, then in-cab safety.",
+      "Brakes: for air brakes, know the purpose of the governor, warning devices, and why air leaks matter under pressure.",
+      "Steering & suspension: “not bent, cracked, or broken” language is everywhere—expect it in both questions and explanations.",
+      "Cargo securement: test writers love the concept of checking load early and often, especially after the first miles and after breaks.",
+    ];
+  }, []);
+
+  const examTactics = useMemo(() => {
+    return [
+      "Look for absolute words (always/never) unless the rule truly is absolute; many questions hide exceptions in the stem.",
+      "When two answers sound right, choose the one that emphasizes safety + legality (inspection, stopping, reporting, control).",
+      "If the question mentions ‘air pressure’, ‘warning’, or ‘leak’, the safest action is usually to stop and correct before continuing.",
+      "If a scenario feels like a trap, slow down: test questions often reward the first safe step, not the final fix.",
+    ];
+  }, []);
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Pill tone="blue">{code} DMV</Pill>
-        <Pill tone="slate">PDF View</Pill>
-        <Pill tone={status === "fallback" ? "amber" : "emerald"}>
-          {status === "checking" ? "Checking…" : status === "fallback" ? "Fallback Pack" : "State Pack"}
-        </Pill>
+        <Pill tone="blue">{code} CDL</Pill>
+        <Pill tone="slate">State Handbook Style</Pill>
+        <Pill tone="amber">Exam Wording</Pill>
       </div>
 
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">What this is</div>
-        <ul className="space-y-2 text-sm text-slate-300 leading-relaxed">
-          {bullets.map((b, i) => (
-            <li key={i} className="flex gap-2">
-              <span className="text-amber-400">•</span>
-              <span>{b}</span>
-            </li>
-          ))}
-        </ul>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          <a
-            href={resolvedPdf}
-            target="_blank"
-            rel="noreferrer"
-            className="px-4 py-2 rounded-xl bg-white text-slate-950 font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-colors"
-          >
-            Open in New Tab
-          </a>
-          <a
-            href={resolvedPdf}
-            download
-            className="px-4 py-2 rounded-xl border border-slate-800 bg-slate-950/40 text-slate-200 font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-colors"
-          >
-            Download
-          </a>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl border border-slate-800 bg-slate-950/40 text-slate-200 font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-colors"
-          >
-            Close
-          </button>
+      <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Overview</div>
+        <div className="text-white font-black">{headline}</div>
+        <div className="mt-3">
+          <BulletList items={keyFacts} />
         </div>
-
-        {status === "fallback" && (
-          <div className="mt-3 text-[11px] text-amber-300/80">
-            State PDF not found at <span className="font-mono text-amber-200">{primary}</span>. Showing fallback pack instead.
-            (Add a file at that path to enable true state-specific packs.)
-          </div>
-        )}
       </div>
 
-      <div className="rounded-2xl border border-slate-800 bg-slate-950/30 overflow-hidden">
-        <div className="p-3 border-b border-slate-800 flex items-center justify-between">
-          <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Preview</div>
-          <div className="text-[10px] font-mono uppercase tracking-widest text-slate-600">{resolvedPdf}</div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <SectionCard title="High-Yield Compliance Themes" icon="🧾">
+          <BulletList items={compliance} />
+        </SectionCard>
 
-        {/* PDF Preview */}
-        <div className="h-[62vh] bg-black">
-          <iframe title={`${code} quick sheet`} src={resolvedPdf} className="w-full h-full" />
-        </div>
+        <SectionCard title="Driving Safety Themes" icon="🛡️">
+          <BulletList items={safety} />
+        </SectionCard>
+
+        <SectionCard title="Inspection & Equipment Logic" icon="🔍">
+          <BulletList items={inspection} />
+        </SectionCard>
+
+        <SectionCard title="Test Strategy That Works" icon="🎯">
+          <BulletList items={examTactics} />
+        </SectionCard>
+      </div>
+
+      <div className="flex flex-wrap gap-2 pt-1">
+        <span className="text-[11px] text-slate-500">
+          Tip: if you switch your state in onboarding, this sheet updates instantly so your study wording stays consistent.
+        </span>
       </div>
     </div>
   );
 }
 
-function ModuleManualViewer({ category, onClose }: { category: string; onClose: () => void }) {
-  // Optional: per-module PDFs
-  // public/manuals/modules/<slug>.pdf and a fallback GENERIC-MODULE.pdf
-  const slug = slugify(category);
-  const primary = `/manuals/modules/${slug}.pdf`;
-  const fallback = `/manuals/modules/GENERIC-MODULE.pdf`;
+type ModuleSection = { title: string; bullets: string[]; icon?: string };
 
-  const [resolvedPdf, setResolvedPdf] = useState<string>(primary);
-  const [status, setStatus] = useState<"checking" | "ok" | "fallback">("checking");
+function buildModuleNotes(category: string): ModuleSection[] {
+  // Production content (no “drop a PDF” or placeholder instructions).
+  const base: ModuleSection[] = [
+    {
+      title: "What the test is really checking",
+      icon: "🧠",
+      bullets: [
+        "Whether you recognize the safest first action (slow down, stop, secure, inspect) before anything else.",
+        "Whether you know the system’s purpose (what the part does) and the failure risk (what happens if it’s wrong).",
+        "Whether you can apply a rule to a scenario (not memorize a sentence).",
+      ],
+    },
+    {
+      title: "Answer-pattern traps",
+      icon: "⚠️",
+      bullets: [
+        "Two options can be ‘true’—the correct one is usually the safest and most immediate action.",
+        "Watch for hidden qualifiers: downhill, wet roads, night, heavy load, air pressure, warning light.",
+        "Avoid aggressive driving answers (speeding up, late braking, tight following) unless the scenario explicitly requires it.",
+      ],
+    },
+  ];
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      setStatus("checking");
-      const ok = await urlExists(primary);
-      if (!alive) return;
-      if (ok) {
-        setResolvedPdf(primary);
-        setStatus("ok");
-      } else {
-        setResolvedPdf(fallback);
-        setStatus("fallback");
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [primary, fallback]);
+  const byCat: Record<string, ModuleSection[]> = {
+    "General Knowledge": [
+      {
+        title: "Core rules that show up everywhere",
+        icon: "📘",
+        bullets: [
+          "Safety-first decision making: control the vehicle, protect the scene, then communicate and document.",
+          "Basic CMV control: smooth steering, controlled braking, lane discipline, and scanning far ahead.",
+          "Weight & balance intuition: heavier loads increase stopping distance and reduce maneuver tolerance.",
+          "Know common disqualifier topics: reckless behavior, impaired driving, leaving the scene, and serious violations.",
+        ],
+      },
+      ...base,
+    ],
+    "Driving Safely": [
+      {
+        title: "The ‘safe driver’ checklist",
+        icon: "🛡️",
+        bullets: [
+          "Space + speed management: keep room to stop and room to escape; adjust early, not late.",
+          "Scan, identify, predict: intersections, merges, work zones, pedestrians, and aggressive drivers.",
+          "Weather response: reduce speed before the hazard, increase following distance, and avoid sudden inputs.",
+          "Downhill control: choose a safe speed early, use proper gear/braking technique, and avoid overheating brakes.",
+        ],
+      },
+      ...base,
+    ],
+    "Air Brakes": [
+      {
+        title: "How exam questions are framed",
+        icon: "💨",
+        bullets: [
+          "Expect scenarios about warning devices, pressure loss, and what to do when a system is not building air correctly.",
+          "Know the idea of an air leak being dangerous because braking capacity depends on stored air pressure.",
+          "Test writers emphasize ‘stop safely and fix’ when braking integrity is in doubt.",
+        ],
+      },
+      {
+        title: "High-yield system concepts",
+        icon: "⚙️",
+        bullets: [
+          "Air pressure builds from the compressor and must stay within safe operating range.",
+          "Low-air warnings exist so you act before braking becomes unreliable.",
+          "Parking brakes/spring brakes are designed to engage when pressure is too low—know the safety intent.",
+        ],
+      },
+      ...base,
+    ],
+    "Pre-Trip Inspection": [
+      {
+        title: "Inspection logic the DMV loves",
+        icon: "🔍",
+        bullets: [
+          "A good inspection is systematic: front-to-back, top-to-bottom, outside then in-cab checks.",
+          "Use consistent language: secure, mounted, not leaking, not damaged, proper inflation/tread, no visible defects.",
+          "If the question mentions leaks, missing parts, or unsafe tires/brakes—your correct action is usually to take it out of service.",
+        ],
+      },
+      {
+        title: "Commonly-tested components",
+        icon: "🧰",
+        bullets: [
+          "Tires/wheels: tread, inflation, damage, lug nuts, rims—these are frequent test targets.",
+          "Brakes: linings, drums, hoses/chambers—anything compromised is a ‘do not drive’ situation.",
+          "Lights/reflectors: visibility and legal compliance—expect questions about mandatory functioning lights.",
+        ],
+      },
+      ...base,
+    ],
+    "Combination Vehicles": [
+      {
+        title: "What separates combo questions",
+        icon: "🔗",
+        bullets: [
+          "Coupling/uncoupling safety steps: secure vehicle, verify connection, and check before moving.",
+          "Trailer swing, off-tracking, and longer stopping distances are core scenario themes.",
+          "If the question mentions coupling integrity, always prioritize verification before driving.",
+        ],
+      },
+      ...base,
+    ],
+    "Doubles/Triples": [
+      {
+        title: "Doubles/Triples focus areas",
+        icon: "🚛",
+        bullets: [
+          "Stability and handling: more articulation points means more risk from speed, wind, and sudden inputs.",
+          "Spacing and braking: longer stopping distance and less tolerance for aggressive maneuvers.",
+          "Hookup order and inspection steps: secure, connect correctly, and check before moving.",
+        ],
+      },
+      ...base,
+    ],
+    "Tank Vehicles": [
+      {
+        title: "Tank vehicle reality",
+        icon: "💧",
+        bullets: [
+          "Liquid surge/slosh is the key concept: it changes braking/turning behavior.",
+          "Smooth control matters: gentle acceleration, braking, and steering reduce surge risk.",
+          "Expect scenario questions that reward slow, deliberate inputs and extra space.",
+        ],
+      },
+      ...base,
+    ],
+    "Hazardous Materials": [
+      {
+        title: "Hazmat question patterns",
+        icon: "☢️",
+        bullets: [
+          "Placards and shipping papers appear often—questions focus on knowing what must be present and how it’s used.",
+          "Safety actions come first: protect yourself and the public, communicate, and follow procedures.",
+          "Expect items on prohibited actions (unsafe parking/ignition sources) and strict compliance mindset.",
+        ],
+      },
+      ...base,
+    ],
+    Passenger: [
+      {
+        title: "Passenger emphasis",
+        icon: "👥",
+        bullets: [
+          "Safety + communication: secure stops, passenger control, and clear procedures.",
+          "Expect questions about safe loading/unloading, emergency exits, and defensive driving.",
+          "Test writers reward calm, methodical actions that protect passengers first.",
+        ],
+      },
+      ...base,
+    ],
+    "School Bus": [
+      {
+        title: "School bus emphasis",
+        icon: "🚸",
+        bullets: [
+          "Child safety procedures are central: loading/unloading discipline and hazard awareness.",
+          "Expect scenario questions that reward stopping early, scanning, and strict procedure compliance.",
+          "If the question involves students near the bus, the safest action and visibility check usually wins.",
+        ],
+      },
+      ...base,
+    ],
+    "Transporting Cargo": [
+      {
+        title: "Cargo questions",
+        icon: "📦",
+        bullets: [
+          "Securement logic: prevent movement, distribute weight, and re-check periodically.",
+          "Expect questions about shifting loads and how they affect control (rollover risk, braking distance).",
+          "Test writers reward inspection and re-tightening discipline over ‘keep driving’ answers.",
+        ],
+      },
+      ...base,
+    ],
+    "Vehicle Control": [
+      {
+        title: "Control under pressure",
+        icon: "⚙️",
+        bullets: [
+          "Skids and recovery: don’t panic; reduce speed, steer deliberately, avoid overcorrection.",
+          "Curves and ramps: slow before entering; avoid hard braking mid-curve.",
+          "Emergency situations: choose the least-bad outcome—protect life first, then property.",
+        ],
+      },
+      ...base,
+    ],
+    "Safety Systems": [
+      {
+        title: "Systems & warnings",
+        icon: "🚨",
+        bullets: [
+          "Warning lights and gauges exist so you act early—questions usually reward immediate safe response.",
+          "If a system affects braking/steering/visibility, the correct answer often involves stopping to address it.",
+          "Know the purpose of safety devices (not just names): why they exist, what failure looks like, and what action follows.",
+        ],
+      },
+      ...base,
+    ],
+  };
+
+  return byCat[category] || [
+    {
+      title: "Module essentials",
+      icon: "📚",
+      bullets: [
+        "Expect scenario-style questions: choose the safest first action and the most compliant procedure.",
+        "Learn the parts, but focus on why they matter (failure risk) and what you do when something is wrong.",
+        "When unsure, pick the answer that increases safety margin: slow down, increase space, stop to inspect, secure the load.",
+      ],
+    },
+    ...base,
+  ];
+}
+
+function ModuleNotesViewer({ category }: { category: string }) {
+  const sections = useMemo(() => buildModuleNotes(category), [category]);
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Pill tone="slate">Module</Pill>
+        <Pill tone="slate">Module Notes</Pill>
         <Pill tone="blue">{category}</Pill>
-        <Pill tone={status === "fallback" ? "amber" : "emerald"}>
-          {status === "checking" ? "Checking…" : status === "fallback" ? "Fallback Manual" : "Manual Found"}
-        </Pill>
+        <Pill tone="amber">High-Yield</Pill>
       </div>
 
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">How to use</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {sections.map((s) => (
+          <SectionCard key={s.title} title={s.title} icon={s.icon}>
+            <BulletList items={s.bullets} />
+          </SectionCard>
+        ))}
+      </div>
+
+      <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">How to use this</div>
         <div className="text-sm text-slate-300 leading-relaxed">
-          Use this PDF as a reference companion while drilling questions. If you don’t have a module PDF yet, the fallback manual is shown—drop your PDF at{" "}
-          <span className="font-mono text-slate-200">{primary}</span>.
-        </div>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          <a
-            href={resolvedPdf}
-            target="_blank"
-            rel="noreferrer"
-            className="px-4 py-2 rounded-xl bg-white text-slate-950 font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-colors"
-          >
-            Open in New Tab
-          </a>
-          <a
-            href={resolvedPdf}
-            download
-            className="px-4 py-2 rounded-xl border border-slate-800 bg-slate-950/40 text-slate-200 font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-colors"
-          >
-            Download
-          </a>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl border border-slate-800 bg-slate-950/40 text-slate-200 font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-colors"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-slate-800 bg-slate-950/30 overflow-hidden">
-        <div className="p-3 border-b border-slate-800 flex items-center justify-between">
-          <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Preview</div>
-          <div className="text-[10px] font-mono uppercase tracking-widest text-slate-600">{resolvedPdf}</div>
-        </div>
-        <div className="h-[62vh] bg-black">
-          <iframe title={`${category} manual`} src={resolvedPdf} className="w-full h-full" />
+          Open these notes side-by-side with practice questions. When you miss a question, identify which rule or safety principle it
+          tested, then re-run 10–15 questions from the same module.
         </div>
       </div>
     </div>
@@ -496,9 +646,9 @@ export default function StudyPage() {
   const [query, setQuery] = useState("");
   const [focusOnly, setFocusOnly] = useState(false);
 
-  const [statePdfOpen, setStatePdfOpen] = useState(false);
-  const [modulePdfOpen, setModulePdfOpen] = useState(false);
-  const [activeModuleForPdf, setActiveModuleForPdf] = useState<string>("");
+  const [stateSheetOpen, setStateSheetOpen] = useState(false);
+  const [moduleNotesOpen, setModuleNotesOpen] = useState(false);
+  const [activeModule, setActiveModule] = useState<string>("");
 
   useEffect(() => {
     setLicense((localStorage.getItem("userLevel") as LicenseClass) || "A");
@@ -575,9 +725,9 @@ export default function StudyPage() {
     return { total, mastered, pct };
   }, [relevantQuestions, masteredIds]);
 
-  const openModulePdf = useCallback((cat: string) => {
-    setActiveModuleForPdf(cat);
-    setModulePdfOpen(true);
+  const openModuleNotes = useCallback((cat: string) => {
+    setActiveModule(cat);
+    setModuleNotesOpen(true);
   }, []);
 
   const stateName = useMemo(() => getStateName(userState), [userState]);
@@ -588,40 +738,34 @@ export default function StudyPage() {
       <div className="fixed inset-0 pointer-events-none opacity-10 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.16),transparent_58%)]" />
       <div className="fixed inset-0 pointer-events-none opacity-[0.08] bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:28px_28px]" />
 
-      {/* State PDF modal */}
+      {/* State Quick Sheet modal */}
       <Modal
-        open={statePdfOpen}
-        title={`${stateName} (${userState}) — Jurisdiction Quick Sheet`}
-        subtitle="State-linked PDF pack (with automatic fallback if missing)."
-        onClose={() => setStatePdfOpen(false)}
+        open={stateSheetOpen}
+        title={`${stateName} (${userState}) — CDL Quick Sheet`}
+        subtitle="High-yield handbook-style notes tuned to common DMV test wording."
+        onClose={() => setStateSheetOpen(false)}
       >
-        <StateQuickSheet stateCode={userState} onClose={() => setStatePdfOpen(false)} />
+        <StateQuickSheet stateCode={userState} license={license} endorsements={endorsements} />
       </Modal>
 
-      {/* Module PDF modal */}
+      {/* Module Notes modal */}
       <Modal
-        open={modulePdfOpen}
-        title={`${activeModuleForPdf || "Module"} — Manual PDF`}
-        subtitle="Per-module reference PDF (optional)."
-        onClose={() => setModulePdfOpen(false)}
+        open={moduleNotesOpen}
+        title={`${activeModule || "Module"} — Manual Notes`}
+        subtitle="Production study notes for this module."
+        onClose={() => setModuleNotesOpen(false)}
       >
-        <ModuleManualViewer
-          category={activeModuleForPdf || "General Knowledge"}
-          onClose={() => setModulePdfOpen(false)}
-        />
+        <ModuleNotesViewer category={activeModule || "General Knowledge"} />
       </Modal>
 
       {/* Header */}
       <header className="px-6 pt-10 pb-6 max-w-3xl mx-auto">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
-              Training Console
-            </div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Training Console</div>
             <h1 className="text-3xl font-black tracking-tight text-white mb-2">Technical Manuals</h1>
             <p className="text-sm text-slate-400 font-mono">
-              RIG CONFIGURATION:{" "}
-              <span className="text-amber-500">CLASS {license}</span>{" "}
+              RIG CONFIGURATION: <span className="text-amber-500">CLASS {license}</span>{" "}
               <span className="text-slate-600">•</span>{" "}
               <span className="text-slate-400">
                 {userState} DMV ({stateName})
@@ -631,7 +775,7 @@ export default function StudyPage() {
             <div className="mt-3 flex flex-wrap gap-2">
               <Pill tone="slate">Manuals</Pill>
               <Pill tone="slate">Study Mode</Pill>
-              <Pill tone="amber">PDF Viewer</Pill>
+              <Pill tone="amber">Quick Sheets</Pill>
             </div>
           </div>
 
@@ -676,7 +820,7 @@ export default function StudyPage() {
       </header>
 
       <main className="px-4 max-w-3xl mx-auto space-y-4">
-        {/* High-value “Focus Target” panel */}
+        {/* Focus Target */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -685,9 +829,7 @@ export default function StudyPage() {
           <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_left,rgba(245,158,11,0.16),transparent_60%)]" />
           <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">
-                Recommended Focus
-              </div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Recommended Focus</div>
               <div className="flex items-center gap-3">
                 <div className="text-2xl">{ICONS[weakestDomain] || "📍"}</div>
                 <div>
@@ -716,27 +858,24 @@ export default function StudyPage() {
           </div>
         </motion.div>
 
-        {/* “Jurisdiction Data” panel */}
+        {/* Jurisdiction panel */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-emerald-900/20 border border-emerald-500/30 p-4 rounded-2xl flex items-center justify-between gap-3"
         >
           <div className="min-w-0">
-            <div className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">
-              JURISDICTION DATA
-            </div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">JURISDICTION DATA</div>
             <div className="font-bold text-white text-sm truncate">{userState} DMV Quick Sheet</div>
             <div className="text-[11px] text-emerald-200/70 mt-0.5">
-              PDF quick-reference pack that mirrors state exam phrasing.
+              Handbook-style notes tuned to common state exam phrasing.
             </div>
           </div>
-
           <button
-            onClick={() => setStatePdfOpen(true)}
+            onClick={() => setStateSheetOpen(true)}
             className="shrink-0 px-3 py-1.5 bg-emerald-500/20 text-emerald-300 text-xs font-black rounded-xl hover:bg-emerald-500/30 border border-emerald-500/30"
           >
-            VIEW PDF
+            VIEW QUICK SHEET
           </button>
         </motion.div>
 
@@ -774,7 +913,9 @@ export default function StudyPage() {
                           <div className="mt-1 flex flex-wrap items-center gap-2">
                             <div className="text-[10px] font-mono text-slate-500">
                               MASTERY: <span className="text-slate-300">{st.pct}%</span>{" "}
-                              <span className="text-slate-600">({st.mastered}/{st.total})</span>
+                              <span className="text-slate-600">
+                                ({st.mastered}/{st.total})
+                              </span>
                             </div>
 
                             {st.pct >= 80 ? (
@@ -791,29 +932,27 @@ export default function StudyPage() {
                       </div>
 
                       <div className="shrink-0 flex items-center gap-2">
-                        {/* Manual button (does not navigate) */}
+                        {/* Manual notes button (does not navigate) */}
                         <button
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            openModulePdf(cat);
+                            openModuleNotes(cat);
                           }}
                           className="hidden sm:inline-flex px-3 py-2 rounded-xl border border-slate-800 bg-slate-950/40 text-slate-200 text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-colors"
-                          title="Open module manual PDF"
+                          title="Open module manual notes"
                         >
-                          Manual PDF
+                          Manual Notes
                         </button>
 
-                        {/* micro “ring” */}
+                        {/* micro ring */}
                         <div className="relative w-10 h-10 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center">
                           <div className="text-[10px] font-mono text-slate-400">{st.pct}</div>
                           <motion.div
                             className="absolute inset-0 rounded-full"
                             style={{
                               boxShadow:
-                                st.pct < 80
-                                  ? "0 0 0 0 rgba(245,158,11,0)"
-                                  : "0 0 0 0 rgba(16,185,129,0)",
+                                st.pct < 80 ? "0 0 0 0 rgba(245,158,11,0)" : "0 0 0 0 rgba(16,185,129,0)",
                             }}
                             animate={
                               st.pct < 80
@@ -861,7 +1000,7 @@ export default function StudyPage() {
             href="/dashboard"
             className="text-[10px] text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-colors"
           >
-            Return to Command Center
+            Back to Dashboard
           </Link>
         </div>
       </main>
