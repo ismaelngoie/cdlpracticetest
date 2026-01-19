@@ -103,7 +103,6 @@ export default function RootLayout({
     <html lang="en">
       <head>
         {/* Google tag (gtag.js) */}
-        <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17887232273"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
