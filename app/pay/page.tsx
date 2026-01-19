@@ -4,12 +4,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
-import { loadStripe } from "@stripe/stripe-js";
-import { EmbeddedCheckout, EmbeddedCheckoutProvider } from "@stripe/react-stripe-js";
 
 // -------------------- TYPES --------------------
 type LicenseClass = "A" | "B" | "C" | "D";
-type Endorsement = "Air Brakes" | "Hazmat" | "Tanker" | "Doubles/Triples" | "Passenger" | "School Bus";
+type Endorsement =
+  | "Air Brakes"
+  | "Hazmat"
+  | "Tanker"
+  | "Doubles/Triples"
+  | "Passenger"
+  | "School Bus";
 type Plan = "monthly" | "lifetime";
 
 // -------------------- STORAGE --------------------
@@ -83,17 +87,20 @@ const TESTIMONIALS = [
   {
     name: "Jose M.",
     role: "CDL Class A • Texas",
-    quote: "I failed once. I used this practice tests for 5 days and passed. The questions felt the same on the real test.",
+    quote:
+      "I failed once. I used this practice tests for 5 days and passed. The questions felt the same on the real test.",
   },
   {
     name: "Amina K.",
     role: "CDL Class B • Florida",
-    quote: "Simple. On my phone. I practiced at rest stops and learned fast. I passed first try.",
+    quote:
+      "Simple. On my phone. I practiced at rest stops and learned fast. I passed first try.",
   },
   {
     name: "Darnell R.",
     role: "CDL • California",
-    quote: "Fast Track is real. It showed what I missed and I repeated until 80%+. Passed next week.",
+    quote:
+      "Fast Track is real. It showed what I missed and I repeated until 80%+. Passed next week.",
   },
 ];
 
@@ -134,7 +141,37 @@ function formatEndorsements(ends: Endorsement[]) {
   return ends.join(", ");
 }
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "");
+// -------------------- STRIPE.JS (CDN) --------------------
+declare global {
+  interface Window {
+    Stripe?: any;
+  }
+}
+
+const STRIPE_JS_SRC = "https://js.stripe.com/v3";
+const STRIPE_JS_ID = "stripe-js-v3";
+
+function loadStripeJs(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined") return reject(new Error("No window"));
+    if (window.Stripe) return resolve();
+
+    const existing = document.getElementById(STRIPE_JS_ID) as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", () => reject(new Error("Stripe.js failed to load")));
+      return;
+    }
+
+    const s = document.createElement("script");
+    s.id = STRIPE_JS_ID;
+    s.src = STRIPE_JS_SRC;
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("Stripe.js failed to load"));
+    document.head.appendChild(s);
+  });
+}
 
 export default function PayPage() {
   const router = useRouter();
@@ -151,8 +188,7 @@ export default function PayPage() {
 
   const [plan, setPlan] = useState<Plan>("lifetime");
 
-  // Embedded checkout state
-  const [clientSecret, setClientSecret] = useState<string>("");
+  // Checkout UI state
   const [loadingCheckout, setLoadingCheckout] = useState<boolean>(true);
   const [checkoutError, setCheckoutError] = useState<string>("");
 
@@ -162,6 +198,10 @@ export default function PayPage() {
   const [restoreMsg, setRestoreMsg] = useState<string | null>(null);
 
   const requestIdRef = useRef(0);
+  const retryKeyRef = useRef(0);
+
+  const checkoutMountRef = useRef<HTMLDivElement | null>(null);
+  const embeddedCheckoutRef = useRef<any>(null);
 
   useEffect(() => setMounted(true), []);
 
@@ -207,11 +247,13 @@ export default function PayPage() {
   const checkoutHeader =
     "Complete payment below to unlock 6,000+ real Q&A, Full Simulator, Fast Track, All 50 states, Offline.";
 
-  // Create embedded checkout session (supports either {clientSecret} or {url} response)
+  const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
+
+  // Create/mount embedded checkout (no npm stripe deps)
   useEffect(() => {
     if (!mounted) return;
 
-    if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+    if (!publishableKey) {
       setCheckoutError("Missing NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.");
       setLoadingCheckout(false);
       return;
@@ -220,50 +262,83 @@ export default function PayPage() {
     const id = ++requestIdRef.current;
     setLoadingCheckout(true);
     setCheckoutError("");
-    setClientSecret("");
+
+    // Cleanup previous embedded instance (plan switch / retry)
+    try {
+      embeddedCheckoutRef.current?.destroy?.();
+    } catch {}
+    embeddedCheckoutRef.current = null;
+
+    if (checkoutMountRef.current) {
+      checkoutMountRef.current.innerHTML = "";
+    }
 
     const run = async () => {
       try {
-        const returnUrl = `/pay?plan=${plan}`; // ensures you land back on the same plan
-        const res = await fetch(`/api/checkout?plan=${plan}&embedded=1&return_url=${encodeURIComponent(returnUrl)}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        });
-
-        // Some implementations return a redirect URL instead of clientSecret.
-        const ct = res.headers.get("content-type") || "";
-        if (!ct.includes("application/json")) {
-          // If server responds with redirect/html, just follow it.
-          window.location.href = `/api/checkout?plan=${plan}`;
-          return;
-        }
-
-        const data = (await res.json()) as { clientSecret?: string; url?: string; error?: string };
-
+        await loadStripeJs();
         if (id !== requestIdRef.current) return;
 
-        if (data.clientSecret) {
-          setClientSecret(data.clientSecret);
-          setLoadingCheckout(false);
+        const stripe = window.Stripe?.(publishableKey);
+        if (!stripe) throw new Error("Stripe failed to initialize.");
+
+        const fetchClientSecret = async () => {
+          const returnUrl = `${window.location.origin}/pay?plan=${plan}`;
+          const url = `/api/checkout?plan=${plan}&embedded=1&return_url=${encodeURIComponent(returnUrl)}&rk=${retryKeyRef.current}`;
+
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
+
+          const ct = res.headers.get("content-type") || "";
+          if (!res.ok) {
+            throw new Error("Checkout could not be started.");
+          }
+          if (!ct.includes("application/json")) {
+            throw new Error("Checkout could not be started.");
+          }
+
+          const data = (await res.json()) as { clientSecret?: string; error?: string };
+          if (!data?.clientSecret) {
+            throw new Error(data?.error || "Checkout could not be started.");
+          }
+          return data.clientSecret;
+        };
+
+        const embedded = await stripe.initEmbeddedCheckout({ fetchClientSecret });
+
+        if (id !== requestIdRef.current) {
+          try {
+            embedded?.destroy?.();
+          } catch {}
           return;
         }
 
-        if (data.url) {
-          window.location.href = data.url;
-          return;
-        }
+        embeddedCheckoutRef.current = embedded;
 
-        setCheckoutError(data.error || "Checkout could not be started.");
+        const mountEl = checkoutMountRef.current;
+        if (!mountEl) throw new Error("Checkout mount not found.");
+
+        embedded.mount(mountEl);
+
         setLoadingCheckout(false);
-      } catch {
+      } catch (e: any) {
         if (id !== requestIdRef.current) return;
-        setCheckoutError("Checkout could not be started.");
+        setCheckoutError(e?.message || "Checkout could not be started.");
         setLoadingCheckout(false);
       }
     };
 
     run();
-  }, [mounted, plan]);
+
+    return () => {
+      // Cleanup on unmount
+      try {
+        embeddedCheckoutRef.current?.destroy?.();
+      } catch {}
+      embeddedCheckoutRef.current = null;
+    };
+  }, [mounted, plan, publishableKey]);
 
   const pill = (text: string) => (
     <span className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-black text-slate-300 uppercase tracking-widest">
@@ -279,12 +354,18 @@ export default function PayPage() {
     }
     setRestoreMsg("Redirecting…");
     const next = `/dashboard?plan=${plan}`;
-    window.location.href = `/api/login?token=${encodeURIComponent(val)}&next=${encodeURIComponent(next)}`;
+    // send both token + email to maximize compatibility with your existing api/login
+    window.location.href = `/api/login?token=${encodeURIComponent(val)}&email=${encodeURIComponent(val)}&next=${encodeURIComponent(next)}`;
+  };
+
+  const setPlanAndUrl = (p: Plan) => {
+    setPlan(p);
+    router.replace(`/pay?plan=${p}`);
   };
 
   return (
     <main className="min-h-screen bg-slate-950 text-white font-sans">
-      {/* Minimal header (no distraction) */}
+      {/* Minimal header */}
       <div className="border-b border-white/5">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <button
@@ -315,7 +396,7 @@ export default function PayPage() {
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setPlan("monthly")}
+                    onClick={() => setPlanAndUrl("monthly")}
                     className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition ${
                       plan === "monthly"
                         ? "bg-amber-500/15 border-amber-500/40 text-amber-200"
@@ -326,7 +407,7 @@ export default function PayPage() {
                     Monthly
                   </button>
                   <button
-                    onClick={() => setPlan("lifetime")}
+                    onClick={() => setPlanAndUrl("lifetime")}
                     className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition ${
                       plan === "lifetime"
                         ? "bg-amber-500/15 border-amber-500/40 text-amber-200"
@@ -372,27 +453,42 @@ export default function PayPage() {
                           <div className="text-red-400 text-3xl mb-3">⚠️</div>
                           <div className="font-black">Checkout error</div>
                           <div className="mt-2 text-sm text-slate-300">{checkoutError}</div>
-                          <button
-                            onClick={() => {
-                              setCheckoutError("");
-                              setLoadingCheckout(true);
-                              setClientSecret("");
-                              // triggers effect by toggling plan twice safely
-                              setPlan((p) => (p === "monthly" ? "lifetime" : "monthly"));
-                              setTimeout(() => setPlan((p) => (p === "monthly" ? "lifetime" : "monthly")), 0);
-                            }}
-                            className="mt-4 px-4 py-3 rounded-xl bg-white text-black font-black uppercase tracking-widest text-xs hover:bg-slate-200 active:scale-95 transition-transform"
-                          >
-                            Retry
-                          </button>
+
+                          <div className="mt-4 flex flex-col gap-2">
+                            <button
+                              onClick={() => {
+                                retryKeyRef.current += 1;
+                                requestIdRef.current += 1; // invalidate any pending run
+                                setLoadingCheckout(true);
+                                setCheckoutError("");
+                                // trigger effect by re-setting same plan (via URL replace + state)
+                                setPlan((p) => p);
+                                // hard refresh mount by forcing plan to same value via router replace
+                                router.replace(`/pay?plan=${plan}`);
+                              }}
+                              className="px-4 py-3 rounded-xl bg-white text-black font-black uppercase tracking-widest text-xs hover:bg-slate-200 active:scale-95 transition-transform"
+                            >
+                              Retry
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                window.location.href = `/api/checkout?plan=${plan}`;
+                              }}
+                              className="px-4 py-3 rounded-xl bg-white/10 border border-white/15 text-white font-black uppercase tracking-widest text-xs hover:bg-white/15 active:scale-95 transition-transform"
+                            >
+                              Open Checkout
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}
 
-                    {!loadingCheckout && !checkoutError && clientSecret && (
-                      <EmbeddedCheckoutProvider stripe={stripePromise} options={{ clientSecret }}>
-                        <EmbeddedCheckout />
-                      </EmbeddedCheckoutProvider>
+                    {!loadingCheckout && !checkoutError && (
+                      <div className="h-full w-full">
+                        {/* Stripe mounts into this div */}
+                        <div ref={checkoutMountRef} className="h-full w-full" />
+                      </div>
                     )}
                   </div>
                 </div>
@@ -442,7 +538,9 @@ export default function PayPage() {
                         </button>
                       </div>
 
-                      {restoreMsg && <div className="mt-2 text-[11px] text-slate-400">{restoreMsg}</div>}
+                      {restoreMsg && (
+                        <div className="mt-2 text-[11px] text-slate-400">{restoreMsg}</div>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -489,28 +587,30 @@ export default function PayPage() {
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-slate-900/50 backdrop-blur p-6">
-              <div className="text-xs font-black uppercase tracking-widest text-slate-200 mb-2">What you get</div>
+              <div className="text-xs font-black uppercase tracking-widest text-slate-200 mb-2">
+                What you get
+              </div>
               <ul className="space-y-3 text-sm text-slate-300/90">
                 <li className="flex gap-3">
-                  <span className="text-emerald-400 font-black">✓</span>
+                  <span className="font-black text-emerald-400">✓</span>
                   <span>
                     <span className="font-black text-white">6,000+ real Q&A</span> (practice like the exam)
                   </span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="text-emerald-400 font-black">✓</span>
+                  <span className="font-black text-emerald-400">✓</span>
                   <span>
                     <span className="font-black text-white">Full Simulator</span> (repeat until 80%+)
                   </span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="text-emerald-400 font-black">✓</span>
+                  <span className="font-black text-emerald-400">✓</span>
                   <span>
                     <span className="font-black text-white">Fast Track</span> (study only what you miss)
                   </span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="text-emerald-400 font-black">✓</span>
+                  <span className="font-black text-emerald-400">✓</span>
                   <span>
                     <span className="font-black text-white">All 50 states</span> +{" "}
                     <span className="font-black text-white">Works offline</span>
@@ -525,7 +625,9 @@ export default function PayPage() {
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-slate-900/50 backdrop-blur p-6">
-              <div className="text-xs font-black uppercase tracking-widest text-slate-200 mb-3">Real drivers</div>
+              <div className="text-xs font-black uppercase tracking-widest text-slate-200 mb-3">
+                Real drivers
+              </div>
               <div className="grid grid-cols-1 gap-3">
                 {TESTIMONIALS.map((t) => (
                   <div key={t.name} className="rounded-2xl border border-slate-800 bg-slate-950/30 p-4">
@@ -539,7 +641,9 @@ export default function PayPage() {
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-slate-900/50 backdrop-blur p-6">
-              <div className="text-xs font-black uppercase tracking-widest text-slate-200 mb-3">Quick FAQ</div>
+              <div className="text-xs font-black uppercase tracking-widest text-slate-200 mb-3">
+                Quick FAQ
+              </div>
               <div className="space-y-4">
                 {FAQ.map((f) => (
                   <div key={f.q} className="rounded-2xl border border-slate-800 bg-slate-950/30 p-4">
