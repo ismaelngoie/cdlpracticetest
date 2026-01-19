@@ -556,7 +556,7 @@ export default function DiagnosticPage() {
     ];
 
     const primaryCta = willFail ? "Get CDL Practice Tests (6,000+ Q&A) →" : "Keep Practicing Until 80%+ →";
-    const ctaSub = "All 50 States • Works Offline • 12,000+ drivers"";
+    const ctaSub = "All 50 States • Works Offline • 12,000+ drivers";
 
     const IdCard = () => (
       <motion.div
