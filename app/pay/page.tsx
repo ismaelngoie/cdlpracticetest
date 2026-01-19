@@ -9,13 +9,6 @@ import Modal from "@/components/Modal";
 // --- CONFIG ---
 type PlanKey = "monthly" | "lifetime";
 
-// (Optional fallback only — if /api/checkout ever fails hard)
-// Keep your old payment links if you want belt-and-suspenders:
-const STRIPE_LINKS_FALLBACK: Record<PlanKey, string> = {
-  monthly: "https://buy.stripe.com/test_4gM4gB5YrbAd71Zeanb3q01",
-  lifetime: "https://buy.stripe.com/test_9B68wR5Yr7jXaeb2rFb3q00",
-};
-
 const PRICING = {
   monthly: {
     price: 19.95,
@@ -263,18 +256,22 @@ function PaywallContent() {
   const { label: risk, tone } = riskFromScore(ctx.score);
   const tc = toneClasses(tone);
 
-  const copy = useMemo(() => stepCopy(ctx.score, ctx.weakDomain, ctx.userState), [ctx.score, ctx.weakDomain, ctx.userState]);
+  const copy = useMemo(
+    () => stepCopy(ctx.score, ctx.weakDomain, ctx.userState),
+    [ctx.score, ctx.weakDomain, ctx.userState]
+  );
 
   const progressToPass = useMemo(() => {
     const pct = (ctx.score / PASSING_SCORE) * 100;
     return clamp(Math.round(pct), 0, 100);
   }, [ctx.score]);
 
+  // ✅ Always-clear CTA (only UI text change)
   const stickyCtaText = useMemo(() => {
-    if (risk === "HIGH") return "Unlock Fix Plan (fastest path) →";
-    if (risk === "ELEVATED") return "Unlock Fix Plan (push to 80%) →";
-    return "Unlock Final Sweep Plan →";
-  }, [risk]);
+    return selectedPlan === "lifetime"
+      ? "Pay once • Get lifetime access →"
+      : "Start monthly • Get full access →";
+  }, [selectedPlan]);
 
   const persistEmail = (email: string) => {
     const e = String(email || "").trim().toLowerCase();
@@ -286,11 +283,20 @@ function PaywallContent() {
     } catch {}
   };
 
+  // ✅ Always open modal first (so it doesn't jump to Stripe immediately)
+  const openCheckoutModal = (prefill?: string) => {
+    setCheckoutErr("");
+    setCheckoutBusy(false);
+    const e = String(prefill || restoreEmail || "").trim().toLowerCase();
+    setCheckoutEmailDraft(e);
+    setCheckoutModalOpen(true);
+  };
+
   const beginCheckout = async (email: string) => {
     const e = String(email || "").trim().toLowerCase();
     if (!e.includes("@")) {
-      setCheckoutEmailDraft(e);
-      setCheckoutModalOpen(true);
+      setCheckoutErr("Please enter a valid email.");
+      setCheckoutBusy(false);
       return;
     }
 
@@ -299,20 +305,10 @@ function PaywallContent() {
     persistEmail(e);
 
     try {
-      // Preferred: server-created Checkout Session
       const url = await createCheckout(selectedPlan, e);
-      window.location.href = url;
+      window.location.href = url; // redirect only AFTER modal confirm
       return;
     } catch (err: any) {
-      // Fallback: Payment Link (optional)
-      try {
-        const base = STRIPE_LINKS_FALLBACK[selectedPlan];
-        const join = base.includes("?") ? "&" : "?";
-        const fb = `${base}${join}prefilled_email=${encodeURIComponent(e)}`;
-        window.location.href = fb;
-        return;
-      } catch {}
-
       setCheckoutErr(err?.message || "Could not start checkout.");
       setCheckoutBusy(false);
     }
@@ -425,7 +421,9 @@ function PaywallContent() {
             <ValueChip>Pass Guarantee</ValueChip>
           </div>
 
-          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border ${tc.pill} text-[10px] font-black uppercase tracking-widest mb-4`}>
+          <div
+            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border ${tc.pill} text-[10px] font-black uppercase tracking-widest mb-4`}
+          >
             ⚠️ Diagnostic Result • {ctx.userState} • {classLabel(ctx.license)}
           </div>
 
@@ -616,7 +614,12 @@ function PaywallContent() {
 
           <AnimatePresence>
             {restoreMsg && (
-              <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} className="text-xs text-amber-300 mt-3">
+              <motion.p
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 6 }}
+                className="text-xs text-amber-300 mt-3"
+              >
                 {restoreMsg}
               </motion.p>
             )}
@@ -652,13 +655,16 @@ function PaywallContent() {
                 <div className="text-right">
                   <div className="text-lg font-black text-white">
                     ${PRICING[selectedPlan].price.toFixed(2)}
-                    <span className="text-xs text-slate-500"> {selectedPlan === "lifetime" ? "" : PRICING[selectedPlan].cadence}</span>
+                    <span className="text-xs text-slate-500">
+                      {" "}
+                      {selectedPlan === "lifetime" ? "" : PRICING[selectedPlan].cadence}
+                    </span>
                   </div>
                 </div>
               </div>
 
               <button
-                onClick={() => beginCheckout(restoreEmail)}
+                onClick={() => openCheckoutModal(restoreEmail)}
                 disabled={checkoutBusy}
                 className={`block w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black text-lg text-center uppercase tracking-widest transition-transform active:scale-95 ${tc.glow} disabled:opacity-60`}
               >
