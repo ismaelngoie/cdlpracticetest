@@ -3,12 +3,13 @@ export {};
 
 type Env = {
   STRIPE_SECRET_KEY?: string;
-  APP_URL?: string;
-  STRIPE_PRICE_MONTHLY?: string;
-  STRIPE_PRICE_LIFETIME?: string;
 };
 
 const STRIPE_API = "https://api.stripe.com";
+
+// ✅ Put your real Price IDs here (since you removed env vars)
+const STRIPE_PRICE_MONTHLY = "price_1Sr3m7J1pnlNpGwV7Zz2TQvU";
+const STRIPE_PRICE_LIFETIME = "price_1Sr3m7J1pnlNpGwVHmJtC7ob";
 
 function json(body: any, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -21,9 +22,7 @@ function badRequest(message: string) {
   return json({ ok: false, error: message }, 400);
 }
 
-function getOrigin(request: Request, env: Env) {
-  const envUrl = String(env.APP_URL || "").trim();
-  if (envUrl) return envUrl.replace(/\/+$/, "");
+function getOrigin(request: Request) {
   const origin = request.headers.get("origin");
   if (origin) return origin.replace(/\/+$/, "");
   const host = request.headers.get("host");
@@ -73,18 +72,16 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: E
     if (!plan) return badRequest("Invalid plan. Use monthly or lifetime.");
 
     const email = normalizeEmail(body?.email);
-    const origin = getOrigin(request, env);
-    if (!origin) return json({ ok: false, error: "Missing APP_URL / origin" }, 500);
 
-    const monthly = String(env.STRIPE_PRICE_MONTHLY || "price_1Sr3m7J1pnlNpGwV7Zz2TQvU").trim();
-    const lifetime = String(env.STRIPE_PRICE_LIFETIME || "price_1Sr3m7J1pnlNpGwVHmJtC7ob").trim();
+    const origin = getOrigin(request);
+    if (!origin) return json({ ok: false, error: "Missing origin/host" }, 500);
 
-    const successUrl = `${origin}/dashboard?plan=${encodeURIComponent(plan)}&session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${origin}/pay?plan=${encodeURIComponent(plan)}`;
+    // ✅ Return URL includes plan=monthly|lifetime
+    const returnUrl = `${origin}/dashboard?plan=${encodeURIComponent(plan)}&session_id={CHECKOUT_SESSION_ID}`;
 
     const common: Record<string, string> = {
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+      ui_mode: "embedded",
+      return_url: returnUrl,
       allow_promotion_codes: "true",
       "metadata[app]": "cdl",
       "metadata[plan]": plan,
@@ -96,23 +93,24 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: E
         ? {
             ...common,
             mode: "subscription",
-            "line_items[0][price]": monthly,
+            "line_items[0][price]": STRIPE_PRICE_MONTHLY,
             "line_items[0][quantity]": "1",
           }
         : {
             ...common,
             mode: "payment",
-            "line_items[0][price]": lifetime,
+            "line_items[0][price]": STRIPE_PRICE_LIFETIME,
             "line_items[0][quantity]": "1",
           };
 
     const session = await stripePOSTForm("/v1/checkout/sessions", stripeKey, form);
 
-    if (!session?.id || !session?.url) {
-      return json({ ok: false, error: "Stripe session URL missing" }, 500);
+    // Embedded Checkout needs client_secret (not session.url)
+    if (!session?.id || !session?.client_secret) {
+      return json({ ok: false, error: "Stripe embedded client_secret missing" }, 500);
     }
 
-    return json({ ok: true, url: session.url, sessionId: session.id }, 200);
+    return json({ ok: true, clientSecret: session.client_secret, sessionId: session.id }, 200);
   } catch (err: any) {
     return json({ ok: false, error: err?.message || "Server error" }, 500);
   }
