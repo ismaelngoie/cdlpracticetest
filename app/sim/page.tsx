@@ -2,8 +2,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { questions, type Question, type LicenseClass, type Endorsement } from "@/lib/questions";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  questions,
+  type Question,
+  type LicenseClass,
+  type Endorsement,
+} from "@/lib/questions";
 import { useRouter } from "next/navigation";
 
 // -------------------- TYPES --------------------
@@ -16,93 +21,50 @@ type AnswerRecord = {
   text: string;
   options: string[];
   explanation: string;
-  selectedIndex: number; // -1 if unanswered (timer ran out)
+  selectedIndex: number; // -1 if unanswered (timer hit 0)
   correctIndex: number;
 };
 
-type DiagnosticMeta = {
-  sessionId: string;
-  startedAt: string;
-  completedAt: string;
-  license: LicenseClass;
-  state: string;
-  endorsements: Endorsement[];
-  timeLimitSec: number;
-  timeUsedSec: number;
-};
+type CategoryBreakdown = Record<
+  string,
+  { total: number; correct: number; accuracy: number }
+>;
 
-type CategoryBreakdown = Record<string, { total: number; correct: number; accuracy: number }>;
+type ConsolidatedConfig = {
+  license?: LicenseClass;
+  endorsements?: Endorsement[];
+  userState?: string;
+};
 
 // -------------------- CONSTANTS --------------------
-const STORAGE_KEYS = {
-  userLevel: "userLevel",
-  userState: "userState",
-  userEndorsements: "userEndorsements",
+const TOTAL_QUESTIONS = 5;
+const QUIZ_SECONDS = 300;
 
-  diagnosticScore: "diagnosticScore",
-  weakestDomain: "weakestDomain",
-  diagnosticAnswers: "haul_diagnostic_answers",
-  diagnosticBreakdown: "haul_diagnostic_breakdown",
-  diagnosticMeta: "haul_diagnostic_meta",
-  diagnosticStartedAt: "haul_diagnostic_started_at",
-  sessionId: "haul_session_id",
+// Optional consolidated config key (supports future changes + keeps legacy working)
+const CONFIG_KEY = "haulOS.config.v1";
+
+// Legacy keys (landing page already uses these)
+const LEGACY_KEYS = {
+  license: "userLevel",
+  endorsements: "userEndorsements",
+  userState: "userState",
 };
 
-const PASSING_SCORE = 80;
-const TIME_LIMIT_SEC = 300; // 5 min
+// Result keys (keep backwards compatibility with your existing pay/dashboard)
+const RESULT_KEYS = {
+  diagnosticScore: "diagnosticScore",
+  weakestDomain: "weakestDomain",
 
-const STATE_NAME: Record<string, string> = {
-  AL: "Alabama",
-  AK: "Alaska",
-  AZ: "Arizona",
-  AR: "Arkansas",
-  CA: "California",
-  CO: "Colorado",
-  CT: "Connecticut",
-  DE: "Delaware",
-  DC: "District of Columbia",
-  FL: "Florida",
-  GA: "Georgia",
-  HI: "Hawaii",
-  ID: "Idaho",
-  IL: "Illinois",
-  IN: "Indiana",
-  IA: "Iowa",
-  KS: "Kansas",
-  KY: "Kentucky",
-  LA: "Louisiana",
-  ME: "Maine",
-  MD: "Maryland",
-  MA: "Massachusetts",
-  MI: "Michigan",
-  MN: "Minnesota",
-  MS: "Mississippi",
-  MO: "Missouri",
-  MT: "Montana",
-  NE: "Nebraska",
-  NV: "Nevada",
-  NH: "New Hampshire",
-  NJ: "New Jersey",
-  NM: "New Mexico",
-  NY: "New York",
-  NC: "North Carolina",
-  ND: "North Dakota",
-  OH: "Ohio",
-  OK: "Oklahoma",
-  OR: "Oregon",
-  PA: "Pennsylvania",
-  RI: "Rhode Island",
-  SC: "South Carolina",
-  SD: "South Dakota",
-  TN: "Tennessee",
-  TX: "Texas",
-  UT: "Utah",
-  VT: "Vermont",
-  VA: "Virginia",
-  WA: "Washington",
-  WV: "West Virginia",
-  WI: "Wisconsin",
-  WY: "Wyoming",
+  // For compatibility with the other AI version
+  diagnosticAnswers: "diagnosticAnswers",
+  diagnosticTimedOut: "diagnosticTimedOut",
+
+  // Extra (richer analytics for later dashboard)
+  haulAnswers: "haul_diagnostic_answers",
+  haulBreakdown: "haul_diagnostic_breakdown",
+  haulMeta: "haul_diagnostic_meta",
+  sessionId: "haul_session_id",
+  startedAt: "haul_diagnostic_started_at",
 };
 
 // -------------------- SAFE STORAGE --------------------
@@ -114,6 +76,7 @@ function safeGet(key: string) {
     return null;
   }
 }
+
 function safeSet(key: string, value: string) {
   try {
     if (typeof window === "undefined") return;
@@ -122,14 +85,16 @@ function safeSet(key: string, value: string) {
     // ignore
   }
 }
-function safeJsonParse<T>(raw: string | null, fallback: T): T {
+
+function safeParseJSON<T>(value: string | null): T | null {
+  if (!value) return null;
   try {
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
+    return JSON.parse(value) as T;
   } catch {
-    return fallback;
+    return null;
   }
 }
+
 function makeSessionId() {
   const a = Math.random().toString(16).slice(2, 10);
   const b = Date.now().toString(16).slice(-6);
@@ -145,19 +110,14 @@ function shuffle<T>(arr: T[]) {
   }
   return a;
 }
-function clamp(n: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, n));
-}
-function formatEndorsements(ends: Endorsement[]) {
-  if (!ends.length) return "None";
-  return ends.join(", ");
-}
+
 function classLabel(license: LicenseClass) {
   if (license === "A") return "Class A";
   if (license === "B") return "Class B";
   if (license === "C") return "Class C";
   return "Class D";
 }
+
 function computeBreakdown(finalAnswers: AnswerRecord[]): CategoryBreakdown {
   const map: Record<string, { total: number; correct: number }> = {};
   for (const a of finalAnswers) {
@@ -174,115 +134,187 @@ function computeBreakdown(finalAnswers: AnswerRecord[]): CategoryBreakdown {
   }
   return out;
 }
+
 function pickWeakestDomain(breakdown: CategoryBreakdown) {
   const entries = Object.entries(breakdown);
   if (!entries.length) return "General Knowledge";
   entries.sort((a, b) => {
-    const aa = a[1].accuracy - b[1].accuracy;
-    if (aa !== 0) return aa;
+    const diff = a[1].accuracy - b[1].accuracy;
+    if (diff !== 0) return diff;
     return b[1].total - a[1].total;
   });
-  return entries[0][0] || "General Knowledge";
+  return entries[0]?.[0] || "General Knowledge";
 }
-function statusFromScore(score: number) {
-  if (score >= PASSING_SCORE) return { label: "PASS READY", tone: "green", risk: "LOW" };
-  if (score >= 60) return { label: "NOT READY", tone: "amber", risk: "MED" };
-  return { label: "HIGH RISK", tone: "red", risk: "HIGH" };
+
+function riskFromScore(score: number) {
+  if (score >= 80) return { label: "CLEAR", tone: "emerald" as const };
+  if (score >= 60) return { label: "ELEVATED", tone: "amber" as const };
+  return { label: "HIGH", tone: "red" as const };
+}
+
+function toneClasses(tone: "emerald" | "amber" | "red") {
+  if (tone === "emerald")
+    return {
+      border: "border-emerald-500/40",
+      bg: "bg-emerald-500/10",
+      text: "text-emerald-300",
+      bar: "bg-emerald-500",
+      glow: "shadow-[0_0_40px_-14px_rgba(16,185,129,0.6)]",
+    };
+  if (tone === "amber")
+    return {
+      border: "border-amber-500/40",
+      bg: "bg-amber-500/10",
+      text: "text-amber-300",
+      bar: "bg-amber-500",
+      glow: "shadow-[0_0_40px_-14px_rgba(245,158,11,0.6)]",
+    };
+  return {
+    border: "border-red-500/40",
+    bg: "bg-red-500/10",
+    text: "text-red-300",
+    bar: "bg-red-500",
+    glow: "shadow-[0_0_40px_-14px_rgba(239,68,68,0.55)]",
+  };
+}
+
+// Pick 5 but try to avoid 5 questions all from one category
+function pickDiagnosticQuestions(eligible: Question[]) {
+  const source = eligible.length ? eligible : questions;
+  const shuffled = shuffle(source);
+
+  const picked: Question[] = [];
+  const seenCats = new Set<string>();
+
+  for (const q of shuffled) {
+    if (picked.length >= TOTAL_QUESTIONS) break;
+
+    // Prefer variety early; relax later so we always fill
+    if (!seenCats.has(q.category) || picked.length >= 3) {
+      picked.push(q);
+      seenCats.add(q.category);
+    }
+  }
+
+  // Fill if needed (unique by id)
+  if (picked.length < TOTAL_QUESTIONS) {
+    const pool = shuffle(questions).filter((q) => !picked.some((p) => p.id === q.id));
+    while (picked.length < TOTAL_QUESTIONS && pool.length) picked.push(pool.shift()!);
+  }
+
+  return picked.slice(0, TOTAL_QUESTIONS);
 }
 
 // -------------------- COMPONENT --------------------
 export default function DiagnosticPage() {
   const router = useRouter();
 
-  const [stage, setStage] = useState<Stage>("quiz");
-
-  // Personalization (loaded from landing config)
-  const [license, setLicense] = useState<LicenseClass>("A");
+  // Personalization from landing
+  const [userLicense, setUserLicense] = useState<LicenseClass>("A");
+  const [userEndorsements, setUserEndorsements] = useState<Endorsement[]>([]);
   const [userState, setUserState] = useState("TX");
-  const [endorsements, setEndorsements] = useState<Endorsement[]>([]);
-  const [configLoaded, setConfigLoaded] = useState(false);
 
-  // Quiz state
+  // Flow
+  const [stage, setStage] = useState<Stage>("quiz");
   const [activeQuestions, setActiveQuestions] = useState<Question[]>([]);
   const [currentQIndex, setCurrentQIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [answers, setAnswers] = useState<AnswerRecord[]>([]);
-  const [timeLeft, setTimeLeft] = useState(TIME_LIMIT_SEC);
 
-  // Analyzing animation state
-  const [analysisText, setAnalysisText] = useState("ANALYZING ANSWERS…");
+  // Timer
+  const [timeLeft, setTimeLeft] = useState(QUIZ_SECONDS);
+  const quizStartMsRef = useRef<number>(Date.now());
+
+  // Analyzing animation
+  const [analysisText, setAnalysisText] = useState("INITIALIZING SYSTEM...");
   const [analysisPct, setAnalysisPct] = useState(0);
+  const analyzingTimers = useRef<number[]>([]);
 
-  // Preview state
+  // Preview state (avoid reading localStorage inside render)
   const [finalScore, setFinalScore] = useState(0);
   const [weakDomain, setWeakDomain] = useState("General Knowledge");
   const [finalBreakdown, setFinalBreakdown] = useState<CategoryBreakdown>({});
-  const [missedList, setMissedList] = useState<AnswerRecord[]>([]);
-
-  const timeoutsRef = useRef<number[]>([]);
-  const quizStartTsRef = useRef<number>(Date.now());
+  const [missed, setMissed] = useState<AnswerRecord | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
 
   const question = activeQuestions[currentQIndex];
 
-  // -------------------- INIT --------------------
+  const chips = useMemo(() => {
+    const e = userEndorsements.length ? userEndorsements.join(", ") : "No modules";
+    return `${userState} • ${classLabel(userLicense)} • ${e}`;
+  }, [userEndorsements, userLicense, userState]);
+
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = (timeLeft % 60).toString().padStart(2, "0");
+  const urgency =
+    timeLeft <= 60 ? "high" : timeLeft <= 120 ? "med" : "low";
+
+  // -------------------- INIT: Load config & pick questions --------------------
   useEffect(() => {
-    const sid = safeGet(STORAGE_KEYS.sessionId);
-    if (!sid) safeSet(STORAGE_KEYS.sessionId, makeSessionId());
+    // Session + start time for later analytics
+    const sid = safeGet(RESULT_KEYS.sessionId);
+    if (!sid) safeSet(RESULT_KEYS.sessionId, makeSessionId());
+    const startedAt = safeGet(RESULT_KEYS.startedAt);
+    if (!startedAt) safeSet(RESULT_KEYS.startedAt, new Date().toISOString());
 
-    const lic = (safeGet(STORAGE_KEYS.userLevel) as LicenseClass | null) || "A";
-    const st = safeGet(STORAGE_KEYS.userState) || "TX";
-    const ends = safeJsonParse<Endorsement[]>(safeGet(STORAGE_KEYS.userEndorsements), []);
+    const cfg = safeParseJSON<ConsolidatedConfig>(safeGet(CONFIG_KEY));
+    const legacyLicense =
+      (safeGet(LEGACY_KEYS.license) as LicenseClass | null) || "A";
+    const legacyEndorsements =
+      safeParseJSON<Endorsement[]>(safeGet(LEGACY_KEYS.endorsements)) || [];
+    const legacyState = safeGet(LEGACY_KEYS.userState) || "TX";
 
-    setLicense(lic);
+    const license = cfg?.license || legacyLicense || "A";
+    const endorsements = Array.isArray(cfg?.endorsements)
+      ? cfg!.endorsements!
+      : legacyEndorsements;
+    const st = cfg?.userState || legacyState || "TX";
+
+    setUserLicense(license);
+    setUserEndorsements(Array.from(new Set(endorsements)));
     setUserState(st);
-    setEndorsements(Array.from(new Set(ends)));
-    setConfigLoaded(true);
 
-    const startedAt = safeGet(STORAGE_KEYS.diagnosticStartedAt);
-    if (!startedAt) safeSet(STORAGE_KEYS.diagnosticStartedAt, new Date().toISOString());
-
+    // Filter questions by license + endorsement rules
     const eligible = questions.filter((q) => {
-      if (!q.licenseClasses.includes(lic)) return false;
+      if (!q.licenseClasses.includes(license)) return false;
+
+      // If question requires endorsements, user must have at least one required item
       if (q.endorsements && q.endorsements.length > 0) {
-        const hasRequired = q.endorsements.some((req) => ends.includes(req));
+        const hasRequired = q.endorsements.some((req) => endorsements.includes(req));
         if (!hasRequired) return false;
       }
       return true;
     });
 
-    const shuffled = shuffle(eligible.length ? eligible : questions);
-    const picked: Question[] = [];
-    const seenCats = new Set<string>();
-
-    for (const q of shuffled) {
-      if (picked.length >= 5) break;
-      if (!seenCats.has(q.category) || picked.length >= 3) {
-        picked.push(q);
-        seenCats.add(q.category);
-      }
-    }
-    while (picked.length < 5 && shuffled[picked.length]) picked.push(shuffled[picked.length]);
-
-    setActiveQuestions(picked.slice(0, 5));
-    quizStartTsRef.current = Date.now();
+    setActiveQuestions(pickDiagnosticQuestions(eligible));
+    quizStartMsRef.current = Date.now();
   }, []);
 
-  // -------------------- TIMER --------------------
+  // -------------------- TIMER TICK --------------------
   useEffect(() => {
     if (stage !== "quiz") return;
-    const t = window.setInterval(() => setTimeLeft((p) => Math.max(0, p - 1)), 1000);
+    const t = window.setInterval(() => {
+      setTimeLeft((p) => Math.max(0, p - 1));
+    }, 1000);
     return () => window.clearInterval(t);
   }, [stage]);
 
+  // Auto-stop at 0 (mark remaining unanswered wrong)
   useEffect(() => {
     if (stage !== "quiz") return;
-    if (timeLeft !== 0) return;
+    if (timeLeft > 0) return;
+    if (!activeQuestions.length) return;
 
-    const finalAnswers: AnswerRecord[] = [...answers];
-    for (let i = currentQIndex; i < activeQuestions.length; i++) {
+    const final: AnswerRecord[] = [...answers];
+
+    // Add remaining questions as unanswered wrong
+    for (let i = currentQIndex; i < TOTAL_QUESTIONS; i++) {
       const q = activeQuestions[i];
       if (!q) continue;
-      finalAnswers.push({
+
+      // If user is currently on a question and selectedOption exists, we still treat as unanswered
+      // because they didn't confirm. That pressure is intentional.
+      final.push({
         id: q.id,
         category: q.category,
         isCorrect: false,
@@ -294,20 +326,22 @@ export default function DiagnosticPage() {
       });
     }
 
-    runStopProtocol(finalAnswers);
+    runStopProtocol(final, { timedOut: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft]);
 
-  // -------------------- KEYBOARD SUPPORT --------------------
+  // -------------------- KEYBOARD SHORTCUTS --------------------
   useEffect(() => {
     if (stage !== "quiz") return;
 
     const onKey = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
+
       if (k === "1" || k === "a") setSelectedOption(0);
       if (k === "2" || k === "b") setSelectedOption(1);
       if (k === "3" || k === "c") setSelectedOption(2);
       if (k === "4" || k === "d") setSelectedOption(3);
+
       if (k === "enter") {
         if (selectedOption !== null) commitAnswer();
       }
@@ -318,10 +352,37 @@ export default function DiagnosticPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage, selectedOption, question, currentQIndex, answers]);
 
-  // -------------------- MAIN LOGIC --------------------
+  // -------------------- ACTIONS --------------------
+  const clearAnalyzingTimers = () => {
+    analyzingTimers.current.forEach((id) => window.clearTimeout(id));
+    analyzingTimers.current = [];
+  };
+
+  const restart = () => {
+    clearAnalyzingTimers();
+
+    setStage("quiz");
+    setAnswers([]);
+    setCurrentQIndex(0);
+    setSelectedOption(null);
+    setTimeLeft(QUIZ_SECONDS);
+    quizStartMsRef.current = Date.now();
+
+    // Re-pick questions (keep personalization)
+    const eligible = questions.filter((q) => {
+      if (!q.licenseClasses.includes(userLicense)) return false;
+      if (q.endorsements && q.endorsements.length > 0) {
+        const hasRequired = q.endorsements.some((req) => userEndorsements.includes(req));
+        if (!hasRequired) return false;
+      }
+      return true;
+    });
+
+    setActiveQuestions(pickDiagnosticQuestions(eligible));
+  };
+
   const commitAnswer = () => {
-    if (!question) return;
-    if (selectedOption === null) return;
+    if (!question || selectedOption === null) return;
 
     const record: AnswerRecord = {
       id: question.id,
@@ -337,157 +398,117 @@ export default function DiagnosticPage() {
     const newAnswers = [...answers, record];
     setAnswers(newAnswers);
 
-    if (currentQIndex >= 4) {
-      runStopProtocol(newAnswers);
+    if (currentQIndex >= TOTAL_QUESTIONS - 1) {
+      runStopProtocol(newAnswers, { timedOut: false });
     } else {
       setCurrentQIndex((p) => p + 1);
       setSelectedOption(null);
     }
   };
 
-  const clearAllTimeouts = () => {
-    for (const id of timeoutsRef.current) window.clearTimeout(id);
-    timeoutsRef.current = [];
-  };
-
-  const runStopProtocol = (finalAnswers: AnswerRecord[]) => {
-    if (stage !== "quiz") return;
-
+  const runStopProtocol = (finalAnswers: AnswerRecord[], opts: { timedOut: boolean }) => {
+    if (stage !== "quiz") return; // prevent double-run
     setStage("analyzing");
-    clearAllTimeouts();
+    clearAnalyzingTimers();
 
     const correct = finalAnswers.filter((a) => a.isCorrect).length;
-    const score = Math.round((correct / 5) * 100);
+    const score = Math.round((correct / TOTAL_QUESTIONS) * 100);
+
     const breakdown = computeBreakdown(finalAnswers);
-    const weakest = pickWeakestDomain(breakdown);
+    const weak = pickWeakestDomain(breakdown);
 
-    safeSet(STORAGE_KEYS.diagnosticScore, String(score));
-    safeSet(STORAGE_KEYS.weakestDomain, weakest);
-    safeSet(STORAGE_KEYS.diagnosticAnswers, JSON.stringify(finalAnswers));
-    safeSet(STORAGE_KEYS.diagnosticBreakdown, JSON.stringify(breakdown));
+    // Tease: prefer a miss in the weakest domain
+    const teased =
+      finalAnswers.find((a) => !a.isCorrect && a.category === weak) ||
+      finalAnswers.find((a) => !a.isCorrect) ||
+      null;
 
-    const sid = safeGet(STORAGE_KEYS.sessionId) || makeSessionId();
-    const startedAt = safeGet(STORAGE_KEYS.diagnosticStartedAt) || new Date().toISOString();
-    const completedAt = new Date().toISOString();
-    const timeUsedSec = clamp(Math.round((Date.now() - quizStartTsRef.current) / 1000), 0, TIME_LIMIT_SEC);
+    // Persist (compat + richer)
+    safeSet(RESULT_KEYS.diagnosticScore, String(score));
+    safeSet(RESULT_KEYS.weakestDomain, weak);
+    safeSet(RESULT_KEYS.diagnosticAnswers, JSON.stringify(finalAnswers));
+    safeSet(RESULT_KEYS.diagnosticTimedOut, opts.timedOut ? "1" : "0");
 
-    const meta: DiagnosticMeta = {
-      sessionId: sid,
-      startedAt,
-      completedAt,
-      license,
-      state: userState,
-      endorsements,
-      timeLimitSec: TIME_LIMIT_SEC,
-      timeUsedSec,
+    safeSet(RESULT_KEYS.haulAnswers, JSON.stringify(finalAnswers));
+    safeSet(RESULT_KEYS.haulBreakdown, JSON.stringify(breakdown));
+
+    const meta = {
+      sessionId: safeGet(RESULT_KEYS.sessionId) || makeSessionId(),
+      startedAt: safeGet(RESULT_KEYS.startedAt) || new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      license: userLicense,
+      userState,
+      endorsements: userEndorsements,
+      timeLimitSec: QUIZ_SECONDS,
+      timeUsedSec: Math.max(0, Math.round((Date.now() - quizStartMsRef.current) / 1000)),
     };
-    safeSet(STORAGE_KEYS.diagnosticMeta, JSON.stringify(meta));
+    safeSet(RESULT_KEYS.haulMeta, JSON.stringify(meta));
 
+    // Set preview state now (no localStorage reads in render)
     setFinalScore(score);
-    setWeakDomain(weakest);
+    setWeakDomain(weak);
     setFinalBreakdown(breakdown);
+    setMissed(teased);
+    setTimedOut(opts.timedOut);
 
-    const missed = finalAnswers.filter((a) => !a.isCorrect);
-    const missedSorted = missed
-      .sort((a, b) => (a.category === weakest ? -1 : 1) - (b.category === weakest ? -1 : 1))
-      .slice(0, 3);
-    setMissedList(missedSorted);
-
-    const stateName = STATE_NAME[userState] || userState;
-    const profileLine = `CLASS ${license} • ${stateName.toUpperCase()} • ${endorsements.length ? `${endorsements.length} MODULES` : "CORE"}`;
-
-    // Faster “feels instant” sequence (no slow “saving” vibe)
-    const sequence = [
-      { t: 80, pct: 12, text: "ANALYZING ANSWERS…" },
-      { t: 260, pct: 32, text: `DMV PROFILE: ${profileLine}` },
-      { t: 520, pct: 54, text: "CALCULATING SCORE…" },
-      { t: 820, pct: 74, text: `WEAK TOPIC: ${weakest.toUpperCase()}…` },
-      { t: 1120, pct: 90, text: "BUILDING YOUR NEXT STEPS…" },
-      { t: 1400, pct: 100, text: "DONE." },
+    // Personalized analyzing animation
+    const seq = [
+      { t: 550, pct: 12, text: `LOADING ${userState} EXAM PROFILE...` },
+      { t: 1300, pct: 28, text: `SYNCING ${classLabel(userLicense).toUpperCase()} MODULES...` },
+      { t: 2150, pct: 46, text: `SCANNING WEAKNESS: ${weak.toUpperCase()}...` },
+      { t: 2950, pct: 65, text: `CALCULATING PASS PROBABILITY...` },
+      {
+        t: 3800,
+        pct: 84,
+        text: opts.timedOut ? `TIME EXPIRED — SAFETY STOP...` : `CRITICAL FAILURE DETECTED...`,
+      },
+      { t: 4650, pct: 100, text: `EXAM STOPPED.` },
     ];
 
-    for (const step of sequence) {
+    setAnalysisPct(0);
+    setAnalysisText("INITIALIZING SYSTEM...");
+
+    seq.forEach((step) => {
       const id = window.setTimeout(() => {
         setAnalysisPct(step.pct);
         setAnalysisText(step.text);
       }, step.t);
-      timeoutsRef.current.push(id);
-    }
+      analyzingTimers.current.push(id);
+    });
 
-    const doneId = window.setTimeout(() => setStage("preview"), 1580);
-    timeoutsRef.current.push(doneId);
+    const doneId = window.setTimeout(() => setStage("preview"), 5200);
+    analyzingTimers.current.push(doneId);
   };
 
-  // -------------------- UI HELPERS --------------------
-  const stateName = useMemo(() => STATE_NAME[userState] || userState, [userState]);
-  const headerProfile = useMemo(() => {
-    const ends = endorsements.length ? `${endorsements.length} modules` : "core";
-    return `${classLabel(license)} • ${stateName} • ${ends}`;
-  }, [license, stateName, endorsements]);
-
-  const timeLabel = `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, "0")}`;
-  const urgency = timeLeft <= 60 ? "high" : timeLeft <= 120 ? "med" : "low";
-
-  const goPay = (plan?: "monthly" | "lifetime") => {
-    const recommended = finalScore >= PASSING_SCORE ? "monthly" : "lifetime";
-    const p = plan || recommended;
-    router.push(`/pay?plan=${p}`);
-  };
-
-  const LockOverlay = ({ title, sub }: { title: string; sub: string }) => (
-    <div className="absolute inset-0 flex items-center justify-center">
-      <div className="bg-slate-900/90 border border-slate-700 px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
-        <span>🔒</span>
-        <div className="leading-tight">
-          <div className="text-[10px] font-black uppercase tracking-widest text-white">{title}</div>
-          <div className="text-[10px] text-slate-300">{sub}</div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // -------------------- VIEW: ANALYZING --------------------
+  // ---------------------------
+  // VIEW 1: ANALYZING
+  // ---------------------------
   if (stage === "analyzing") {
     return (
-      <div className="min-h-screen bg-slate-950 text-white font-sans">
+      <div className="min-h-screen bg-slate-950 text-white font-sans flex items-center justify-center p-6">
         <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:52px_52px]" />
-          <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] opacity-20 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.55),transparent_65%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(2,6,23,0.88)_75%)]" />
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.18),transparent_60%)]" />
+          <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:44px_44px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_35%,rgba(2,6,23,0.9)_75%)]" />
         </div>
 
-        <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
-          <div className="w-full max-w-md">
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-300 text-[10px] font-mono tracking-widest uppercase">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-70" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
-                </span>
-                DMV QUICK DIAGNOSTIC
-              </div>
-
-              <h2 className="mt-5 text-3xl font-black tracking-tight leading-none">
-                <span className="text-amber-500">Analyzing</span> answers…
-              </h2>
-              <p className="mt-2 text-xs text-slate-400 font-mono">{headerProfile.toUpperCase()}</p>
-
-              <div className="mt-3 flex flex-wrap justify-center gap-2">
-                <span className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-200">
-                  DMV
-                </span>
-                <span className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-200">
-                  {classLabel(license)}
-                </span>
-                <span className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-200">
-                  {stateName.toUpperCase()}
-                </span>
-              </div>
+        <div className="w-full max-w-md relative z-10">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-300 text-[10px] font-black uppercase tracking-widest">
+              System Scan • {userState} • {classLabel(userLicense)}
             </div>
+            <div className="mt-4 text-6xl animate-pulse">⚠️</div>
+            <h2 className="mt-4 text-3xl font-black tracking-tighter">STOP PROTOCOL</h2>
+            <p className="mt-2 text-xs font-mono text-slate-500 uppercase tracking-widest">
+              {chips}
+            </p>
+          </div>
 
-            <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-2xl">
-              <div className="flex justify-between text-[10px] text-slate-400 uppercase tracking-widest font-mono mb-2">
-                <span>Status</span>
+          <div className="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 relative overflow-hidden">
+            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.2),transparent_60%)]" />
+            <div className="relative">
+              <div className="flex justify-between text-[10px] text-slate-400 mb-2 uppercase tracking-widest font-mono">
+                <span>System Status</span>
                 <span>{analysisPct}%</span>
               </div>
 
@@ -496,18 +517,17 @@ export default function DiagnosticPage() {
                   className="h-full bg-amber-500"
                   initial={{ width: 0 }}
                   animate={{ width: `${analysisPct}%` }}
-                  transition={{ ease: "easeOut", duration: 0.35 }}
+                  transition={{ type: "spring", stiffness: 120, damping: 20 }}
                 />
               </div>
 
-              <div className="rounded-xl bg-slate-950/40 border border-slate-800 p-4">
-                <div className="text-[11px] font-mono text-amber-300 tracking-widest">
-                  {">"} <span className="font-black">{analysisText}</span>
-                </div>
-              </div>
+              <p className="text-amber-300 font-black text-sm">
+                {">"} {analysisText}
+              </p>
 
-              <div className="mt-5 text-center text-[10px] text-slate-500 font-mono">
-                Do not close this tab
+              <div className="mt-5 text-[10px] text-slate-500 font-mono uppercase tracking-widest flex items-center justify-between">
+                <span>Encrypted</span>
+                <span>v6.0 • Haul.OS</span>
               </div>
             </div>
           </div>
@@ -516,473 +536,302 @@ export default function DiagnosticPage() {
     );
   }
 
-  // -------------------- VIEW: PREVIEW --------------------
+  // ---------------------------
+  // VIEW 2: PREVIEW / PAYWALL
+  // ---------------------------
   if (stage === "preview") {
-    const status = statusFromScore(finalScore);
-    const willFail = finalScore < PASSING_SCORE;
-    const missing = Math.max(0, PASSING_SCORE - finalScore);
-    const totalCorrect = Math.round((finalScore / 100) * 5);
-    const totalMissed = Math.max(0, 5 - totalCorrect);
+    const risk = riskFromScore(finalScore);
+    const tc = toneClasses(risk.tone);
+    const missing = Math.max(0, 80 - finalScore);
 
-    const tone =
-      status.tone === "green"
-        ? {
-            badge: "bg-emerald-500/10 border-emerald-500/40 text-emerald-300",
-            big: "text-emerald-400",
-            bar: "bg-emerald-500",
-          }
-        : status.tone === "amber"
-        ? {
-            badge: "bg-amber-500/10 border-amber-500/40 text-amber-300",
-            big: "text-amber-400",
-            bar: "bg-amber-500",
-          }
-        : {
-            badge: "bg-red-500/10 border-red-500/40 text-red-300",
-            big: "text-red-400",
-            bar: "bg-red-500",
-          };
-
-    const breakdownEntries = Object.entries(finalBreakdown).sort((a, b) => a[1].accuracy - b[1].accuracy);
-
-    const unlockBullets = [
-      "Unlimited CDL Practice Tests",
-      "6,000+ Real Questions & Answers",
-      "Fast Track Mode (Save Time)",
-      "Full Simulator of Real Exam Access",
-      "All 50 States Included",
-      "Works Offline (Study at rest stops)",
-      "100% Pass Guarantee",
-    ];
-
-    const primaryCta = willFail ? "Get CDL Practice Tests (6,000+ Q&A) →" : "Keep Practicing Until 80%+ →";
-    const ctaSub = "All 50 States • Works Offline • 12,000+ drivers";
-
-    const IdCard = () => (
-      <motion.div
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5 relative overflow-hidden"
-      >
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.35),transparent_60%)]" />
-        <div className="relative">
-          <div className="flex items-start justify-between gap-3 mb-4">
-            <div>
-              <div className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Driver Study Card</div>
-              <div className="mt-1 text-sm font-black text-white">
-                {classLabel(license)} • {stateName}
-              </div>
-              <div className="mt-1 text-[11px] text-slate-400">
-                Endorsements: <span className="text-slate-200 font-bold">{formatEndorsements(endorsements)}</span>
-              </div>
-            </div>
-            <div className={`px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest ${tone.badge}`}>
-              {status.label}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/30 p-3">
-              <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Score</div>
-              <div className={`text-2xl font-black ${tone.big}`}>{finalScore}%</div>
-            </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/30 p-3">
-              <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Need</div>
-              <div className={`text-2xl font-black ${willFail ? "text-red-300" : "text-emerald-300"}`}>
-                {willFail ? `${missing}%` : "0%"}
-              </div>
-            </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/30 p-3">
-              <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Missed</div>
-              <div className="text-2xl font-black text-white">{totalMissed}/5</div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
+    const breakdownEntries = Object.entries(finalBreakdown).sort(
+      (a, b) => a[1].accuracy - b[1].accuracy
     );
 
-    const MissedPreview = ({ item }: { item: AnswerRecord }) => {
-      const correctLetter = String.fromCharCode(65 + item.correctIndex);
-      const chosenLetter = item.selectedIndex >= 0 ? String.fromCharCode(65 + item.selectedIndex) : "—";
-
-      return (
-        <button
-          onClick={() => goPay()}
-          className="w-full text-left rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5 relative overflow-hidden hover:border-slate-700 transition"
-          aria-label="Open paywall"
-        >
-          <div className="text-[10px] font-black uppercase tracking-widest text-amber-300/90 mb-2">
-            You missed this • {item.category}
-          </div>
-
-          <div className="font-black text-white text-sm leading-relaxed">{item.text}</div>
-
-          <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/30 p-3">
-              <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Correct</div>
-              <div className="text-emerald-300 font-black text-lg">{correctLetter}</div>
-            </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/30 p-3">
-              <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">You picked</div>
-              <div className={`font-black text-lg ${item.isCorrect ? "text-emerald-300" : "text-red-300"}`}>{chosenLetter}</div>
-            </div>
-          </div>
-
-          <div className="mt-3 rounded-2xl border border-slate-800 bg-slate-950/30 p-4 relative overflow-hidden">
-            <div className="filter blur-sm select-none opacity-60 text-[12px] text-slate-200 leading-relaxed">
-              Explanation: {item.explanation}
-            </div>
-            <LockOverlay title="See full answers + why" sub="Get unlimited CDL practice tests" />
-          </div>
-        </button>
-      );
-    };
-
     return (
-      <div className="min-h-screen bg-slate-950 text-white font-sans pb-32">
+      <div className="min-h-screen bg-slate-950 text-white p-4 flex items-center justify-center font-sans pb-28">
         <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:52px_52px]" />
-          <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] opacity-15 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.55),transparent_65%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(2,6,23,0.9)_75%)]" />
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.18),transparent_60%)]" />
+          <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:44px_44px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_35%,rgba(2,6,23,0.9)_75%)]" />
         </div>
 
-        <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6 pt-10">
-          <div className="mb-4 text-center">
-            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[10px] font-mono tracking-widest uppercase ${tone.badge}`}>
-              QUICK CHECK • 5 QUESTIONS • {headerProfile.toUpperCase()}
+        <div className="w-full max-w-md relative z-10">
+          {/* Status Header */}
+          <div className={`rounded-3xl p-5 border ${tc.border} ${tc.bg} text-center`}>
+            <div className={`font-black text-xs uppercase tracking-[0.2em] mb-1 ${tc.text}`}>
+              Status: {risk.label === "CLEAR" ? "Cleared" : "Grounded"}
+            </div>
+            <div className="text-3xl font-black">RISK LEVEL: {risk.label}</div>
+            <div className="text-slate-300 text-sm mt-1">
+              Readiness Score: <span className={`font-black ${tc.text}`}>{finalScore}%</span>
+              {risk.label !== "CLEAR" && (
+                <span className="text-slate-400"> • Need +{missing}% to hit 80%</span>
+              )}
             </div>
 
-            <h1 className="mt-4 text-3xl md:text-5xl font-black tracking-tight leading-none">
-              Your score is <span className={`${tone.big}`}>{finalScore}%</span>
-            </h1>
+            <div className="mt-2 text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+              {chips}
+            </div>
 
-            <p className="mt-2 text-slate-400 text-sm">
-              You need <span className="font-black text-white">{PASSING_SCORE}%</span> to pass in{" "}
-              <span className="font-black text-white">{stateName}</span>.
-            </p>
-
-            {finalScore < PASSING_SCORE ? (
-              <div className="mt-4 rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 inline-block">
-                <div className="text-red-200 font-black uppercase tracking-widest text-[11px]">
-                  If you take the test today, you will FAIL.
-                </div>
-              </div>
-            ) : (
-              <div className="mt-4 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 inline-block">
-                <div className="text-emerald-200 font-black uppercase tracking-widest text-[11px]">
-                  You’re close. Keep practicing to stay above 80%.
-                </div>
+            {timedOut && (
+              <div className="mt-3 text-[10px] font-black uppercase tracking-widest text-amber-300">
+                Time expired — this is exactly how the real test feels.
               </div>
             )}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-            <div className="space-y-4">
-              <IdCard />
-
-              <div className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5">
-                <div className="text-xs font-black text-slate-200 uppercase tracking-widest mb-2">What this means</div>
-                <div className="text-sm text-slate-300 leading-relaxed">
-                  <span className="font-black text-white">Weak topic</span> = the topic you miss the most.{" "}
-                  <span className="font-black text-white">That’s what makes you fail.</span>
-                </div>
-
-                <div className="mt-3 rounded-2xl border border-slate-800 bg-slate-950/30 p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Your weak topic</div>
-                    <div className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Need</div>
-                  </div>
-                  <div className="mt-1 flex items-end justify-between gap-3">
-                    <div className="text-white font-black">{weakDomain}</div>
-                    <div className={`text-xl font-black ${willFail ? "text-red-300" : "text-emerald-300"}`}>
-                      {willFail ? `${missing}%` : "0%"}
-                    </div>
-                  </div>
-
-                  <div className="mt-3 h-2 rounded-full bg-slate-800 overflow-hidden">
-                    <motion.div
-                      className={`h-full ${tone.bar}`}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${clamp(Math.round((finalScore / PASSING_SCORE) * 100), 0, 100)}%` }}
-                      transition={{ type: "spring", stiffness: 120, damping: 18 }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5">
-                <div className="text-xs font-black text-slate-200 uppercase tracking-widest mb-3">What to do next</div>
-
-                <div className="space-y-2">
-                  {[
-                    { k: "1", t: "Get full CDL practice tests", d: "Unlimited tests so you can practice anytime." },
-                    { k: "2", t: "Use Fast Track (save time)", d: "Study only what you miss. No guessing." },
-                    { k: "3", t: `Practice until ${PASSING_SCORE}%+`, d: "Take the full simulator until you stay above 80%." },
-                  ].map((s) => (
-                    <div key={s.k} className="rounded-2xl border border-slate-800 bg-slate-950/30 p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-2xl bg-amber-500/10 border border-amber-500/20 grid place-items-center shrink-0">
-                          <span className="text-amber-300 font-black">{s.k}</span>
-                        </div>
-                        <div>
-                          <div className="font-black text-white">{s.t}</div>
-                          <div className="text-sm text-slate-400 mt-0.5 leading-relaxed">{s.d}</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => goPay()}
-                  className="mt-4 w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black uppercase tracking-widest transition-transform active:scale-95 shadow-[0_0_40px_-16px_rgba(245,158,11,0.65)]"
-                >
-                  {primaryCta}
-                </button>
-                <div className="mt-2 text-center text-[10px] text-slate-500 font-mono uppercase tracking-widest">
-                  {ctaSub}
-                </div>
-              </div>
-
-              {/* What you unlock (kept EXACT concept you asked for) */}
-              <div className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5">
-                <div className="text-xs font-black text-slate-200 uppercase tracking-widest mb-3">Unlock includes</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {unlockBullets.map((b) => (
-                    <div key={b} className="rounded-2xl border border-slate-800 bg-slate-950/30 p-3 text-sm text-slate-200">
-                      <span className="text-emerald-400 font-black">✓</span> <span className="font-semibold">{b}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200 leading-relaxed">
-                  <span className="font-black">Pass Guarantee: 12,000+</span> drivers passed last year using the app{" "}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5">
+          {/* Breakdown (makes it feel truly personalized) */}
+          {breakdownEntries.length > 0 && (
+            <div className="mt-6 bg-slate-900/70 border border-slate-800 rounded-3xl p-6 relative overflow-hidden">
+              <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.22),transparent_60%)]" />
+              <div className="relative">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="text-xs font-black text-slate-200 uppercase tracking-widest">Your results</div>
-                  <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Correct {totalCorrect}/5</div>
+                  <div className="text-xs font-black text-slate-300 uppercase tracking-widest">
+                    Diagnostic Breakdown
+                  </div>
+                  <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+                    Target: {weakDomain}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  {breakdownEntries.slice(0, 5).map(([cat, v]) => (
-                    <div key={cat} className="rounded-2xl border border-slate-800 bg-slate-950/30 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm font-black text-white">{cat}</div>
+                  {breakdownEntries.slice(0, 4).map(([cat, v]) => (
+                    <div key={cat} className="rounded-2xl border border-slate-800 bg-slate-950/40 p-3">
+                      <div className="flex justify-between items-center">
+                        <div className="text-xs font-black text-white">{cat}</div>
                         <div className="text-xs font-mono text-slate-300">
-                          {v.correct}/{v.total} • <span className="font-black text-white">{v.accuracy}%</span>
+                          {v.correct}/{v.total} • {v.accuracy}%
                         </div>
                       </div>
                       <div className="mt-2 h-2 bg-slate-800 rounded-full overflow-hidden">
                         <motion.div
-                          className={`h-full ${v.accuracy >= 80 ? "bg-emerald-500" : v.accuracy >= 60 ? "bg-amber-500" : "bg-red-500"}`}
+                          className={`h-full ${
+                            v.accuracy >= 80 ? "bg-emerald-500" : v.accuracy >= 60 ? "bg-amber-500" : "bg-red-500"
+                          }`}
                           initial={{ width: 0 }}
-                          animate={{ width: `${clamp(v.accuracy, 0, 100)}%` }}
-                          transition={{ duration: 0.5, ease: "easeOut" }}
+                          animate={{ width: `${Math.max(0, Math.min(100, v.accuracy))}%` }}
+                          transition={{ duration: 0.7, ease: "easeOut" }}
                         />
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-3 text-[11px] text-slate-400 leading-relaxed">
-                  <span className="font-black text-white">Weak topic</span> is where you miss the most. That’s what we train.
+                <div className="mt-4 text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+                  We will build your Fix Plan around <span className="text-slate-300 font-black">{weakDomain}</span> first (fastest score lift).
                 </div>
               </div>
+            </div>
+          )}
 
-              <div className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-xs font-black text-slate-200 uppercase tracking-widest">What you missed</div>
-                  <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Tap to unlock</div>
+          {/* Hook: Missed Question */}
+          {missed ? (
+            <div className="mt-6 bg-slate-900/70 border border-slate-800 rounded-3xl p-6 relative overflow-hidden">
+              <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top,rgba(239,68,68,0.25),transparent_60%)]" />
+              <div className="relative">
+                <div className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">
+                  Priority Fix: {missed.category}
                 </div>
 
-                <div className="space-y-3">
-                  {missedList.length ? (
-                    missedList.map((m) => <MissedPreview key={m.id} item={m} />)
-                  ) : (
-                    <div className="rounded-2xl border border-slate-800 bg-slate-950/30 p-4 text-sm text-slate-300">
-                      Nice — you didn’t miss any in this quick check. Keep practicing to stay at 80%+.
+                <p className="text-white font-bold text-sm leading-relaxed">{missed.text}</p>
+
+                <div className="mt-4 bg-slate-950/60 border border-slate-800 rounded-2xl p-4 relative">
+                  <div className="filter blur-sm select-none opacity-60 text-sm text-slate-200 leading-relaxed">
+                    {missed.explanation}{" "}
+                    {missed.selectedIndex === -1 ? (
+                      <span>(You did not answer — timer hit 0.)</span>
+                    ) : (
+                      <span>
+                        (You picked {String.fromCharCode(65 + missed.selectedIndex)} — correct is{" "}
+                        {String.fromCharCode(65 + missed.correctIndex)}.)
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="bg-slate-900/90 border border-slate-700 px-4 py-2 rounded-full flex items-center gap-2">
+                      <span>🔒</span>
+                      <span className="text-xs font-black uppercase tracking-wider">Fix Plan Locked</span>
                     </div>
-                  )}
+                  </div>
                 </div>
 
-                <button
-                  onClick={() => goPay()}
-                  className="mt-4 w-full py-4 rounded-2xl bg-white text-black font-black uppercase tracking-widest transition-transform active:scale-95 hover:bg-slate-200"
-                >
-                  See full answers + explanations →
-                </button>
-
-                <div className="mt-2 text-center text-[10px] text-slate-500 font-mono uppercase tracking-widest">
-                  Unlimited CDL practice tests • {ctaSub}
+                <div className="mt-4 text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+                  Unlock to see the rule + drill it until it sticks (fastest lift).
                 </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-6 bg-slate-900/70 border border-slate-800 rounded-3xl p-6 text-center">
+              <div className="text-emerald-300 text-4xl mb-2">✅</div>
+              <div className="text-lg font-black">No failures detected in this scan.</div>
+              <p className="text-slate-400 text-sm mt-2 leading-relaxed">
+                Now make it <span className="text-white font-bold">repeatable</span>. Unlock full simulator + timed reps to keep 80%+ on demand.
+              </p>
+            </div>
+          )}
+
+          {/* Sticky CTA */}
+          <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-slate-950/80 backdrop-blur-xl border-t border-white/5">
+            <div className="max-w-md mx-auto">
+              <button
+                onClick={() => router.push("/pay")}
+                className={`w-full py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-black text-lg uppercase tracking-widest transition-transform active:scale-95 ${tc.glow}`}
+              >
+                Unlock Fix Plan & Pass →
+              </button>
+              <div className="mt-2 text-center text-[10px] text-slate-500 font-mono uppercase tracking-widest">
+                🔒 No credit card stored here • Stripe secure checkout
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Sticky CTA (direct to /pay, no modal) */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-slate-950/85 backdrop-blur-xl border-t border-white/5">
-          <div className="max-w-6xl mx-auto px-0 md:px-2">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-              <div className="text-center md:text-left">
-                <div className="text-[10px] font-black uppercase tracking-widest text-slate-300">
-                  {willFail ? "You are not ready yet" : "Keep practicing"}
-                </div>
-                <div className="text-xs text-slate-400">
-                  {willFail ? `Need ${missing}% more to reach ${PASSING_SCORE}%` : `Stay above ${PASSING_SCORE}% to pass`}
-                </div>
-              </div>
-
-              <button
-                onClick={() => goPay()}
-                className="w-full md:w-auto md:min-w-[420px] py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black uppercase tracking-widest shadow-lg transition-transform active:scale-95"
-              >
-                {primaryCta}
-              </button>
-            </div>
-
-            <div className="mt-2 text-center text-[10px] text-slate-500 font-mono uppercase tracking-widest">
-              {ctaSub}
-            </div>
+          <div className="mt-5 flex items-center justify-between">
+            <button onClick={restart} className="text-xs text-slate-500 underline hover:text-slate-300">
+              Restart Diagnostic
+            </button>
+            <button onClick={() => router.push("/")} className="text-xs text-slate-500 underline hover:text-slate-300">
+              Change setup
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
-  // -------------------- VIEW: QUIZ --------------------
+  // ---------------------------
+  // VIEW 3: QUIZ
+  // ---------------------------
   if (!question) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
-        <div className="text-center max-w-md">
-          <div className="text-amber-500 text-5xl mb-4">⏳</div>
-          <div className="text-2xl font-black">Loading…</div>
-          <div className="mt-2 text-sm text-slate-400">Preparing your 5-question quick check.</div>
-
-          {configLoaded ? (
-            <div className="mt-6 text-[11px] font-mono text-slate-500">{headerProfile.toUpperCase()}</div>
-          ) : (
-            <div className="mt-6 text-[11px] font-mono text-slate-500">Loading your setup…</div>
-          )}
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen bg-slate-950" />;
   }
 
   return (
     <div className="min-h-screen bg-slate-950 text-white font-sans flex flex-col">
+      {/* Background FX */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:52px_52px]" />
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] opacity-10 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.55),transparent_65%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(2,6,23,0.9)_75%)]" />
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.18),transparent_60%)]" />
+        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:44px_44px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_35%,rgba(2,6,23,0.9)_75%)]" />
       </div>
 
-      <div className="relative z-20 px-5 py-4 border-b border-slate-800 bg-slate-950/60 backdrop-blur sticky top-0">
+      {/* HUD Header */}
+      <div className="relative z-20 px-6 py-4 border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-[10px] font-black text-amber-400 uppercase tracking-widest">
-              CDL QUICK CHECK • 5 QUESTIONS
+              Diagnostic Active • Tuned to {userState}
             </div>
-            <div className="text-xs text-slate-400 font-mono mt-1">{headerProfile.toUpperCase()}</div>
-            <div className="text-[11px] text-slate-500 font-mono mt-1">
-              Q{currentQIndex + 1}/5 • {question.category}
+            <div className="text-xs text-slate-400 font-mono uppercase tracking-widest mt-1">
+              {classLabel(userLicense)} • {userEndorsements.length ? userEndorsements.join(", ") : "No Modules"}
+            </div>
+            <div className="text-xs text-slate-500 font-mono mt-1">
+              Q{currentQIndex + 1} / {TOTAL_QUESTIONS} • ID: {question.id}
             </div>
           </div>
 
           <div className="text-right">
+            <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Time</div>
             <div
-              className={`text-2xl font-black font-mono ${
+              className={`font-mono font-black text-2xl ${
                 urgency === "high" ? "text-red-400" : urgency === "med" ? "text-amber-300" : "text-slate-200"
               }`}
             >
-              {timeLabel}
+              {minutes}:{seconds}
             </div>
-            <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">time left</div>
           </div>
         </div>
       </div>
 
+      {/* Progress Bar */}
       <div className="relative z-10 w-full h-1 bg-slate-900">
         <motion.div
           className="h-full bg-amber-500"
           initial={{ width: 0 }}
-          animate={{ width: `${((currentQIndex + 1) / 5) * 100}%` }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
+          animate={{ width: `${((currentQIndex + 1) / TOTAL_QUESTIONS) * 100}%` }}
+          transition={{ type: "spring", stiffness: 120, damping: 20 }}
         />
       </div>
 
-      <div className="relative z-10 flex-1 p-5 max-w-3xl mx-auto flex flex-col justify-center w-full">
-        <div className="mb-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-slate-900/70 border border-slate-800 text-[10px] font-black text-slate-200 uppercase tracking-widest">
-              {question.category}
-            </span>
-            <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Pick A–D</span>
-          </div>
+      {/* Question */}
+      <div className="relative z-10 flex-1 p-6 max-w-2xl mx-auto flex flex-col justify-center w-full">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={question.id}
+            initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -10, filter: "blur(6px)" }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+          >
+            <div className="mb-6">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/70 border border-slate-800 text-[10px] font-black text-slate-300 uppercase tracking-widest mb-3">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                {question.category}
+              </span>
+              <h2 className="text-xl md:text-2xl font-black leading-relaxed tracking-tight">{question.text}</h2>
+              <p className="mt-2 text-sm text-slate-400 leading-relaxed">
+                Choose the best answer. This scan is tuned to your setup ({userState} • {classLabel(userLicense)}).
+              </p>
+            </div>
 
-          <h2 className="text-xl md:text-2xl font-black leading-relaxed tracking-tight">{question.text}</h2>
-        </div>
-
-        <div className="space-y-3">
-          {question.options.map((opt, idx) => {
-            const active = selectedOption === idx;
-            return (
-              <button
-                key={idx}
-                onClick={() => setSelectedOption(idx)}
-                className={`w-full text-left p-4 rounded-2xl border transition-all ${
-                  active
-                    ? "bg-amber-500/10 border-amber-500 text-white shadow-[0_0_18px_rgba(245,158,11,0.20)]"
-                    : "bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-900"
-                }`}
-                aria-pressed={active}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`mt-0.5 w-7 h-7 rounded-lg border flex items-center justify-center text-[12px] font-black ${
-                      active ? "border-amber-500 bg-amber-500 text-black" : "border-slate-700 text-slate-300"
+            <div className="space-y-3">
+              {question.options.map((opt, idx) => {
+                const active = selectedOption === idx;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedOption(idx)}
+                    className={`w-full text-left p-4 rounded-2xl border transition-all ${
+                      active
+                        ? "bg-amber-500/10 border-amber-500 text-white shadow-[0_0_18px_rgba(245,158,11,0.18)]"
+                        : "bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-900"
                     }`}
+                    aria-pressed={active}
                   >
-                    {String.fromCharCode(65 + idx)}
-                  </div>
+                    <div className="flex items-start gap-3">
+                      <div
+                        className={`mt-0.5 w-6 h-6 rounded-lg border flex items-center justify-center text-[10px] font-black ${
+                          active
+                            ? "border-amber-500 bg-amber-500 text-black"
+                            : "border-slate-700 text-slate-300"
+                        }`}
+                      >
+                        {String.fromCharCode(65 + idx)}
+                      </div>
+                      <span className="text-sm md:text-base font-semibold leading-relaxed">{opt}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
 
-                  <div className="flex-1">
-                    <div className="text-sm md:text-base font-semibold leading-relaxed">{opt}</div>
-                    {active && (
-                      <div className="mt-2 text-[10px] font-mono text-amber-300 uppercase tracking-widest">selected</div>
-                    )}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="mt-6 text-center text-[11px] text-slate-500 font-mono">
-          This is a quick check. Your full practice tests unlock after.
-        </div>
+            <div className="mt-6 text-center text-[11px] text-slate-500 font-mono">
+              Updated for 2026 • Optimized for mobile • No account needed
+            </div>
+          </motion.div>
+        </AnimatePresence>
       </div>
 
-      <div className="relative z-20 p-5 border-t border-slate-800 bg-slate-950/65 backdrop-blur">
+      {/* Footer CTA */}
+      <div className="relative z-10 p-6 border-t border-slate-800 bg-slate-950/70 backdrop-blur">
         <button
           onClick={commitAnswer}
           disabled={selectedOption === null}
-          className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-transform active:scale-95 ${
+          className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all ${
             selectedOption === null
               ? "bg-slate-900 text-slate-600 cursor-not-allowed border border-slate-800"
-              : "bg-white text-black hover:bg-slate-200 shadow-lg"
+              : "bg-white text-black hover:bg-slate-200 shadow-lg active:scale-95"
           }`}
         >
-          {currentQIndex === 4 ? "Finish & See Score →" : "Next →"}
+          {currentQIndex === TOTAL_QUESTIONS - 1 ? "Complete Inspection" : "Confirm Selection"}
         </button>
 
-        <div className="mt-3 text-center text-[10px] text-slate-500 font-mono uppercase tracking-widest">
-          You need {PASSING_SCORE}% to pass in {stateName}
+        <div className="mt-3 flex items-center justify-between text-[10px] text-slate-500 font-mono uppercase tracking-widest">
+          <button onClick={() => router.push("/")} className="underline hover:text-slate-300">
+            Change setup
+          </button>
+          <span>Haul.OS • v6.0</span>
         </div>
       </div>
     </div>
