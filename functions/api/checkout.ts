@@ -82,7 +82,7 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: E
     const common: Record<string, string> = {
       ui_mode: "embedded",
       return_url: returnUrl,
-      allow_promotion_codes: "true",
+      allow_promotion_codes: "false",
       "metadata[app]": "cdl",
       "metadata[plan]": plan,
       ...(email ? { customer_email: email } : {}),
