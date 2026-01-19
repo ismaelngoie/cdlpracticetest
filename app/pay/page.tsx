@@ -370,6 +370,29 @@ function PaywallContent() {
     }, 50);
   };
 
+  // Desktop: show embedded checkout in the right column (trust/product feel)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+    if (!isDesktop) return;
+
+    if (!stripePk) return;
+
+    const e = String(restoreEmail || "").trim().toLowerCase();
+    const email = e.includes("@") ? e : undefined;
+    if (email) persistEmail(email);
+
+    setCheckoutErr("");
+    setCheckoutOpen(true);
+    setCheckoutBusy(true);
+
+    setEmbedParams((prev) => {
+      if (prev?.plan === selectedPlan && prev?.email === email) return prev;
+      return { plan: selectedPlan, email };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPlan, restoreEmail, stripePk]);
+
   // Mount embedded checkout (inline)
   useEffect(() => {
     let cancelled = false;
@@ -647,7 +670,7 @@ function PaywallContent() {
               </div>
 
               {/* FAQ */}
-              <div className="rounded-3xl border border-white/10 bg-slate-900/50 backdrop-blur p-6 mb-6">
+              <div className="rounded-3xl border border-white/10 bg-slate-900/50 backdrop-blur p-6 mb-3">
                 <div className="text-xs font-black uppercase tracking-widest text-slate-300 mb-4">Quick FAQ</div>
                 <div className="space-y-4">
                   {faqs.map((f) => (
@@ -659,14 +682,11 @@ function PaywallContent() {
                 </div>
               </div>
 
-              {/* Restore (hidden by default) */}
-              <div className="text-center">
+              {/* Restore (hidden by default, small link) */}
+              <div className="mt-2">
                 <button
-                  onClick={() => {
-                    setShowRestore((p) => !p);
-                    setRestoreMsg("");
-                  }}
-                  className="text-[11px] text-slate-400 hover:text-slate-200 underline"
+                  onClick={() => setShowRestore((p) => !p)}
+                  className="text-xs text-slate-400 hover:text-white underline underline-offset-4"
                 >
                   Already paid? Restore access
                 </button>
@@ -674,13 +694,13 @@ function PaywallContent() {
                 <AnimatePresence>
                   {showRestore && (
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="mt-4 mx-auto max-w-xl rounded-3xl border border-white/10 bg-white/5 p-6 text-left"
+                      exit={{ opacity: 0, y: 8 }}
+                      className="mt-4 rounded-3xl border border-white/10 bg-white/5 p-6"
                     >
                       <div className="text-xs font-black uppercase tracking-widest text-slate-300">Restore access</div>
-                      <div className="text-[11px] text-slate-500 mt-1">Enter the email you used at payment.</div>
+                      <div className="text-[11px] text-slate-500 mt-1">Restore access with your payment email.</div>
 
                       <div className="mt-4 flex gap-2">
                         <input
@@ -722,7 +742,7 @@ function PaywallContent() {
             {/* RIGHT: Plans + Checkout */}
             <div className="lg:col-span-5">
               {/* Plans */}
-              <div className={`${checkoutOpen ? "hidden" : ""} space-y-4 mb-6`}>
+              <div className="space-y-4 mb-6">
                 {/* Lifetime */}
                 <button
                   onClick={() => setSelectedPlan("lifetime")}
@@ -827,7 +847,7 @@ function PaywallContent() {
                 </button>
               </div>
 
-              {/* Inline Checkout */}
+              {/* Inline Checkout (full-screen height on desktop) */}
               <AnimatePresence>
                 {checkoutOpen && (
                   <motion.div
@@ -835,46 +855,45 @@ function PaywallContent() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    className="fixed inset-0 z-[60] bg-slate-950/95 backdrop-blur-lg p-4 lg:static lg:z-auto lg:bg-transparent lg:backdrop-blur-0 lg:p-0 lg:mb-6"
+                    className="mb-6 rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5 text-left flex flex-col lg:sticky lg:top-6 lg:h-[calc(100vh-48px)]"
                   >
-                    <div
-                      className="mx-auto w-full max-w-screen-2xl h-full lg:max-w-none lg:h-[calc(100vh-140px)] lg:sticky lg:top-8"
-                    >
-                      <div className="h-full rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5 text-left flex flex-col">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="text-xs font-black text-slate-300 uppercase tracking-widest">
-                              Complete payment below
-                            </div>
-                            <div className="text-sm text-white font-black mt-2 leading-snug">
-                              Complete payment below to unlock 6,000+ real Q&A, Full Simulator, Fast Track, All 50 states, Offline.
-                            </div>
-                            <div className="mt-2 text-[11px] text-amber-300 font-black">
-                              ✅ Trusted by {DRIVERS_USED} drivers
-                            </div>
-                          </div>
-
-                          <button
-                            onClick={closeCheckout}
-                            className="shrink-0 px-3 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/10 bg-white/5 hover:bg-white/10"
-                            aria-label="Close checkout"
-                          >
-                            Close
-                          </button>
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div>
+                        <div className="text-sm md:text-base font-black text-white leading-snug">
+                          Complete payment below to unlock 6,000+ real Q&A, Full Simulator, Fast Track, All 50 states, Offline.
                         </div>
-
-                        <div className="mt-4 flex-1 flex flex-col">
-                          {checkoutErr ? <div className="text-xs text-red-300 mb-3">{checkoutErr}</div> : null}
-                          {checkoutBusy ? <div className="text-xs text-slate-400 mb-3">Loading secure payment…</div> : null}
-
-                          <div className="flex-1 rounded-2xl overflow-hidden border border-slate-800 bg-slate-950/40">
-                            <div id="embedded-checkout" className="h-full w-full" />
-                          </div>
-
-                          <div className="mt-3 text-[11px] text-slate-400 font-black">
-                            🔒 Secure Payment • 100% Money-Back Guarantee
-                          </div>
+                        <div className="text-[11px] text-slate-500 mt-1">
+                          Get instant access to{" "}
+                          <span className="text-white font-black">
+                            {selectedPlan === "lifetime" ? "6,000+" : "4,000"}
+                          </span>{" "}
+                          real questions & answers + full simulator.
                         </div>
+                        <div className="mt-2 text-[11px] text-amber-300 font-black">
+                          ✅ Trusted by {DRIVERS_USED} drivers
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={closeCheckout}
+                        className="shrink-0 px-3 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/10 bg-white/5 hover:bg-white/10"
+                        aria-label="Close checkout"
+                      >
+                        Close
+                      </button>
+                    </div>
+
+                    <div className="flex-1 min-h-0 flex flex-col gap-3">
+                      {checkoutErr ? <div className="text-xs text-red-300">{checkoutErr}</div> : null}
+                      {checkoutBusy ? <div className="text-xs text-slate-400">Loading secure payment…</div> : null}
+
+                      <div
+                        id="embedded-checkout"
+                        className="flex-1 min-h-[560px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950/40"
+                      />
+
+                      <div className="text-[11px] text-slate-400 font-black">
+                        🔒 Secure Payment • 100% Money-Back Guarantee
                       </div>
                     </div>
                   </motion.div>
@@ -882,7 +901,7 @@ function PaywallContent() {
               </AnimatePresence>
 
               {/* Small scarcity + CTA helper */}
-              <div className={`${checkoutOpen ? "hidden" : ""} rounded-3xl border border-white/10 bg-white/5 p-5`}>
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
                 <div className="text-xs font-black uppercase tracking-widest text-slate-300">
                   Don’t waste your test day
                 </div>
