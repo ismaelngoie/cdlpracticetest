@@ -421,7 +421,8 @@ export default function ProfilePage() {
     setBanner(null);
     try {
       const url = await createBillingPortalUrl(e);
-      window.location.href = url;
+      const w = window.open(url, "billing", "noopener,noreferrer,width=520,height=740");
+if (!w) window.location.href = url;
     } catch (err: any) {
       setBanner({ tone: "err", msg: err?.message || "Could not open billing portal." });
       setTimeout(() => setBanner(null), 4200);
@@ -452,7 +453,8 @@ export default function ProfilePage() {
     setBanner(null);
     try {
       const url = await createBillingPortalUrl(e);
-      window.location.href = url;
+      const w = window.open(url, "billing", "noopener,noreferrer,width=520,height=740");
+if (!w) window.location.href = url;
     } catch (err: any) {
       setBanner({ tone: "err", msg: err?.message || "Could not open billing portal." });
       setTimeout(() => setBanner(null), 4200);
