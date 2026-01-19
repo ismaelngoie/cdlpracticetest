@@ -54,36 +54,44 @@ export default function Modal({
           role="dialog"
           aria-modal="true"
         >
-          {/* Backdrop */}
+          {/* Backdrop: High transparency (bg-slate-950/40) + Blur.
+             This ensures they see the app behind it, reducing "checkout anxiety".
+          */}
           <button
             aria-label="Close modal"
             onClick={onClose}
-            className="absolute inset-0 bg-slate-950/55 backdrop-blur-md"
+            className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm transition-all"
           />
 
-          {/* Panel */}
+          {/* Panel: "Million Dollar" look - sharp borders, deep shadows, premium feel */}
           <motion.div
             initial={{ opacity: 0, y: 14, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 14, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 140, damping: 18 }}
-            className={`relative w-full max-w-md rounded-3xl border border-white/10 bg-slate-900/80 backdrop-blur-xl p-5 ring-1 ${ring}`}
+            className={`relative w-full max-w-md rounded-3xl border border-white/10 bg-slate-900 shadow-2xl p-6 ring-1 ${ring}`}
           >
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start justify-between gap-3 mb-4">
               <div>
-                <div className={`text-lg font-black ${titleColor}`}>{title}</div>
-                {subtitle ? <div className="text-sm text-slate-400 mt-1">{subtitle}</div> : null}
+                <div className={`text-xl font-black tracking-tight ${titleColor}`}>
+                  {title}
+                </div>
+                {subtitle ? (
+                  <div className="text-sm text-slate-400 mt-1 font-medium">
+                    {subtitle}
+                  </div>
+                ) : null}
               </div>
 
               <button
                 onClick={onClose}
-                className="shrink-0 rounded-2xl px-3 py-2 text-xs font-black uppercase tracking-widest border border-white/10 bg-white/5 hover:bg-white/10"
+                className="shrink-0 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 transition-colors"
               >
                 Close
               </button>
             </div>
 
-            <div className="mt-4">{children}</div>
+            <div className="mt-2">{children}</div>
           </motion.div>
         </motion.div>
       )}
