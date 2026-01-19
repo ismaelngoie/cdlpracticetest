@@ -618,55 +618,163 @@ function PaywallContent() {
         </div>
 
         {/* EMBEDDED CHECKOUT (INLINE ON PAGE) */}
-        <AnimatePresence>
-          {checkoutOpen && (
-            <motion.div
-              ref={checkoutSectionRef}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="mb-10 rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5 text-left"
-            >
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div>
-                  <div className="text-xs font-black text-slate-300 uppercase tracking-widest">Secure Checkout</div>
-                  <div className="text-[11px] text-slate-500 mt-1">Complete payment to unlock access instantly.</div>
-                </div>
+<AnimatePresence>
+  {checkoutOpen && (
+    <motion.section
+      ref={checkoutSectionRef}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 10 }}
+      className="mb-10 rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5 text-left ring-1 ring-white/5"
+      aria-label="Checkout section"
+    >
+      {/* Top bar */}
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="text-xs font-black text-slate-200 uppercase tracking-widest">
+              🔒 Secure Checkout
+            </div>
+            <span className="px-2 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-300">
+              Powered by Stripe
+            </span>
+            <span className="px-2 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-[10px] font-black uppercase tracking-widest text-emerald-200">
+              Instant access
+            </span>
+          </div>
 
-                <button
-                  onClick={closeCheckout}
-                  className="shrink-0 px-3 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/10 bg-white/5 hover:bg-white/10"
-                  aria-label="Close checkout"
-                >
-                  Close
-                </button>
+          <div className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+            Complete payment below. Stripe will email your receipt. You can restore access anytime with the same email.
+          </div>
+        </div>
+
+        <button
+          onClick={closeCheckout}
+          className="shrink-0 px-3 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/10 bg-white/5 hover:bg-white/10"
+          aria-label="Close checkout"
+        >
+          Back
+        </button>
+      </div>
+
+      {/* Error / Loading */}
+      {checkoutErr ? (
+        <div className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-3">
+          <div className="text-xs font-black text-red-200 uppercase tracking-widest">Checkout issue</div>
+          <div className="text-xs text-red-100 mt-1">{checkoutErr}</div>
+          <button
+            onClick={() => {
+              // Simple retry: close + reopen triggers re-init with same plan
+              closeCheckout();
+              setTimeout(() => startCheckout(), 50);
+            }}
+            className="mt-3 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/10 bg-white/5 hover:bg-white/10"
+          >
+            Retry
+          </button>
+        </div>
+      ) : null}
+
+      {checkoutBusy ? (
+        <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-3">
+          <div className="text-xs font-black text-slate-200 uppercase tracking-widest">
+            Loading secure checkout…
+          </div>
+          <div className="text-[11px] text-slate-400 mt-1">
+            This can take a moment on slow connections.
+          </div>
+        </div>
+      ) : null}
+
+      {/* Layout: Checkout + Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        {/* Stripe Embed */}
+        <div className="md:col-span-3">
+          <div className="rounded-2xl overflow-hidden border border-slate-800 bg-slate-950/40">
+            <div id="embedded-checkout" className="min-h-[560px]" />
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-mono uppercase tracking-widest text-slate-500">
+            <span className="px-2 py-1 rounded-full border border-white/10 bg-white/5">Encrypted</span>
+            <span className="px-2 py-1 rounded-full border border-white/10 bg-white/5">No hidden fees</span>
+            <span className="px-2 py-1 rounded-full border border-white/10 bg-white/5">Receipt by Stripe</span>
+          </div>
+        </div>
+
+        {/* Summary */}
+        <aside className="md:col-span-2">
+          <div className={`rounded-2xl border border-white/10 bg-white/5 p-4 ${tc.glow}`}>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-300">
+              Order Summary
+            </div>
+
+            <div className="mt-2 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-sm font-black text-white">{PRICING[selectedPlan].title}</div>
+                <div className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                  {selectedPlan === "lifetime"
+                    ? "One-time payment. Lifetime access."
+                    : "Monthly subscription. Cancel anytime."}
+                </div>
               </div>
 
-              <div className="space-y-3">
-                {checkoutErr ? <div className="text-xs text-red-300">{checkoutErr}</div> : null}
-
-                {checkoutBusy ? <div className="text-xs text-slate-400">Loading secure checkout…</div> : null}
-
-                {/* Stripe mounts here */}
-                <div
-                  id="embedded-checkout"
-                  className="min-h-[560px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950/40"
-                />
-
-                <div className="text-[11px] text-slate-500">
-                  Support:{" "}
-                  <a
-                    className="underline text-white font-bold"
-                    href="mailto:contact@cdlpretest.com?subject=Support%20Request%20-%20CDL%20PreTest&body=Please%20include%20the%20email%20you%20paid%20with%20and%20a%20brief%20description%20of%20the%20issue."
-                  >
-                    contact@cdlpretest.com
-                  </a>
+              <div className="text-right shrink-0">
+                <div className="text-2xl font-black text-white">
+                  ${PRICING[selectedPlan].price.toFixed(2)}
+                </div>
+                <div className="text-[10px] text-slate-500 uppercase tracking-widest">
+                  {selectedPlan === "lifetime" ? "one-time" : "per month"}
                 </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
 
+            <div className="mt-4 space-y-2">
+              {(selectedPlan === "lifetime"
+                ? PRICING.lifetime.features.slice(0, 4)
+                : PRICING.monthly.features.slice(0, 4)
+              ).map((feat, i) => (
+                <div key={i} className="flex items-center gap-2 text-xs text-slate-200">
+                  <span className="text-emerald-400 font-black">✓</span> {feat}
+                </div>
+              ))}
+            </div>
+
+            {selectedPlan === "lifetime" ? (
+              <div className="mt-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-200 leading-relaxed">
+                <span className="font-black">Money-back guarantee:</span> Complete the Fix Plan and if you don’t pass, request a refund.
+              </div>
+            ) : (
+              <div className="mt-4 rounded-2xl bg-slate-950/40 border border-white/10 p-3 text-[11px] text-slate-400 leading-relaxed">
+                Cancel anytime. Keep access until your billing date.
+              </div>
+            )}
+
+            <div className="mt-4 text-[11px] text-slate-500 leading-relaxed">
+              <span className="font-black text-slate-300">Need help?</span>{" "}
+              Email{" "}
+              <a className="underline text-white font-bold" href="mailto:contact@cdlpretest.com">
+                contact@cdlpretest.com
+              </a>
+              {" "}or review{" "}
+              <a className="underline text-slate-200" href="/terms">
+                Terms
+              </a>
+              {" "}•{" "}
+              <a className="underline text-slate-200" href="/privacy">
+                Privacy
+              </a>
+              {" "}•{" "}
+              <a className="underline text-slate-200" href="/refund">
+                Refund Policy
+              </a>
+              .
+            </div>
+          </div>
+        </aside>
+      </div>
+    </motion.section>
+  )}
+</AnimatePresence>
         {/* RESTORE */}
         <div className="mt-10 p-6 rounded-3xl bg-slate-900/60 border border-slate-800 text-left">
           <div className="flex items-center justify-between gap-3 mb-3">
