@@ -269,8 +269,8 @@ function PaywallContent() {
   // ✅ Always-clear CTA (only UI text change)
   const stickyCtaText = useMemo(() => {
     return selectedPlan === "lifetime"
-      ? "Pay once • Get lifetime access →"
-      : "Start monthly • Get full access →";
+      ? "Get lifetime access"
+      : "Start monthly Access";
   }, [selectedPlan]);
 
   const persistEmail = (email: string) => {
