@@ -210,7 +210,7 @@ export default function DiagnosticPage() {
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT_SEC);
 
   // Analyzing animation state
-  const [analysisText, setAnalysisText] = useState("ANALYZING ANSWERS…");
+  const [analysisText, setAnalysisText] = useState("INITIALIZING SYSTEM…");
   const [analysisPct, setAnalysisPct] = useState(0);
 
   // Preview state
@@ -396,14 +396,15 @@ export default function DiagnosticPage() {
     const stateName = STATE_NAME[userState] || userState;
     const profileLine = `CLASS ${license} • ${stateName.toUpperCase()} • ${endorsements.length ? `${endorsements.length} MODULES` : "CORE"}`;
 
-    // Faster “feels instant” sequence (no slow “saving” vibe)
+    // Old-length analyzing sequence (matches ancient timing)
     const sequence = [
-      { t: 80, pct: 12, text: "ANALYZING ANSWERS…" },
-      { t: 260, pct: 32, text: `DMV PROFILE: ${profileLine}` },
-      { t: 520, pct: 54, text: "CALCULATING SCORE…" },
-      { t: 820, pct: 74, text: `WEAK TOPIC: ${weakest.toUpperCase()}…` },
-      { t: 1120, pct: 90, text: "BUILDING YOUR NEXT STEPS…" },
-      { t: 1400, pct: 100, text: "DONE." },
+      { t: 250, pct: 10, text: "HANDSHAKE ESTABLISHED…" },
+      { t: 900, pct: 22, text: `DMV PROFILE: ${profileLine}` },
+      { t: 1600, pct: 40, text: "LOADING DMV PATTERNS + FEDERAL CORE…" },
+      { t: 2400, pct: 58, text: `SCANNING WEAK POINTS: ${weakest.toUpperCase()}…` },
+      { t: 3300, pct: 76, text: "CALCULATING PASS PROBABILITY…" },
+      { t: 4200, pct: 90, text: "LOCKING DIAGNOSTIC RESULTS…" },
+      { t: 5200, pct: 100, text: "EXAM STOPPED." },
     ];
 
     for (const step of sequence) {
@@ -414,7 +415,7 @@ export default function DiagnosticPage() {
       timeoutsRef.current.push(id);
     }
 
-    const doneId = window.setTimeout(() => setStage("preview"), 1580);
+    const doneId = window.setTimeout(() => setStage("preview"), 5850);
     timeoutsRef.current.push(doneId);
   };
 
@@ -487,7 +488,7 @@ export default function DiagnosticPage() {
 
             <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-2xl">
               <div className="flex justify-between text-[10px] text-slate-400 uppercase tracking-widest font-mono mb-2">
-                <span>Status</span>
+                <span>System Status</span>
                 <span>{analysisPct}%</span>
               </div>
 
@@ -496,18 +497,34 @@ export default function DiagnosticPage() {
                   className="h-full bg-amber-500"
                   initial={{ width: 0 }}
                   animate={{ width: `${analysisPct}%` }}
-                  transition={{ ease: "easeOut", duration: 0.35 }}
+                  transition={{ ease: "easeOut", duration: 0.6 }}
                 />
               </div>
 
+              {/* swapped in the ancient “DMV table” block (kept colors) */}
               <div className="rounded-xl bg-slate-950/40 border border-slate-800 p-4">
                 <div className="text-[11px] font-mono text-amber-300 tracking-widest">
                   {">"} <span className="font-black">{analysisText}</span>
                 </div>
+
+                <div className="mt-3 grid grid-cols-3 gap-2 text-[10px] font-mono text-slate-400">
+                  <div className="rounded-lg border border-slate-800 bg-slate-950/30 p-2">
+                    <div className="text-slate-500">MODE</div>
+                    <div className="text-white font-black">DMV</div>
+                  </div>
+                  <div className="rounded-lg border border-slate-800 bg-slate-950/30 p-2">
+                    <div className="text-slate-500">STATE</div>
+                    <div className="text-white font-black">{userState}</div>
+                  </div>
+                  <div className="rounded-lg border border-slate-800 bg-slate-950/30 p-2">
+                    <div className="text-slate-500">CLASS</div>
+                    <div className="text-white font-black">{license}</div>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-5 text-center text-[10px] text-slate-500 font-mono">
-                Do not close this tab
+                Do not close this tab • Results are being sealed
               </div>
             </div>
           </div>
@@ -743,22 +760,6 @@ export default function DiagnosticPage() {
                   {ctaSub}
                 </div>
               </div>
-
-              {/* What you unlock (kept EXACT concept you asked for) */}
-              <div className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5">
-                <div className="text-xs font-black text-slate-200 uppercase tracking-widest mb-3">Unlock includes</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {unlockBullets.map((b) => (
-                    <div key={b} className="rounded-2xl border border-slate-800 bg-slate-950/30 p-3 text-sm text-slate-200">
-                      <span className="text-emerald-400 font-black">✓</span> <span className="font-semibold">{b}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200 leading-relaxed">
-                  <span className="font-black">Pass Guarantee: 12,000+</span> drivers passed last year using the app{" "}
-                </div>
-              </div>
             </div>
 
             <div className="space-y-4">
@@ -819,6 +820,22 @@ export default function DiagnosticPage() {
 
                 <div className="mt-2 text-center text-[10px] text-slate-500 font-mono uppercase tracking-widest">
                   Unlimited CDL practice tests • {ctaSub}
+                </div>
+              </div>
+
+              {/* moved: Unlock includes (now AFTER “See full answers + explanations” section) */}
+              <div className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5">
+                <div className="text-xs font-black text-slate-200 uppercase tracking-widest mb-3">Unlock includes</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {unlockBullets.map((b) => (
+                    <div key={b} className="rounded-2xl border border-slate-800 bg-slate-950/30 p-3 text-sm text-slate-200">
+                      <span className="text-emerald-400 font-black">✓</span> <span className="font-semibold">{b}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200 leading-relaxed">
+                  <span className="font-black">Pass Guarantee: 12,000+</span> drivers passed last year using the app{" "}
                 </div>
               </div>
             </div>
