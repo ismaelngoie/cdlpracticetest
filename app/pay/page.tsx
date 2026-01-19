@@ -257,13 +257,17 @@ function PaywallContent() {
 
     // session id (nice for the card)
     const sid = String(localStorage.getItem("haul_session_id") || "").trim();
-    const sessionId = sid ? sid : (() => {
-      const a = Math.random().toString(16).slice(2, 10);
-      const b = Date.now().toString(16).slice(-6);
-      const gen = `S-${a}-${b}`.toUpperCase();
-      try { localStorage.setItem("haul_session_id", gen); } catch {}
-      return gen;
-    })();
+    const sessionId = sid
+      ? sid
+      : (() => {
+          const a = Math.random().toString(16).slice(2, 10);
+          const b = Date.now().toString(16).slice(-6);
+          const gen = `S-${a}-${b}`.toUpperCase();
+          try {
+            localStorage.setItem("haul_session_id", gen);
+          } catch {}
+          return gen;
+        })();
 
     setCtx({
       score: Number.isFinite(s) ? clamp(s, 0, 100) : 42,
@@ -337,8 +341,12 @@ function PaywallContent() {
     setCheckoutBusy(false);
     setEmbedParams(null);
 
-    try { embeddedRef.current?.destroy?.(); } catch {}
-    try { embeddedRef.current?.unmount?.(); } catch {}
+    try {
+      embeddedRef.current?.destroy?.();
+    } catch {}
+    try {
+      embeddedRef.current?.unmount?.();
+    } catch {}
     embeddedRef.current = null;
 
     const host = document.getElementById("embedded-checkout");
@@ -399,8 +407,12 @@ function PaywallContent() {
 
     async function mountEmbedded(plan: PlanKey, email?: string) {
       try {
-        try { embeddedRef.current?.destroy?.(); } catch {}
-        try { embeddedRef.current?.unmount?.(); } catch {}
+        try {
+          embeddedRef.current?.destroy?.();
+        } catch {}
+        try {
+          embeddedRef.current?.unmount?.();
+        } catch {}
         embeddedRef.current = null;
 
         const host = document.getElementById("embedded-checkout");
@@ -545,11 +557,15 @@ function PaywallContent() {
 
             {/* Big warning line */}
             {ctx.score < PASSING_SCORE ? (
-              <div className={`mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-full border ${tc.dangerBg} text-[12px] font-black uppercase tracking-widest`}>
+              <div
+                className={`mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-full border ${tc.dangerBg} text-[12px] font-black uppercase tracking-widest`}
+              >
                 ⚠️ You are {failGap}% away from passing • Target is {PASSING_SCORE}% • {stateName}
               </div>
             ) : (
-              <div className={`mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-full border ${tc.dangerBg} text-[12px] font-black uppercase tracking-widest`}>
+              <div
+                className={`mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-full border ${tc.dangerBg} text-[12px] font-black uppercase tracking-widest`}
+              >
                 ✅ You are at {ctx.score}% • Keep it consistent • {stateName}
               </div>
             )}
@@ -575,7 +591,9 @@ function PaywallContent() {
                         </div>
                       </div>
 
-                      <div className={`shrink-0 px-3 py-2 rounded-2xl border ${tc.pill} text-[10px] font-black uppercase tracking-widest`}>
+                      <div
+                        className={`shrink-0 px-3 py-2 rounded-2xl border ${tc.pill} text-[10px] font-black uppercase tracking-widest`}
+                      >
                         {risk} RISK
                       </div>
                     </div>
@@ -645,9 +663,7 @@ function PaywallContent() {
                     <div className="text-xs font-black uppercase tracking-widest text-slate-300">
                       Why {DRIVERS_USED} drivers use our practice tests
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-1">
-                      Simple practice. Real questions. Pass faster.
-                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">Simple practice. Real questions. Pass faster.</div>
                   </div>
                   <div className="px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-300 text-[10px] font-black uppercase tracking-widest">
                     Pass Guarantee
@@ -657,9 +673,7 @@ function PaywallContent() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {testimonials.map((t) => (
                     <div key={t.name} className="rounded-3xl border border-white/10 bg-slate-950/30 p-5">
-                      <div className="text-[10px] font-black uppercase tracking-widest text-amber-300 mb-2">
-                        {t.tag}
-                      </div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-amber-300 mb-2">{t.tag}</div>
                       <div className="text-sm text-white font-black leading-snug">“{t.quote}”</div>
                       <div className="mt-3 text-[11px] text-slate-400 font-mono">
                         — {t.name} • {t.state}
@@ -793,12 +807,11 @@ function PaywallContent() {
                         ))}
 
                         <div className="mt-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-200 leading-relaxed">
-                          <span className="font-black">Guarantee:</span> If you don’t pass after using the app, you get a <span className="font-black">100% full refund</span>.
+                          <span className="font-black">Guarantee:</span> If you don’t pass after using the app, you get a{" "}
+                          <span className="font-black">100% full refund</span>.
                         </div>
 
-                        <div className="text-[11px] text-slate-400 font-black mt-3">
-                          🔒 Secure Payment • 100% Money-Back Guarantee
-                        </div>
+                        <div className="text-[11px] text-slate-400 font-black mt-3">🔒 Secure Payment • 100% Money-Back Guarantee</div>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -838,9 +851,7 @@ function PaywallContent() {
                             <span className="text-emerald-400 font-black">✓</span> {feat}
                           </div>
                         ))}
-                        <div className="text-[11px] text-slate-400 font-black mt-3">
-                          🔒 Secure Payment • 100% Money-Back Guarantee
-                        </div>
+                        <div className="text-[11px] text-slate-400 font-black mt-3">🔒 Secure Payment • 100% Money-Back Guarantee</div>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -861,14 +872,10 @@ function PaywallContent() {
                       <div>
                         <div className="text-[11px] text-slate-500 mt-1">
                           Get instant access to{" "}
-                          <span className="text-white font-black">
-                            {selectedPlan === "lifetime" ? "6,000+" : "4,000"}
-                          </span>{" "}
+                          <span className="text-white font-black">{selectedPlan === "lifetime" ? "6,000+" : "4,000"}</span>{" "}
                           real questions & answers + full simulator.
                         </div>
-                        <div className="mt-2 text-[11px] text-amber-300 font-black">
-                          ✅ Trusted by {DRIVERS_USED} drivers
-                        </div>
+                        <div className="mt-2 text-[11px] text-amber-300 font-black">✅ Trusted by {DRIVERS_USED} drivers</div>
                       </div>
 
                       <button
@@ -884,14 +891,12 @@ function PaywallContent() {
                       {checkoutErr ? <div className="text-xs text-red-300">{checkoutErr}</div> : null}
                       {checkoutBusy ? <div className="text-xs text-slate-400">Loading secure payment…</div> : null}
 
-                      <div
-                        id="embedded-checkout"
-                        className="flex-1 min-h-[560px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950/40"
-                      />
-
-                      <div className="text-[11px] text-slate-400 font-black">
-                        🔒 Secure Payment • 100% Money-Back Guarantee
+                      {/* ✅ Desktop fix: make the embed region scrollable so nothing gets clipped */}
+                      <div className="flex-1 min-h-[560px] lg:min-h-0 rounded-2xl border border-slate-800 bg-slate-950/40 overflow-auto overscroll-contain">
+                        <div id="embedded-checkout" className="min-h-full" />
                       </div>
+
+                      <div className="text-[11px] text-slate-400 font-black">🔒 Secure Payment • 100% Money-Back Guarantee</div>
                     </div>
                   </motion.div>
                 )}
@@ -899,9 +904,7 @@ function PaywallContent() {
 
               {/* Small scarcity + CTA helper */}
               <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-                <div className="text-xs font-black uppercase tracking-widest text-slate-300">
-                  Don’t waste your test day
-                </div>
+                <div className="text-xs font-black uppercase tracking-widest text-slate-300">Don’t waste your test day</div>
                 <div className="text-sm text-slate-400 mt-2 leading-relaxed">
                   Failing costs money and time. Practice now. Pass with confidence.
                 </div>
@@ -941,7 +944,10 @@ function PaywallContent() {
               <div className="text-right">
                 <div className="text-lg font-black text-white">
                   ${PRICING[selectedPlan].price.toFixed(2)}
-                  <span className="text-xs text-slate-500"> {selectedPlan === "lifetime" ? "" : PRICING[selectedPlan].cadence}</span>
+                  <span className="text-xs text-slate-500">
+                    {" "}
+                    {selectedPlan === "lifetime" ? "" : PRICING[selectedPlan].cadence}
+                  </span>
                 </div>
               </div>
             </div>
