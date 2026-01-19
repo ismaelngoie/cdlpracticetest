@@ -1,64 +1,122 @@
 // functions/api/login.ts
 // Cloudflare Pages Function: POST /api/login
+//
+// Body: { email: string }
+// Returns: { ok:true, access:"subscription"|"lifetime" } OR { ok:false, error?:string }
+//
+// Requires env:
+// - STRIPE_SECRET_KEY
+// Optional env:
+// - STRIPE_PRICE_MONTHLY / STRIPE_PRICE_LIFETIME
+// - STRIPE_LIFETIME_FALLBACK_ANY_PAYMENT="1"  (ONLY if you must support old payment links that lack price scoping)
 
-type StripeList<T> = { object: "list"; data: T[]; has_more: boolean };
+import {
+  StripeList,
+  StripeCustomer,
+  badRequest,
+  findCustomerByEmail,
+  getPriceIds,
+  getStripeKey,
+  json,
+  normalizeEmail,
+  stripeGET,
+} from "../_stripe";
 
-type StripeCustomer = { id: string; email?: string | null };
-type StripeSubscription = { id: string; status: string };
+type StripeSubscriptionItem = { price?: { id?: string } };
+type StripeSubscription = {
+  id: string;
+  status: string;
+  items?: { data?: StripeSubscriptionItem[] };
+};
+
 type StripeCheckoutSession = {
   id: string;
   mode: "payment" | "subscription" | string;
   payment_status?: "paid" | "unpaid" | "no_payment_required" | string;
   status?: "complete" | "open" | "expired" | string;
+  metadata?: Record<string, string> | null;
 };
 
-async function stripeGET<T>(path: string, stripeKey: string): Promise<T> {
-  const url = `https://api.stripe.com${path}`;
-  const res = await fetch(url, {
-    method: "GET",
-    headers: { Authorization: `Bearer ${stripeKey}` },
-  });
-
-  const json: any = await res.json();
-
-  if (!res.ok) {
-    const msg = json?.error?.message || `Stripe error (${res.status})`;
-    throw new Error(msg);
-  }
-
-  return json as T;
-}
+type StripeLineItem = { price?: { id?: string } | null };
+type StripeLineItems = { object: "list"; data: StripeLineItem[]; has_more: boolean };
 
 function isActiveSubStatus(status: string) {
   return status === "active" || status === "trialing" || status === "past_due";
 }
 
-async function hasActiveSubscription(customerId: string, stripeKey: string) {
+async function hasActiveSubscription(customerId: string, stripeKey: string, monthlyPriceId: string) {
   const subs = await stripeGET<StripeList<StripeSubscription>>(
     `/v1/subscriptions?customer=${encodeURIComponent(customerId)}&status=all&limit=20`,
     stripeKey
   );
 
-  return Array.isArray(subs.data) && subs.data.some((s) => isActiveSubStatus(String(s.status)));
+  if (!Array.isArray(subs?.data)) return false;
+
+  // Prefer strict: active + contains our monthly price
+  for (const s of subs.data) {
+    if (!s?.id) continue;
+    if (!isActiveSubStatus(String(s.status))) continue;
+
+    const items = s.items?.data || [];
+    const hasMonthly = Array.isArray(items)
+      ? items.some((it) => String(it?.price?.id || "") === String(monthlyPriceId))
+      : false;
+
+    if (hasMonthly) return true;
+  }
+
+  // Fallback: any active subscription (if items not present)
+  return subs.data.some((s) => isActiveSubStatus(String(s.status)));
 }
 
-async function hasPaidLifetimeSession(customerId: string, stripeKey: string) {
-  // Any paid one-time checkout session counts as "lifetime"
+async function sessionHasLifetimePrice(sessionId: string, stripeKey: string, lifetimePriceId: string) {
+  const items = await stripeGET<StripeLineItems>(
+    `/v1/checkout/sessions/${encodeURIComponent(sessionId)}/line_items?limit=100`,
+    stripeKey
+  );
+
+  return (
+    Array.isArray(items?.data) &&
+    items.data.some((li) => String(li?.price?.id || "") === String(lifetimePriceId))
+  );
+}
+
+async function hasPaidLifetimeSession(
+  customerId: string,
+  stripeKey: string,
+  lifetimePriceId: string,
+  allowAnyPaidFallback: boolean
+) {
+  // Look through recent sessions (few pages max)
   let startingAfter: string | null = null;
 
   for (let page = 0; page < 3; page++) {
-    const base: string = `/v1/checkout/sessions?customer=${encodeURIComponent(customerId)}&limit=25`;
-    const qs: string = startingAfter
-      ? `${base}&starting_after=${encodeURIComponent(startingAfter)}`
-      : base;
+    const base = `/v1/checkout/sessions?customer=${encodeURIComponent(customerId)}&limit=25`;
+    const qs = startingAfter ? `${base}&starting_after=${encodeURIComponent(startingAfter)}` : base;
 
     const sessions = await stripeGET<StripeList<StripeCheckoutSession>>(qs, stripeKey);
 
-    const found =
-      Array.isArray(sessions.data) &&
-      sessions.data.some((s) => s.mode === "payment" && s.payment_status === "paid" && s.status === "complete");
+    const candidates =
+      Array.isArray(sessions?.data) &&
+      sessions.data.filter(
+        (s) => s.mode === "payment" && s.payment_status === "paid" && s.status === "complete"
+      );
 
-    if (found) return true;
+    if (candidates && candidates.length) {
+      for (const s of candidates) {
+        // Fast path: if we created it, metadata will be present
+        const metaPlan = String(s?.metadata?.plan || "");
+        const metaApp = String(s?.metadata?.app || "");
+        if (metaApp === "cdl" && metaPlan === "lifetime") return true;
+
+        // Strict: verify line_items include our lifetime price
+        const ok = await sessionHasLifetimePrice(String(s.id), stripeKey, lifetimePriceId);
+        if (ok) return true;
+
+        // Legacy fallback (optional)
+        if (allowAnyPaidFallback) return true;
+      }
+    }
 
     if (!sessions.has_more || !sessions.data?.length) break;
     startingAfter = sessions.data[sessions.data.length - 1].id;
@@ -67,62 +125,39 @@ async function hasPaidLifetimeSession(customerId: string, stripeKey: string) {
   return false;
 }
 
-export async function onRequestPost({ request, env }: { request: Request; env: Record<string, string> }) {
+export async function onRequestPost({
+  request,
+  env,
+}: {
+  request: Request;
+  env: Record<string, any>;
+}) {
   try {
-    const stripeKey = env.STRIPE_SECRET_KEY;
-    if (!stripeKey) {
-      return new Response(JSON.stringify({ ok: false, error: "Missing STRIPE_SECRET_KEY" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-      });
-    }
+    const stripeKey = getStripeKey(env);
+    if (!stripeKey) return json({ ok: false, error: "Missing STRIPE_SECRET_KEY" }, 500);
 
     const body = (await request.json().catch(() => null)) as { email?: string } | null;
-    const email = String(body?.email || "").trim().toLowerCase();
+    const email = normalizeEmail(body?.email);
+    if (!email) return badRequest("Email required");
 
-    if (!email || !email.includes("@")) {
-      return new Response(JSON.stringify({ ok: false, error: "Email required" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-      });
-    }
-
-    // 1) Find customer by email
-    const customers = await stripeGET<StripeList<StripeCustomer>>(
-      `/v1/customers?email=${encodeURIComponent(email)}&limit=1`,
-      stripeKey
-    );
-
-    const customer = customers?.data?.[0];
+    const customer = await findCustomerByEmail(email, stripeKey);
     if (!customer?.id) {
-      return new Response(JSON.stringify({ ok: false }), {
-        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-      });
+      return json({ ok: false });
     }
 
-    // 2) Subscription check
-    const subOk = await hasActiveSubscription(customer.id, stripeKey);
-    if (subOk) {
-      return new Response(JSON.stringify({ ok: true, access: "subscription" }), {
-        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-      });
-    }
+    const { monthly, lifetime } = getPriceIds(env);
 
-    // 3) Lifetime check
-    const lifeOk = await hasPaidLifetimeSession(customer.id, stripeKey);
-    if (lifeOk) {
-      return new Response(JSON.stringify({ ok: true, access: "lifetime" }), {
-        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-      });
-    }
+    // 1) Subscription check (strict by price id)
+    const subOk = await hasActiveSubscription(customer.id, stripeKey, monthly);
+    if (subOk) return json({ ok: true, access: "subscription" });
 
-    return new Response(JSON.stringify({ ok: false }), {
-      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-    });
+    // 2) Lifetime check (strict by price id; optional legacy fallback)
+    const allowAnyPaidFallback = String(env.STRIPE_LIFETIME_FALLBACK_ANY_PAYMENT || "") === "1";
+    const lifeOk = await hasPaidLifetimeSession(customer.id, stripeKey, lifetime, allowAnyPaidFallback);
+    if (lifeOk) return json({ ok: true, access: "lifetime" });
+
+    return json({ ok: false });
   } catch (err: any) {
-    return new Response(JSON.stringify({ ok: false, error: err?.message || "Server error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-    });
+    return json({ ok: false, error: err?.message || "Server error" }, 500);
   }
 }
