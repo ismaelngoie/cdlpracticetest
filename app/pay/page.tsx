@@ -129,7 +129,7 @@ function stepCopy(score: number, weakDomain: string, userState: string) {
   };
 }
 
-type LoginResponse = { ok: boolean; access?: "subscription" | "lifetime"; error?: string };
+type LoginResponse = { ok: boolean; access?: "subscription" | "lifetime" | "none"; error?: string };
 
 async function loginWithEmail(email: string): Promise<LoginResponse> {
   const res = await fetch("/api/login", {
@@ -150,7 +150,8 @@ async function loginWithEmail(email: string): Promise<LoginResponse> {
   return (json || { ok: false }) as LoginResponse;
 }
 
-async function createCheckout(plan: PlanKey, email?: string) {
+// Embedded Checkout: /api/checkout returns { clientSecret }
+async function createCheckoutClientSecret(plan: PlanKey, email?: string) {
   const res = await fetch("/api/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
@@ -165,13 +166,42 @@ async function createCheckout(plan: PlanKey, email?: string) {
     throw new Error(String(msg));
   }
 
-  if (!data?.ok || !data?.url) throw new Error("Checkout URL missing.");
-  return String(data.url);
+  if (!data?.ok || !data?.clientSecret) throw new Error("Checkout clientSecret missing.");
+  return String(data.clientSecret);
+}
+
+declare global {
+  interface Window {
+    Stripe?: any;
+  }
+}
+
+function loadStripeJs(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined") return reject(new Error("No window"));
+    if (window.Stripe) return resolve();
+
+    const existing = document.querySelector('script[src="https://js.stripe.com/v3/"]') as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error("Failed to load Stripe.js")), { once: true });
+      return;
+    }
+
+    const s = document.createElement("script");
+    s.src = "https://js.stripe.com/v3/";
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("Failed to load Stripe.js"));
+    document.head.appendChild(s);
+  });
 }
 
 function PaywallContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const stripePk = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 
   const [selectedPlan, setSelectedPlan] = useState<PlanKey>("lifetime");
 
@@ -188,15 +218,13 @@ function PaywallContent() {
   const [isRestoring, setIsRestoring] = useState(false);
   const [restoreMsg, setRestoreMsg] = useState("");
 
-  // Checkout UX
+  // Checkout (Embedded) UX
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutErr, setCheckoutErr] = useState("");
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
-  const [checkoutEmailDraft, setCheckoutEmailDraft] = useState("");
 
-  // Sticky CTA behavior
-  const [showSticky, setShowSticky] = useState(true);
-  const topCtaRef = useRef<HTMLDivElement | null>(null);
+  const embeddedRef = useRef<any>(null);
+  const [embedParams, setEmbedParams] = useState<{ plan: PlanKey; email?: string } | null>(null);
 
   useEffect(() => {
     const s = parseInt(localStorage.getItem("diagnosticScore") || "42", 10);
@@ -223,19 +251,6 @@ function PaywallContent() {
   }, []);
 
   useEffect(() => {
-    const onScroll = () => {
-      const el = topCtaRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const near = rect.top < 140 && rect.bottom > 140;
-      setShowSticky(!near);
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
     const plan = searchParams.get("plan");
     if (plan === "monthly" || plan === "lifetime") setSelectedPlan(plan);
   }, [searchParams]);
@@ -256,10 +271,7 @@ function PaywallContent() {
   const { label: risk, tone } = riskFromScore(ctx.score);
   const tc = toneClasses(tone);
 
-  const copy = useMemo(
-    () => stepCopy(ctx.score, ctx.weakDomain, ctx.userState),
-    [ctx.score, ctx.weakDomain, ctx.userState]
-  );
+  const copy = useMemo(() => stepCopy(ctx.score, ctx.weakDomain, ctx.userState), [ctx.score, ctx.weakDomain, ctx.userState]);
 
   const progressToPass = useMemo(() => {
     const pct = (ctx.score / PASSING_SCORE) * 100;
@@ -269,8 +281,8 @@ function PaywallContent() {
   // ✅ Always-clear CTA (only UI text change)
   const stickyCtaText = useMemo(() => {
     return selectedPlan === "lifetime"
-      ? "Get lifetime access"
-      : "Start monthly Access";
+      ? "Pay once • Get lifetime access →"
+      : "Start monthly • Get full access →";
   }, [selectedPlan]);
 
   const persistEmail = (email: string) => {
@@ -283,36 +295,90 @@ function PaywallContent() {
     } catch {}
   };
 
-  // ✅ Always open modal first (so it doesn't jump to Stripe immediately)
-  const openCheckoutModal = (prefill?: string) => {
+  const closeCheckoutModal = () => {
+    setCheckoutModalOpen(false);
     setCheckoutErr("");
     setCheckoutBusy(false);
-    const e = String(prefill || restoreEmail || "").trim().toLowerCase();
-    setCheckoutEmailDraft(e);
-    setCheckoutModalOpen(true);
+    setEmbedParams(null);
+
+    // cleanup embedded instance + container
+    try { embeddedRef.current?.destroy?.(); } catch {}
+    try { embeddedRef.current?.unmount?.(); } catch {}
+    embeddedRef.current = null;
+
+    const host = document.getElementById("embedded-checkout");
+    if (host) host.innerHTML = "";
   };
 
-  const beginCheckout = async (email: string) => {
-    const e = String(email || "").trim().toLowerCase();
-    if (!e.includes("@")) {
-      setCheckoutErr("Please enter a valid email.");
-      setCheckoutBusy(false);
-      return;
-    }
-
+  // ✅ CTA triggers checkout immediately (no extra steps)
+  const startCheckout = () => {
     setCheckoutErr("");
-    setCheckoutBusy(true);
-    persistEmail(e);
 
-    try {
-      const url = await createCheckout(selectedPlan, e);
-      window.location.href = url; // redirect only AFTER modal confirm
-      return;
-    } catch (err: any) {
-      setCheckoutErr(err?.message || "Could not start checkout.");
+    // Optional prefill: if restoreEmail is valid, send as customer_email; otherwise Stripe will collect it in checkout
+    const e = String(restoreEmail || "").trim().toLowerCase();
+    const email = e.includes("@") ? e : undefined;
+    if (email) persistEmail(email);
+
+    if (!stripePk) {
+      setCheckoutErr("Missing NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.");
+      setCheckoutModalOpen(true);
       setCheckoutBusy(false);
+      setEmbedParams(null);
+      return;
     }
+
+    setCheckoutBusy(true);
+    setCheckoutModalOpen(true);
+    setEmbedParams({ plan: selectedPlan, email });
   };
+
+  // Mount Stripe Embedded Checkout in the modal
+  useEffect(() => {
+    let cancelled = false;
+
+    async function mountEmbedded(plan: PlanKey, email?: string) {
+      try {
+        // cleanup old
+        try { embeddedRef.current?.destroy?.(); } catch {}
+        try { embeddedRef.current?.unmount?.(); } catch {}
+        embeddedRef.current = null;
+
+        const host = document.getElementById("embedded-checkout");
+        if (host) host.innerHTML = "";
+
+        await loadStripeJs();
+        if (cancelled) return;
+
+        const stripe = window.Stripe?.(stripePk);
+        if (!stripe) throw new Error("Stripe failed to initialize.");
+
+        const embeddedCheckout = await stripe.initEmbeddedCheckout({
+          fetchClientSecret: async () => {
+            const cs = await createCheckoutClientSecret(plan, email);
+            return cs;
+          },
+        });
+
+        if (cancelled) return;
+
+        embeddedRef.current = embeddedCheckout;
+        embeddedCheckout.mount("#embedded-checkout");
+
+        setCheckoutBusy(false);
+      } catch (err: any) {
+        setCheckoutErr(err?.message || "Could not load secure checkout.");
+        setCheckoutBusy(false);
+      }
+    }
+
+    if (checkoutModalOpen && embedParams?.plan) {
+      mountEmbedded(embedParams.plan, embedParams.email);
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [checkoutModalOpen, embedParams, stripePk]);
 
   const handleRestore = async () => {
     const email = String(restoreEmail || "").trim().toLowerCase();
@@ -361,44 +427,26 @@ function PaywallContent() {
         <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:44px_44px]" />
       </div>
 
-      {/* Native-feel checkout modal */}
+      {/* Embedded Checkout modal (no extra step) */}
       <Modal
         open={checkoutModalOpen}
         title="Secure Checkout"
-        subtitle="Enter the email you want to use for access restore and receipts."
-        onClose={() => setCheckoutModalOpen(false)}
+        subtitle="Complete payment to unlock access instantly."
+        onClose={closeCheckoutModal}
         tone="amber"
       >
         <div className="space-y-3">
-          <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Email</div>
-          <input
-            value={checkoutEmailDraft}
-            onChange={(e) => setCheckoutEmailDraft(e.target.value)}
-            placeholder="you@example.com"
-            className="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-amber-500/60"
+          {checkoutErr ? <div className="text-xs text-red-300">{checkoutErr}</div> : null}
+
+          {checkoutBusy ? (
+            <div className="text-xs text-slate-400">Loading secure checkout…</div>
+          ) : null}
+
+          {/* Stripe mounts here */}
+          <div
+            id="embedded-checkout"
+            className="min-h-[560px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950/40"
           />
-
-          <div className="text-xs text-slate-400 leading-relaxed">
-            You’ll use this email to restore access (no password).
-          </div>
-
-          {checkoutErr && <div className="text-xs text-red-300">{checkoutErr}</div>}
-
-          <div className="flex items-center gap-2 pt-2">
-            <button
-              onClick={() => beginCheckout(checkoutEmailDraft)}
-              disabled={checkoutBusy}
-              className="flex-1 px-4 py-3 rounded-2xl bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-widest hover:bg-amber-400 transition-colors disabled:opacity-60"
-            >
-              {checkoutBusy ? "Opening…" : "Continue →"}
-            </button>
-            <button
-              onClick={() => setCheckoutModalOpen(false)}
-              className="px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950/40 text-slate-200 font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
 
           <div className="text-[11px] text-slate-500">
             Support:{" "}
@@ -421,9 +469,7 @@ function PaywallContent() {
             <ValueChip>Pass Guarantee</ValueChip>
           </div>
 
-          <div
-            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border ${tc.pill} text-[10px] font-black uppercase tracking-widest mb-4`}
-          >
+          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border ${tc.pill} text-[10px] font-black uppercase tracking-widest mb-4`}>
             ⚠️ Diagnostic Result • {ctx.userState} • {classLabel(ctx.license)}
           </div>
 
@@ -485,7 +531,7 @@ function PaywallContent() {
         </div>
 
         {/* PLANS */}
-        <div ref={topCtaRef} className="space-y-4 mb-10">
+        <div className="space-y-4 mb-10">
           {/* Lifetime */}
           <button
             onClick={() => setSelectedPlan("lifetime")}
@@ -633,51 +679,42 @@ function PaywallContent() {
         <div className="h-10" />
       </main>
 
-      {/* STICKY CHECKOUT CTA */}
-      <AnimatePresence>
-        {showSticky && (
-          <motion.div
-            initial={{ y: 90, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 90, opacity: 0 }}
-            className="fixed bottom-0 left-0 right-0 p-4 bg-slate-950/80 backdrop-blur-lg border-t border-white/5 z-50"
-          >
-            <div className="max-w-lg mx-auto">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-left">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-300">
-                    Selected: {PRICING[selectedPlan].title}
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    {selectedPlan === "lifetime" ? "One-time payment • Lifetime access" : "Monthly • Cancel anytime"}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-black text-white">
-                    ${PRICING[selectedPlan].price.toFixed(2)}
-                    <span className="text-xs text-slate-500">
-                      {" "}
-                      {selectedPlan === "lifetime" ? "" : PRICING[selectedPlan].cadence}
-                    </span>
-                  </div>
-                </div>
+      {/* STICKY CHECKOUT CTA (always visible + always clear) */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-slate-950/80 backdrop-blur-lg border-t border-white/5 z-50">
+        <div className="max-w-lg mx-auto">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-left">
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-300">
+                Selected: {PRICING[selectedPlan].title}
               </div>
-
-              <button
-                onClick={() => openCheckoutModal(restoreEmail)}
-                disabled={checkoutBusy}
-                className={`block w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black text-lg text-center uppercase tracking-widest transition-transform active:scale-95 ${tc.glow} disabled:opacity-60`}
-              >
-                {checkoutBusy ? "Opening…" : stickyCtaText}
-              </button>
-
-              <p className="text-center text-[10px] text-slate-500 mt-2 flex items-center justify-center gap-2 font-mono uppercase tracking-widest">
-                <span>🔒 Secure checkout</span> • <span>Instant access</span>
-              </p>
+              <div className="text-xs text-slate-500">
+                {selectedPlan === "lifetime" ? "One-time payment • Lifetime access" : "Monthly • Cancel anytime"}
+              </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div className="text-right">
+              <div className="text-lg font-black text-white">
+                ${PRICING[selectedPlan].price.toFixed(2)}
+                <span className="text-xs text-slate-500">
+                  {" "}
+                  {selectedPlan === "lifetime" ? "" : PRICING[selectedPlan].cadence}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={startCheckout}
+            disabled={checkoutBusy}
+            className={`block w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black text-lg text-center uppercase tracking-widest transition-transform active:scale-95 ${tc.glow} disabled:opacity-60`}
+          >
+            {checkoutBusy ? "Opening…" : stickyCtaText}
+          </button>
+
+          <p className="text-center text-[10px] text-slate-500 mt-2 flex items-center justify-center gap-2 font-mono uppercase tracking-widest">
+            <span>🔒 Secure checkout</span> • <span>Instant access</span>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
