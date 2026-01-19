@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
+import type { ReactNode } from "react";
 import "./globals.css";
 
 // Load our fonts
@@ -20,7 +21,7 @@ export const viewport: Viewport = {
 // 2. THE SEO ENGINE
 export const metadata: Metadata = {
   // ⚠️ CHANGE THIS TO YOUR ACTUAL DOMAIN WHEN DEPLOYED
-  metadataBase: new URL("https://haul-os.pages.dev"), 
+  metadataBase: new URL("https://haul-os.pages.dev"),
 
   title: {
     default: "CDL Practice Test 2026 | Free Simulator & Diagnostic",
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
   },
   description:
     "Don't just study. Simulate. Free 2026 CDL practice test for Class A, B, & C. Master Air Brakes, Hazmat, and Pre-Trip Inspection with the HAUL.OS exam simulator.",
-  
+
   keywords: [
     "CDL practice test",
     "CDL practice test 2026",
@@ -51,11 +52,12 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://haul-os.pages.dev",
     title: "CDL Practice Test 2026 | Pass First Time",
-    description: "Take the 60-second diagnostic. Find your weak points. Pass your CDL exam.",
+    description:
+      "Take the 60-second diagnostic. Find your weak points. Pass your CDL exam.",
     siteName: "HAUL.OS",
     images: [
       {
-        url: "/icon.png", // We use your icon as the preview image for now
+        url: "/icon.png",
         width: 512,
         height: 512,
         alt: "HAUL.OS CDL Simulator",
@@ -64,7 +66,7 @@ export const metadata: Metadata = {
   },
 
   twitter: {
-    card: "summary", // Use 'summary_large_image' if you make a big banner later
+    card: "summary",
     title: "CDL Practice Test 2026",
     description: "Free CDL Diagnostic & Simulator. Class A, B, C.",
     images: ["/icon.png"],
@@ -95,11 +97,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
@@ -129,7 +127,9 @@ export default function RootLayout({
         </Script>
       </head>
 
-      <body className={inter.className}>{children}</body>
+      <body className={`${inter.className} ${inter.variable} ${mono.variable}`}>
+        {children}
+      </body>
     </html>
   );
 }
