@@ -1,661 +1,952 @@
 // app/pay/page.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-// -------------------- TYPES --------------------
-type LicenseClass = "A" | "B" | "C" | "D";
-type Endorsement =
-  | "Air Brakes"
-  | "Hazmat"
-  | "Tanker"
-  | "Doubles/Triples"
-  | "Passenger"
-  | "School Bus";
-type Plan = "monthly" | "lifetime";
+// --- CONFIG ---
+type PlanKey = "monthly" | "lifetime";
 
-// -------------------- STORAGE --------------------
-const STORAGE_KEYS = {
-  userLevel: "userLevel",
-  userState: "userState",
-  userEndorsements: "userEndorsements",
-  diagnosticScore: "diagnosticScore",
-};
-
-const ACCESS_KEY = "haulOS.access.v1"; // "paid" | "true"
-
-// -------------------- CONSTANTS --------------------
+const DRIVERS_USED = "12,000+";
 const PASSING_SCORE = 80;
 
-const STATE_NAME: Record<string, string> = {
-  AL: "Alabama",
-  AK: "Alaska",
-  AZ: "Arizona",
-  AR: "Arkansas",
-  CA: "California",
-  CO: "Colorado",
-  CT: "Connecticut",
-  DE: "Delaware",
-  DC: "District of Columbia",
-  FL: "Florida",
-  GA: "Georgia",
-  HI: "Hawaii",
-  ID: "Idaho",
-  IL: "Illinois",
-  IN: "Indiana",
-  IA: "Iowa",
-  KS: "Kansas",
-  KY: "Kentucky",
-  LA: "Louisiana",
-  ME: "Maine",
-  MD: "Maryland",
-  MA: "Massachusetts",
-  MI: "Michigan",
-  MN: "Minnesota",
-  MS: "Mississippi",
-  MO: "Missouri",
-  MT: "Montana",
-  NE: "Nebraska",
-  NV: "Nevada",
-  NH: "New Hampshire",
-  NJ: "New Jersey",
-  NM: "New Mexico",
-  NY: "New York",
-  NC: "North Carolina",
-  ND: "North Dakota",
-  OH: "Ohio",
-  OK: "Oklahoma",
-  OR: "Oregon",
-  PA: "Pennsylvania",
-  RI: "Rhode Island",
-  SC: "South Carolina",
-  SD: "South Dakota",
-  TN: "Tennessee",
-  TX: "Texas",
-  UT: "Utah",
-  VT: "Vermont",
-  VA: "Virginia",
-  WA: "Washington",
-  WV: "West Virginia",
-  WI: "Wisconsin",
-  WY: "Wyoming",
+const PRICING = {
+  monthly: {
+    price: 19.95,
+    cadence: "/mo",
+    title: "Monthly Access",
+    subtitle: "Good if you want to try it first. Cancel anytime.",
+    features: [
+      "Unlimited CDL Practice Tests",
+      "4,000 Real Questions & Answers",
+      "Full Simulator of Real Exam Access",
+      "All 50 States Included",
+      "Works Offline (Study at rest stops)",
+    ],
+    cta: "START MONTHLY ACCESS",
+  },
+  lifetime: {
+    price: 69.0,
+    cadence: "one-time",
+    title: "Lifetime Access",
+    subtitle: "Best value. Pay once. Use forever.",
+    badge: "BEST VALUE",
+    features: [
+      "Unlimited CDL Practice Tests",
+      "6,000+ Real Questions & Answers",
+      "Fast Track Mode (Save Time)",
+      "Full Simulator of Real Exam Access",
+      "All 50 States Included",
+      "Works Offline (Study at rest stops)",
+      "100% Money-Back Guarantee",
+    ],
+    cta: "GET LIFETIME ACCESS",
+  },
+} as const;
+
+const CONFIG_KEY = "haulOS.config.v1";
+
+// local storage keys for entitlement + billing email
+const ACCESS_KEY = "haulOS.access.v1"; // "subscription" | "lifetime"
+const EMAIL_KEY = "haulOS.email.v1"; // purchase/billing email
+
+type UserContext = {
+  score: number;
+  weakDomain: string;
+  userState: string; // "TX"
+  license: string; // "A"
+  endorsements: string[];
+  sessionId: string;
 };
 
-const TESTIMONIALS = [
-  {
-    name: "Jose M.",
-    role: "CDL Class A • Texas",
-    quote:
-      "I failed once. I used this practice tests for 5 days and passed. The questions felt the same on the real test.",
-  },
-  {
-    name: "Amina K.",
-    role: "CDL Class B • Florida",
-    quote:
-      "Simple. On my phone. I practiced at rest stops and learned fast. I passed first try.",
-  },
-  {
-    name: "Darnell R.",
-    role: "CDL • California",
-    quote:
-      "Fast Track is real. It showed what I missed and I repeated until 80%+. Passed next week.",
-  },
-];
-
-const FAQ = [
-  { q: "Do I need an account?", a: "No. You get instant access right after payment." },
-  { q: "Does this work for my state?", a: "Yes. All 50 states are included." },
-  { q: "What if I don’t pass?", a: "If you don’t pass after using the app, you get a 100% full refund." },
-];
-
-// -------------------- SAFE STORAGE --------------------
-function safeGet(key: string) {
+function safeParseJSON<T>(value: string | null): T | null {
+  if (!value) return null;
   try {
-    if (typeof window === "undefined") return null;
-    return window.localStorage.getItem(key);
+    return JSON.parse(value) as T;
   } catch {
     return null;
   }
 }
-function safeJsonParse<T>(raw: string | null, fallback: T): T {
-  try {
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
+
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
-function classLabel(license: LicenseClass) {
+
+function classLabel(license: string) {
   if (license === "A") return "Class A";
   if (license === "B") return "Class B";
   if (license === "C") return "Class C";
   return "Class D";
 }
-function formatEndorsements(ends: Endorsement[]) {
-  if (!ends.length) return "None";
-  return ends.join(", ");
+
+function formatEndorsements(list: string[]) {
+  if (!list || list.length === 0) return "None";
+  return list.join(", ");
 }
 
-// -------------------- STRIPE.JS (CDN) --------------------
+const STATE_NAMES: Record<string, string> = {
+  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California", CO: "Colorado", CT: "Connecticut",
+  DE: "Delaware", DC: "District of Columbia", FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho",
+  IL: "Illinois", IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine",
+  MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri",
+  MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico",
+  NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon",
+  PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee", TX: "Texas",
+  UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+};
+
+function stateFullName(code: string) {
+  const c = String(code || "").toUpperCase();
+  return STATE_NAMES[c] || c || "Your State";
+}
+
+function riskFromScore(score: number) {
+  if (score >= PASSING_SCORE) return { label: "READY", tone: "emerald" as const };
+  if (score >= 60) return { label: "RISK", tone: "amber" as const };
+  return { label: "FAIL", tone: "red" as const };
+}
+
+function toneClasses(tone: "emerald" | "amber" | "red") {
+  if (tone === "emerald")
+    return {
+      ring: "ring-emerald-500/20",
+      pill: "bg-emerald-500/10 border-emerald-500/30 text-emerald-300",
+      big: "text-emerald-300",
+      bar: "bg-emerald-500",
+      glow: "shadow-[0_0_40px_-16px_rgba(16,185,129,0.55)]",
+      danger: "text-emerald-300",
+      dangerBg: "bg-emerald-500/10 border-emerald-500/20",
+    };
+  if (tone === "amber")
+    return {
+      ring: "ring-amber-500/20",
+      pill: "bg-amber-500/10 border-amber-500/30 text-amber-300",
+      big: "text-amber-300",
+      bar: "bg-amber-500",
+      glow: "shadow-[0_0_40px_-16px_rgba(245,158,11,0.55)]",
+      danger: "text-amber-300",
+      dangerBg: "bg-amber-500/10 border-amber-500/20",
+    };
+  return {
+    ring: "ring-red-500/20",
+    pill: "bg-red-500/10 border-red-500/30 text-red-300",
+    big: "text-red-300",
+    bar: "bg-red-500",
+    glow: "shadow-[0_0_40px_-16px_rgba(239,68,68,0.55)]",
+    danger: "text-red-300",
+    dangerBg: "bg-red-500/10 border-red-500/20",
+  };
+}
+
+type LoginResponse = { ok: boolean; access?: "subscription" | "lifetime" | "none"; error?: string };
+
+async function loginWithEmail(email: string): Promise<LoginResponse> {
+  const res = await fetch("/api/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+    cache: "no-store",
+  });
+
+  let json: any = null;
+  try {
+    json = await res.json();
+  } catch {
+    json = null;
+  }
+
+  if (!res.ok) return { ok: false, error: json?.error || "Server error" };
+  return (json || { ok: false }) as LoginResponse;
+}
+
+// Embedded Checkout: /api/checkout returns { clientSecret }
+async function createCheckoutClientSecret(plan: PlanKey, email?: string) {
+  const res = await fetch("/api/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    body: JSON.stringify({ plan, email }),
+  });
+
+  const status = res.status;
+  const data = (await res.json().catch(() => null)) as any;
+
+  if (!res.ok) {
+    const msg = data?.error || `Checkout failed (${status})`;
+    throw new Error(String(msg));
+  }
+
+  if (!data?.ok || !data?.clientSecret) throw new Error("Checkout clientSecret missing.");
+  return String(data.clientSecret);
+}
+
 declare global {
   interface Window {
     Stripe?: any;
   }
 }
 
-const STRIPE_JS_SRC = "https://js.stripe.com/v3";
-const STRIPE_JS_ID = "stripe-js-v3";
-
 function loadStripeJs(): Promise<void> {
   return new Promise((resolve, reject) => {
     if (typeof window === "undefined") return reject(new Error("No window"));
     if (window.Stripe) return resolve();
 
-    const existing = document.getElementById(STRIPE_JS_ID) as HTMLScriptElement | null;
+    const existing = document.querySelector('script[src="https://js.stripe.com/v3/"]') as HTMLScriptElement | null;
     if (existing) {
-      existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", () => reject(new Error("Stripe.js failed to load")));
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error("Failed to load payment system")), { once: true });
       return;
     }
 
     const s = document.createElement("script");
-    s.id = STRIPE_JS_ID;
-    s.src = STRIPE_JS_SRC;
+    s.src = "https://js.stripe.com/v3/";
     s.async = true;
     s.onload = () => resolve();
-    s.onerror = () => reject(new Error("Stripe.js failed to load"));
+    s.onerror = () => reject(new Error("Failed to load payment system"));
     document.head.appendChild(s);
   });
 }
 
-export default function PayPage() {
+function PaywallContent() {
   const router = useRouter();
-  const sp = useSearchParams();
+  const searchParams = useSearchParams();
 
-  const queryPlan = (sp.get("plan") as Plan | null) || null;
+  const stripePk = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 
-  const [mounted, setMounted] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<PlanKey>("lifetime");
 
-  const [license, setLicense] = useState<LicenseClass>("A");
-  const [userState, setUserState] = useState("TX");
-  const [endorsements, setEndorsements] = useState<Endorsement[]>([]);
-  const [score, setScore] = useState<number>(0);
+  const [ctx, setCtx] = useState<UserContext>({
+    score: 42,
+    weakDomain: "General Knowledge",
+    userState: "TX",
+    license: "A",
+    endorsements: [],
+    sessionId: "S-000000",
+  });
 
-  const [plan, setPlan] = useState<Plan>("lifetime");
-
-  // Checkout UI state
-  const [loadingCheckout, setLoadingCheckout] = useState<boolean>(true);
-  const [checkoutError, setCheckoutError] = useState<string>("");
-
-  // Restore UI
+  // Restore (de-emphasized but available)
+  const [restoreEmail, setRestoreEmail] = useState("");
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [restoreMsg, setRestoreMsg] = useState("");
   const [showRestore, setShowRestore] = useState(false);
-  const [restoreInput, setRestoreInput] = useState("");
-  const [restoreMsg, setRestoreMsg] = useState<string | null>(null);
 
-  const requestIdRef = useRef(0);
-  const retryKeyRef = useRef(0);
+  // Checkout (Embedded) UX
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [checkoutErr, setCheckoutErr] = useState("");
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
-  const checkoutMountRef = useRef<HTMLDivElement | null>(null);
-  const embeddedCheckoutRef = useRef<any>(null);
+  const embeddedRef = useRef<any>(null);
+  const checkoutSectionRef = useRef<HTMLDivElement | null>(null);
+  const [embedParams, setEmbedParams] = useState<{ plan: PlanKey; email?: string } | null>(null);
 
-  useEffect(() => setMounted(true), []);
-
-  // If already paid on this device, go to dashboard immediately
+  // Restore user info
   useEffect(() => {
-    if (!mounted) return;
-    const access = safeGet(ACCESS_KEY);
-    if (access === "paid" || access === "true") {
-      router.replace("/dashboard");
-    }
-  }, [mounted, router]);
+    const s = parseInt(localStorage.getItem("diagnosticScore") || "42", 10);
+    const weakDomain = localStorage.getItem("weakestDomain") || "General Knowledge";
+    const userState = localStorage.getItem("userState") || "TX";
 
-  // Load personalization from localStorage
+    const saved = safeParseJSON<{ license?: string; endorsements?: string[]; userState?: string }>(
+      localStorage.getItem(CONFIG_KEY)
+    );
+
+    const legacyLicense = localStorage.getItem("userLevel") || "A";
+    const legacyEnd = safeParseJSON<string[]>(localStorage.getItem("userEndorsements")) || [];
+
+    const license = saved?.license || legacyLicense || "A";
+    const endorsements = Array.isArray(saved?.endorsements) ? saved.endorsements : legacyEnd;
+
+    // session id (nice for the card)
+    const sid = String(localStorage.getItem("haul_session_id") || "").trim();
+    const sessionId = sid ? sid : (() => {
+      const a = Math.random().toString(16).slice(2, 10);
+      const b = Date.now().toString(16).slice(-6);
+      const gen = `S-${a}-${b}`.toUpperCase();
+      try { localStorage.setItem("haul_session_id", gen); } catch {}
+      return gen;
+    })();
+
+    setCtx({
+      score: Number.isFinite(s) ? clamp(s, 0, 100) : 42,
+      weakDomain,
+      userState,
+      license,
+      endorsements,
+      sessionId,
+    });
+  }, []);
+
   useEffect(() => {
-    if (!mounted) return;
+    const plan = searchParams.get("plan");
+    if (plan === "monthly" || plan === "lifetime") setSelectedPlan(plan);
+  }, [searchParams]);
 
-    const lic = (safeGet(STORAGE_KEYS.userLevel) as LicenseClass | null) || "A";
-    const st = safeGet(STORAGE_KEYS.userState) || "TX";
-    const ends = safeJsonParse<Endorsement[]>(safeGet(STORAGE_KEYS.userEndorsements), []);
-    const rawScore = safeGet(STORAGE_KEYS.diagnosticScore);
-    const sc = rawScore ? clamp(parseInt(rawScore, 10) || 0, 0, 100) : 0;
-
-    setLicense(lic);
-    setUserState(st);
-    setEndorsements(Array.from(new Set(ends)));
-    setScore(sc);
-
-    const recommended: Plan = sc >= PASSING_SCORE ? "monthly" : "lifetime";
-    if (queryPlan === "monthly" || queryPlan === "lifetime") setPlan(queryPlan);
-    else setPlan(recommended);
-  }, [mounted, queryPlan]);
-
-  const stateName = useMemo(() => STATE_NAME[userState] || userState, [userState]);
-  const missing = Math.max(0, PASSING_SCORE - score);
-  const willFail = score > 0 && score < PASSING_SCORE;
-
-  const headline = willFail ? "Don’t fail your CDL test." : "Pass your CDL test faster.";
-  const subline =
-    score > 0
-      ? `Your score is ${score}%. You need ${PASSING_SCORE}% to pass in ${stateName}.`
-      : `All 50 states. Full simulator. Fast Track. Offline.`;
-
-  const checkoutHeader =
-    "Complete payment below to unlock 6,000+ real Q&A, Full Simulator, Fast Track, All 50 states, Offline.";
-
-  const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
-
-  // Create/mount embedded checkout (no npm stripe deps)
   useEffect(() => {
-    if (!mounted) return;
-
-    if (!publishableKey) {
-      setCheckoutError("Missing NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.");
-      setLoadingCheckout(false);
+    const urlEmail = String(searchParams.get("email") || "").trim().toLowerCase();
+    if (urlEmail && urlEmail.includes("@")) {
+      setRestoreEmail(urlEmail);
       return;
     }
 
-    const id = ++requestIdRef.current;
-    setLoadingCheckout(true);
-    setCheckoutError("");
-
-    // Cleanup previous embedded instance (plan switch / retry)
     try {
-      embeddedCheckoutRef.current?.destroy?.();
+      const saved = String(localStorage.getItem(EMAIL_KEY) || localStorage.getItem("userEmail") || "").trim();
+      if (saved && saved.includes("@")) setRestoreEmail(saved.toLowerCase());
     } catch {}
-    embeddedCheckoutRef.current = null;
+  }, [searchParams]);
 
-    if (checkoutMountRef.current) {
-      checkoutMountRef.current.innerHTML = "";
+  const { label: risk, tone } = riskFromScore(ctx.score);
+  const tc = toneClasses(tone);
+
+  const stateName = useMemo(() => stateFullName(ctx.userState), [ctx.userState]);
+
+  const progressToPass = useMemo(() => {
+    const pct = (ctx.score / PASSING_SCORE) * 100;
+    return clamp(Math.round(pct), 0, 100);
+  }, [ctx.score]);
+
+  const failGap = useMemo(() => Math.max(0, PASSING_SCORE - ctx.score), [ctx.score]);
+
+  const heroLine = useMemo(() => {
+    if (ctx.score >= PASSING_SCORE) {
+      return `You’re at ${ctx.score}%. You can pass in ${stateName}. Now lock it in.`;
+    }
+    return `Your score is ${ctx.score}%. You need ${PASSING_SCORE}% to pass in ${stateName}.`;
+  }, [ctx.score, stateName]);
+
+  const scaryLine = useMemo(() => {
+    if (ctx.score >= PASSING_SCORE) return "You’re close. Don’t risk it. Get consistent before test day.";
+    return "If you take the test today, you will FAIL.";
+  }, [ctx.score]);
+
+  const stickyCtaText = useMemo(() => {
+    return selectedPlan === "lifetime" ? PRICING.lifetime.cta : PRICING.monthly.cta;
+  }, [selectedPlan]);
+
+  const persistEmail = (email: string) => {
+    const e = String(email || "").trim().toLowerCase();
+    if (!e.includes("@")) return;
+    try {
+      localStorage.setItem(EMAIL_KEY, e);
+      localStorage.setItem("userEmail", e);
+      localStorage.setItem("billingEmail", e);
+    } catch {}
+  };
+
+  const closeCheckout = () => {
+    setCheckoutOpen(false);
+    setCheckoutErr("");
+    setCheckoutBusy(false);
+    setEmbedParams(null);
+
+    try { embeddedRef.current?.destroy?.(); } catch {}
+    try { embeddedRef.current?.unmount?.(); } catch {}
+    embeddedRef.current = null;
+
+    const host = document.getElementById("embedded-checkout");
+    if (host) host.innerHTML = "";
+  };
+
+  const startCheckout = () => {
+    setCheckoutErr("");
+
+    const e = String(restoreEmail || "").trim().toLowerCase();
+    const email = e.includes("@") ? e : undefined;
+    if (email) persistEmail(email);
+
+    if (!stripePk) {
+      setCheckoutErr("Payment system not ready. Missing publishable key.");
+      setCheckoutOpen(true);
+      setCheckoutBusy(false);
+      setEmbedParams(null);
+      return;
     }
 
-    const run = async () => {
+    setCheckoutBusy(true);
+    setCheckoutOpen(true);
+    setEmbedParams({ plan: selectedPlan, email });
+
+    // scroll into view for mobile + desktop
+    setTimeout(() => {
+      checkoutSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  };
+
+  // Mount embedded checkout (inline)
+  useEffect(() => {
+    let cancelled = false;
+
+    async function mountEmbedded(plan: PlanKey, email?: string) {
       try {
+        try { embeddedRef.current?.destroy?.(); } catch {}
+        try { embeddedRef.current?.unmount?.(); } catch {}
+        embeddedRef.current = null;
+
+        const host = document.getElementById("embedded-checkout");
+        if (host) host.innerHTML = "";
+
         await loadStripeJs();
-        if (id !== requestIdRef.current) return;
+        if (cancelled) return;
 
-        const stripe = window.Stripe?.(publishableKey);
-        if (!stripe) throw new Error("Stripe failed to initialize.");
+        const stripe = window.Stripe?.(stripePk);
+        if (!stripe) throw new Error("Payment system failed to initialize.");
 
-        const fetchClientSecret = async () => {
-          const returnUrl = `${window.location.origin}/pay?plan=${plan}`;
-          const url = `/api/checkout?plan=${plan}&embedded=1&return_url=${encodeURIComponent(returnUrl)}&rk=${retryKeyRef.current}`;
+        const embeddedCheckout = await stripe.initEmbeddedCheckout({
+          fetchClientSecret: async () => {
+            const cs = await createCheckoutClientSecret(plan, email);
+            return cs;
+          },
+        });
 
-          const res = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-          });
+        if (cancelled) return;
 
-          const ct = res.headers.get("content-type") || "";
-          if (!res.ok) {
-            throw new Error("Checkout could not be started.");
-          }
-          if (!ct.includes("application/json")) {
-            throw new Error("Checkout could not be started.");
-          }
+        embeddedRef.current = embeddedCheckout;
+        embeddedCheckout.mount("#embedded-checkout");
 
-          const data = (await res.json()) as { clientSecret?: string; error?: string };
-          if (!data?.clientSecret) {
-            throw new Error(data?.error || "Checkout could not be started.");
-          }
-          return data.clientSecret;
-        };
-
-        const embedded = await stripe.initEmbeddedCheckout({ fetchClientSecret });
-
-        if (id !== requestIdRef.current) {
-          try {
-            embedded?.destroy?.();
-          } catch {}
-          return;
-        }
-
-        embeddedCheckoutRef.current = embedded;
-
-        const mountEl = checkoutMountRef.current;
-        if (!mountEl) throw new Error("Checkout mount not found.");
-
-        embedded.mount(mountEl);
-
-        setLoadingCheckout(false);
-      } catch (e: any) {
-        if (id !== requestIdRef.current) return;
-        setCheckoutError(e?.message || "Checkout could not be started.");
-        setLoadingCheckout(false);
+        setCheckoutBusy(false);
+      } catch (err: any) {
+        setCheckoutErr(err?.message || "Could not load secure payment.");
+        setCheckoutBusy(false);
       }
-    };
+    }
 
-    run();
+    if (checkoutOpen && embedParams?.plan) {
+      mountEmbedded(embedParams.plan, embedParams.email);
+    }
 
     return () => {
-      // Cleanup on unmount
-      try {
-        embeddedCheckoutRef.current?.destroy?.();
-      } catch {}
-      embeddedCheckoutRef.current = null;
+      cancelled = true;
     };
-  }, [mounted, plan, publishableKey]);
+  }, [checkoutOpen, embedParams, stripePk]);
 
-  const pill = (text: string) => (
-    <span className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-black text-slate-300 uppercase tracking-widest">
-      {text}
+  const handleRestore = async () => {
+    const email = String(restoreEmail || "").trim().toLowerCase();
+    if (!email.includes("@")) {
+      setRestoreMsg("Enter a valid email.");
+      return;
+    }
+
+    setRestoreMsg("");
+    setIsRestoring(true);
+
+    try {
+      const result = await loginWithEmail(email);
+
+      if (result?.ok && (result.access === "subscription" || result.access === "lifetime")) {
+        persistEmail(email);
+        try {
+          localStorage.setItem(ACCESS_KEY, result.access);
+        } catch {}
+
+        setIsRestoring(false);
+        router.push("/profile");
+        return;
+      }
+
+      setRestoreMsg("Email not found. Try the email you used at payment.");
+      setIsRestoring(false);
+    } catch {
+      setRestoreMsg("Email not found. Try the email you used at payment.");
+      setIsRestoring(false);
+    }
+  };
+
+  const ValueChip = ({ children }: { children: React.ReactNode }) => (
+    <span className="px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-[9px] font-black uppercase tracking-widest text-slate-300 whitespace-nowrap">
+      {children}
     </span>
   );
 
-  const onRestore = () => {
-    const val = restoreInput.trim();
-    if (!val) {
-      setRestoreMsg("Enter your purchase email or code.");
-      return;
-    }
-    setRestoreMsg("Redirecting…");
-    const next = `/dashboard?plan=${plan}`;
-    // send both token + email to maximize compatibility with your existing api/login
-    window.location.href = `/api/login?token=${encodeURIComponent(val)}&email=${encodeURIComponent(val)}&next=${encodeURIComponent(next)}`;
-  };
+  const testimonials = [
+    {
+      name: "Jose M.",
+      state: "Texas",
+      quote: "Simple. I did practice every day. I passed first try.",
+      tag: "Passed first try",
+    },
+    {
+      name: "Abdi A.",
+      state: "Florida",
+      quote: "The simulator felt like the real test. It helped me a lot.",
+      tag: "Felt like real test",
+    },
+    {
+      name: "Maria L.",
+      state: "California",
+      quote: "I was failing. This showed me what to study. I passed.",
+      tag: "Fixed weak topics",
+    },
+  ];
 
-  const setPlanAndUrl = (p: Plan) => {
-    setPlan(p);
-    router.replace(`/pay?plan=${p}`);
-  };
+  const faqs = [
+    {
+      q: "Does it work for my state?",
+      a: "Yes. All 50 states are included.",
+    },
+    {
+      q: "Can I use it on my phone?",
+      a: "Yes. Mobile-first. Works great on iPhone and Android.",
+    },
+    {
+      q: "What if I don’t pass?",
+      a: "If you don’t pass after using the app, you get a 100% full refund.",
+    },
+  ];
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white font-sans">
-      {/* Minimal header */}
-      <div className="border-b border-white/5">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <button
-            onClick={() => router.back()}
-            className="text-xs text-slate-400 hover:text-slate-200 font-mono uppercase tracking-widest"
-          >
-            ← Back
-          </button>
-
-          <div className="text-xs font-black tracking-widest uppercase">
-            HAUL<span className="text-amber-500">.OS</span>
-          </div>
-
-          <div className="text-xs text-slate-400 font-mono uppercase tracking-widest">
-            Secure checkout
-          </div>
-        </div>
+    <div className="min-h-screen bg-slate-950 text-white font-sans pb-32 selection:bg-amber-500/20">
+      {/* Background FX */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.18),transparent_60%)]" />
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.12),transparent_55%)]" />
+        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:44px_44px]" />
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-6 lg:py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-8 items-start">
-          {/* RIGHT FIRST on mobile: checkout occupies screen */}
-          <div className="order-1 lg:order-2 lg:sticky lg:top-6">
-            <div className="rounded-3xl border border-white/10 bg-slate-900/60 backdrop-blur p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-[10px] font-black uppercase tracking-widest text-amber-300">
-                  Complete payment
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setPlanAndUrl("monthly")}
-                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition ${
-                      plan === "monthly"
-                        ? "bg-amber-500/15 border-amber-500/40 text-amber-200"
-                        : "bg-white/5 border-white/10 text-slate-300 hover:text-slate-100"
-                    }`}
-                    aria-pressed={plan === "monthly"}
-                  >
-                    Monthly
-                  </button>
-                  <button
-                    onClick={() => setPlanAndUrl("lifetime")}
-                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition ${
-                      plan === "lifetime"
-                        ? "bg-amber-500/15 border-amber-500/40 text-amber-200"
-                        : "bg-white/5 border-white/10 text-slate-300 hover:text-slate-100"
-                    }`}
-                    aria-pressed={plan === "lifetime"}
-                  >
-                    Lifetime
-                  </button>
-                </div>
-              </div>
+      <main className="relative z-10 w-full px-4 lg:px-10 pt-10">
+        <div className="mx-auto w-full max-w-screen-2xl">
+          {/* HERO */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
+            <div className="flex flex-wrap justify-center gap-1.5 mb-4">
+              <ValueChip>{DRIVERS_USED} drivers used this</ValueChip>
+              <ValueChip>All 50 states</ValueChip>
+              <ValueChip>Works offline</ValueChip>
+              <ValueChip>Pass Guarantee</ValueChip>
+            </div>
 
-              <div className="mt-2 text-white font-black text-base leading-snug">
-                {checkoutHeader}
-              </div>
+            <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-none mb-3">
+              Don’t fail your <span className="text-amber-500">CDL test</span>.
+            </h1>
 
-              <div className="mt-3 flex flex-wrap gap-2">
-                {pill("Instant access")}
-                {pill("Money-back guarantee")}
-                {pill("All 50 states")}
-                {pill("Works offline")}
-              </div>
+            <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-3xl mx-auto">
+              {heroLine}{" "}
+              <span className={`font-black ${tc.danger} ${ctx.score < PASSING_SCORE ? "underline" : ""}`}>{scaryLine}</span>
+            </p>
 
-              <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/40 overflow-hidden">
-                <div className="w-full">
-                  {/* Full focus area */}
-                  <div className="h-[78vh] min-h-[620px]">
-                    {loadingCheckout && (
-                      <div className="h-full w-full grid place-items-center p-6">
-                        <div className="text-center">
-                          <div className="text-amber-400 text-3xl mb-3">⏳</div>
-                          <div className="font-black">Loading secure checkout…</div>
-                          <div className="mt-1 text-xs text-slate-400 font-mono uppercase tracking-widest">
-                            {plan.toUpperCase()} • {classLabel(license)} • {stateName.toUpperCase()}
-                          </div>
+            {/* Big warning line */}
+            {ctx.score < PASSING_SCORE ? (
+              <div className={`mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-full border ${tc.dangerBg} text-[12px] font-black uppercase tracking-widest`}>
+                ⚠️ You are {failGap}% away from passing • Target is {PASSING_SCORE}% • {stateName}
+              </div>
+            ) : (
+              <div className={`mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-full border ${tc.dangerBg} text-[12px] font-black uppercase tracking-widest`}>
+                ✅ You are at {ctx.score}% • Keep it consistent • {stateName}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Layout: full screen on desktop */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+            {/* LEFT: personalization + story + FAQ */}
+            <div className="lg:col-span-7">
+              {/* Driver Profile Card */}
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+                <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/60 backdrop-blur p-6">
+                  <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.25),transparent_55%)]" />
+                  <div className="relative">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">CDL Pass Card</div>
+                        <div className="mt-1 text-xl font-black tracking-tight">
+                          {classLabel(ctx.license)} • {stateName}
+                        </div>
+                        <div className="mt-1 text-[11px] font-mono text-slate-500 uppercase tracking-widest">
+                          Driver ID: {ctx.sessionId.slice(0, 14)}
                         </div>
                       </div>
-                    )}
 
-                    {!loadingCheckout && checkoutError && (
-                      <div className="h-full w-full grid place-items-center p-6">
-                        <div className="text-center max-w-sm">
-                          <div className="text-red-400 text-3xl mb-3">⚠️</div>
-                          <div className="font-black">Checkout error</div>
-                          <div className="mt-2 text-sm text-slate-300">{checkoutError}</div>
-
-                          <div className="mt-4 flex flex-col gap-2">
-                            <button
-                              onClick={() => {
-                                retryKeyRef.current += 1;
-                                requestIdRef.current += 1; // invalidate any pending run
-                                setLoadingCheckout(true);
-                                setCheckoutError("");
-                                // trigger effect by re-setting same plan (via URL replace + state)
-                                setPlan((p) => p);
-                                // hard refresh mount by forcing plan to same value via router replace
-                                router.replace(`/pay?plan=${plan}`);
-                              }}
-                              className="px-4 py-3 rounded-xl bg-white text-black font-black uppercase tracking-widest text-xs hover:bg-slate-200 active:scale-95 transition-transform"
-                            >
-                              Retry
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                window.location.href = `/api/checkout?plan=${plan}`;
-                              }}
-                              className="px-4 py-3 rounded-xl bg-white/10 border border-white/15 text-white font-black uppercase tracking-widest text-xs hover:bg-white/15 active:scale-95 transition-transform"
-                            >
-                              Open Checkout
-                            </button>
-                          </div>
-                        </div>
+                      <div className={`shrink-0 px-3 py-2 rounded-2xl border ${tc.pill} text-[10px] font-black uppercase tracking-widest`}>
+                        {risk} RISK
                       </div>
-                    )}
+                    </div>
 
-                    {!loadingCheckout && !checkoutError && (
-                      <div className="h-full w-full">
-                        {/* Stripe mounts into this div */}
-                        <div ref={checkoutMountRef} className="h-full w-full" />
+                    <div className="mt-5 grid grid-cols-3 gap-3">
+                      <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Your Score</div>
+                        <div className={`mt-1 text-3xl font-black ${tc.big}`}>{ctx.score}%</div>
                       </div>
-                    )}
+                      <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Need to Pass</div>
+                        <div className="mt-1 text-3xl font-black text-white">{PASSING_SCORE}%</div>
+                      </div>
+                      <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Weak Topic</div>
+                        <div className="mt-2 text-sm font-black text-white leading-snug">{ctx.weakDomain}</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-5">
+                      <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
+                        <motion.div
+                          className={`h-full ${tc.bar}`}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${progressToPass}%` }}
+                          transition={{ type: "spring", stiffness: 120, damping: 18 }}
+                        />
+                      </div>
+                      <div className="mt-2 flex justify-between text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+                        <span>Now: {ctx.score}%</span>
+                        <span>Pass: {PASSING_SCORE}%</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 text-[11px] text-slate-400">
+                      <span className="font-black text-white">Endorsements:</span> {formatEndorsements(ctx.endorsements)}
+                    </div>
                   </div>
                 </div>
+              </motion.div>
+
+              {/* Simple “How this helps” */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                {[
+                  { k: "1", t: "Practice", d: "Do unlimited practice tests." },
+                  { k: "2", t: "Fast Track", d: "We focus on what you miss." },
+                  { k: "3", t: "Simulator", d: "Train like the real exam." },
+                ].map((s) => (
+                  <div key={s.k} className="rounded-3xl border border-white/10 bg-white/5 p-5 text-left">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 grid place-items-center">
+                        <span className="text-amber-300 font-black">{s.k}</span>
+                      </div>
+                      <div>
+                        <div className="font-black text-white">{s.t}</div>
+                        <div className="text-sm text-slate-400 mt-0.5 leading-relaxed">{s.d}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              <div className="mt-3 text-center text-[10px] text-slate-500 font-mono uppercase tracking-widest">
-                You will return to <span className="text-slate-300">/pay?plan={plan}</span> after payment
+              {/* Testimonials (must be above plans) */}
+              <div className="rounded-3xl border border-white/10 bg-slate-900/50 backdrop-blur p-6 mb-6">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div>
+                    <div className="text-xs font-black uppercase tracking-widest text-slate-300">
+                      Why {DRIVERS_USED} drivers use our practice tests
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      Simple practice. Real questions. Pass faster.
+                    </div>
+                  </div>
+                  <div className="px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-300 text-[10px] font-black uppercase tracking-widest">
+                    Pass Guarantee
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {testimonials.map((t) => (
+                    <div key={t.name} className="rounded-3xl border border-white/10 bg-slate-950/30 p-5">
+                      <div className="text-[10px] font-black uppercase tracking-widest text-amber-300 mb-2">
+                        {t.tag}
+                      </div>
+                      <div className="text-sm text-white font-black leading-snug">“{t.quote}”</div>
+                      <div className="mt-3 text-[11px] text-slate-400 font-mono">
+                        — {t.name} • {t.state}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* Restore hidden by default */}
-              <div className="mt-4 text-center">
+              {/* FAQ */}
+              <div className="rounded-3xl border border-white/10 bg-slate-900/50 backdrop-blur p-6 mb-6">
+                <div className="text-xs font-black uppercase tracking-widest text-slate-300 mb-4">Quick FAQ</div>
+                <div className="space-y-4">
+                  {faqs.map((f) => (
+                    <div key={f.q} className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
+                      <div className="font-black text-white">{f.q}</div>
+                      <div className="mt-1 text-sm text-slate-400">{f.a}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Restore (hidden by default) */}
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
                 <button
-                  onClick={() => {
-                    setShowRestore((p) => !p);
-                    setRestoreMsg(null);
-                  }}
-                  className="text-[11px] text-slate-400 hover:text-slate-200 underline"
+                  onClick={() => setShowRestore((p) => !p)}
+                  className="w-full flex items-center justify-between text-left"
                 >
-                  Already paid? Restore access
+                  <div>
+                    <div className="text-xs font-black uppercase tracking-widest text-slate-300">Already paid before?</div>
+                    <div className="text-[11px] text-slate-500 mt-1">Restore access with your payment email.</div>
+                  </div>
+                  <span className="text-slate-400 font-black">{showRestore ? "−" : "+"}</span>
                 </button>
 
                 <AnimatePresence>
                   {showRestore && (
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="mt-3 rounded-2xl border border-white/10 bg-slate-950/40 p-4 text-left"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mt-4"
                     >
-                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-2">
-                        Restore on this device
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row gap-2">
+                      <div className="flex gap-2">
                         <input
-                          value={restoreInput}
-                          onChange={(e) => setRestoreInput(e.target.value)}
-                          placeholder="Purchase email or code"
-                          autoComplete="email"
-                          className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500"
+                          type="email"
+                          placeholder="Enter your email"
+                          value={restoreEmail}
+                          onChange={(e) => setRestoreEmail(e.target.value)}
+                          className="flex-1 bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:border-amber-500 outline-none"
                         />
                         <button
-                          onClick={onRestore}
-                          className="px-4 py-3 rounded-xl bg-white text-black font-black uppercase tracking-widest text-xs hover:bg-slate-200 active:scale-95 transition-transform"
+                          onClick={handleRestore}
+                          disabled={isRestoring}
+                          className={`px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest border border-white/10 ${
+                            isRestoring ? "bg-slate-800 text-slate-400" : "bg-white/5 hover:bg-white/10 text-white"
+                          }`}
                         >
-                          Restore
+                          {isRestoring ? "Checking..." : "Restore"}
                         </button>
                       </div>
 
-                      {restoreMsg && (
-                        <div className="mt-2 text-[11px] text-slate-400">{restoreMsg}</div>
-                      )}
+                      <AnimatePresence>
+                        {restoreMsg && (
+                          <motion.p
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 6 }}
+                            className="text-xs text-amber-300 mt-3"
+                          >
+                            {restoreMsg}
+                          </motion.p>
+                        )}
+                      </AnimatePresence>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
             </div>
-          </div>
 
-          {/* LEFT: seller copy (desktop) */}
-          <div className="order-2 lg:order-1 space-y-4">
-            <div className="rounded-3xl border border-white/10 bg-slate-900/50 backdrop-blur p-6">
-              <div className="text-xs font-black uppercase tracking-widest text-slate-200 mb-2">
-                {headline}
-              </div>
-              <div className="text-sm text-slate-300/90 leading-relaxed">{subline}</div>
+            {/* RIGHT: Plans + Checkout */}
+            <div className="lg:col-span-5">
+              {/* Plans */}
+              <div className="space-y-4 mb-6">
+                {/* Lifetime */}
+                <button
+                  onClick={() => setSelectedPlan("lifetime")}
+                  className={`relative w-full p-5 rounded-3xl border-2 text-left transition-all ${
+                    selectedPlan === "lifetime"
+                      ? "bg-amber-500/10 border-amber-500 shadow-[0_0_34px_rgba(245,158,11,0.18)]"
+                      : "bg-slate-900/60 border-slate-800 hover:border-slate-700"
+                  }`}
+                  aria-label="Select lifetime access"
+                >
+                  {selectedPlan === "lifetime" && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wide shadow-lg">
+                      Recommended • Best value
+                    </div>
+                  )}
 
-              {score > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[11px] font-mono text-slate-200">
-                    {classLabel(license)} • {stateName}
-                  </span>
-                  <span className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[11px] font-mono text-slate-200">
-                    Endorsements: {formatEndorsements(endorsements)}
-                  </span>
-                  <span className="px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-[11px] font-black text-amber-200">
-                    Score: <span className="text-white">{score}%</span>
-                  </span>
-                  <span className="px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-[11px] font-black text-emerald-200">
-                    Need: <span className="text-white">{PASSING_SCORE}%</span>
-                  </span>
-                </div>
-              )}
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className={`text-lg font-black ${selectedPlan === "lifetime" ? "text-white" : "text-slate-200"}`}>
+                          {PRICING.lifetime.title}
+                        </h3>
+                        <span className="px-2 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-[10px] font-black uppercase tracking-widest text-amber-300">
+                          {PRICING.lifetime.badge}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">{PRICING.lifetime.subtitle}</p>
+                    </div>
 
-              {willFail && (
-                <div className="mt-4 rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3">
-                  <div className="text-red-200 font-black uppercase tracking-widest text-[11px]">
-                    If you take the test today, you will FAIL.
-                  </div>
-                  <div className="text-red-200/80 text-[12px] mt-1">
-                    You need <span className="font-black text-white">{missing}%</span> more to reach{" "}
-                    <span className="font-black text-white">{PASSING_SCORE}%</span>.
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-slate-900/50 backdrop-blur p-6">
-              <div className="text-xs font-black uppercase tracking-widest text-slate-200 mb-2">
-                What you get
-              </div>
-              <ul className="space-y-3 text-sm text-slate-300/90">
-                <li className="flex gap-3">
-                  <span className="font-black text-emerald-400">✓</span>
-                  <span>
-                    <span className="font-black text-white">6,000+ real Q&A</span> (practice like the exam)
-                  </span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="font-black text-emerald-400">✓</span>
-                  <span>
-                    <span className="font-black text-white">Full Simulator</span> (repeat until 80%+)
-                  </span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="font-black text-emerald-400">✓</span>
-                  <span>
-                    <span className="font-black text-white">Fast Track</span> (study only what you miss)
-                  </span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="font-black text-emerald-400">✓</span>
-                  <span>
-                    <span className="font-black text-white">All 50 states</span> +{" "}
-                    <span className="font-black text-white">Works offline</span>
-                  </span>
-                </li>
-              </ul>
-
-              <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200 leading-relaxed">
-                <span className="font-black">Guarantee:</span> If you don’t pass after using the app,{" "}
-                <span className="font-black">100% full refund.</span>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-slate-900/50 backdrop-blur p-6">
-              <div className="text-xs font-black uppercase tracking-widest text-slate-200 mb-3">
-                Real drivers
-              </div>
-              <div className="grid grid-cols-1 gap-3">
-                {TESTIMONIALS.map((t) => (
-                  <div key={t.name} className="rounded-2xl border border-slate-800 bg-slate-950/30 p-4">
-                    <div className="text-sm text-white font-black">“{t.quote}”</div>
-                    <div className="mt-2 text-[11px] text-slate-400">
-                      <span className="font-black text-slate-200">{t.name}</span> • {t.role}
+                    <div className="text-right shrink-0">
+                      <div className="text-3xl font-black text-white">${PRICING.lifetime.price.toFixed(2)}</div>
+                      <div className="text-xs text-slate-500 uppercase tracking-widest">one-time</div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            <div className="rounded-3xl border border-white/10 bg-slate-900/50 backdrop-blur p-6">
-              <div className="text-xs font-black uppercase tracking-widest text-slate-200 mb-3">
-                Quick FAQ
-              </div>
-              <div className="space-y-4">
-                {FAQ.map((f) => (
-                  <div key={f.q} className="rounded-2xl border border-slate-800 bg-slate-950/30 p-4">
-                    <div className="font-black text-white">{f.q}</div>
-                    <div className="text-sm text-slate-400 mt-1">{f.a}</div>
+                  <AnimatePresence>
+                    {selectedPlan === "lifetime" && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-4 pt-4 border-t border-white/10 space-y-2"
+                      >
+                        {PRICING.lifetime.features.map((feat, i) => (
+                          <div key={i} className="flex items-center gap-2 text-xs text-slate-200">
+                            <span className="text-emerald-400 font-black">✓</span> {feat}
+                          </div>
+                        ))}
+
+                        <div className="mt-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-200 leading-relaxed">
+                          <span className="font-black">Guarantee:</span> If you don’t pass after using the app, you get a <span className="font-black">100% full refund</span>.
+                        </div>
+
+                        <div className="text-[11px] text-slate-400 font-black mt-3">
+                          🔒 Secure Payment • 100% Money-Back Guarantee
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </button>
+
+                {/* Monthly */}
+                <button
+                  onClick={() => setSelectedPlan("monthly")}
+                  className={`relative w-full p-5 rounded-3xl border-2 text-left transition-all ${
+                    selectedPlan === "monthly"
+                      ? "bg-white/5 border-slate-500"
+                      : "bg-slate-900/60 border-slate-800 opacity-90 hover:opacity-100 hover:border-slate-700"
+                  }`}
+                  aria-label="Select monthly access"
+                >
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="min-w-0">
+                      <h3 className="text-md font-black text-slate-200">{PRICING.monthly.title}</h3>
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed">{PRICING.monthly.subtitle}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-xl font-black text-slate-200">${PRICING.monthly.price.toFixed(2)}</div>
+                      <div className="text-xs text-slate-500 uppercase tracking-widest">/mo</div>
+                    </div>
                   </div>
-                ))}
+
+                  <AnimatePresence>
+                    {selectedPlan === "monthly" && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-4 pt-4 border-t border-white/10 space-y-2"
+                      >
+                        {PRICING.monthly.features.map((feat, i) => (
+                          <div key={i} className="flex items-center gap-2 text-xs text-slate-200">
+                            <span className="text-emerald-400 font-black">✓</span> {feat}
+                          </div>
+                        ))}
+                        <div className="text-[11px] text-slate-400 font-black mt-3">
+                          🔒 Secure Payment • 100% Money-Back Guarantee
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </button>
+              </div>
+
+              {/* Inline Checkout */}
+              <AnimatePresence>
+                {checkoutOpen && (
+                  <motion.div
+                    ref={checkoutSectionRef}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="mb-6 rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5 text-left"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div>
+                        <div className="text-xs font-black text-slate-300 uppercase tracking-widest">
+                          Complete payment below
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-1">
+                          Get instant access to{" "}
+                          <span className="text-white font-black">
+                            {selectedPlan === "lifetime" ? "6,000+" : "4,000"}
+                          </span>{" "}
+                          real questions & answers + full simulator.
+                        </div>
+                        <div className="mt-2 text-[11px] text-amber-300 font-black">
+                          ✅ Trusted by {DRIVERS_USED} drivers
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={closeCheckout}
+                        className="shrink-0 px-3 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/10 bg-white/5 hover:bg-white/10"
+                        aria-label="Close checkout"
+                      >
+                        Close
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {checkoutErr ? <div className="text-xs text-red-300">{checkoutErr}</div> : null}
+                      {checkoutBusy ? <div className="text-xs text-slate-400">Loading secure payment…</div> : null}
+
+                      <div
+                        id="embedded-checkout"
+                        className="min-h-[560px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950/40"
+                      />
+
+                      <div className="text-[11px] text-slate-400 font-black">
+                        🔒 Secure Payment • 100% Money-Back Guarantee
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Small scarcity + CTA helper */}
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                <div className="text-xs font-black uppercase tracking-widest text-slate-300">
+                  Don’t waste your test day
+                </div>
+                <div className="text-sm text-slate-400 mt-2 leading-relaxed">
+                  Failing costs money and time. Practice now. Pass with confidence.
+                </div>
+
+                <button
+                  onClick={startCheckout}
+                  disabled={checkoutBusy}
+                  className={`mt-4 w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black text-lg text-center uppercase tracking-widest transition-transform active:scale-95 ${tc.glow} disabled:opacity-60`}
+                >
+                  {checkoutBusy ? "Opening…" : stickyCtaText}
+                </button>
+
+                <p className="text-center text-[10px] text-slate-500 mt-2 flex items-center justify-center gap-2 font-mono uppercase tracking-widest">
+                  <span>🔒 Secure Payment</span> • <span>Pass Guarantee</span>
+                </p>
               </div>
             </div>
           </div>
         </div>
+
+        <div className="h-10" />
+      </main>
+
+      {/* STICKY CHECKOUT CTA (mobile conversion safety net) */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-slate-950/80 backdrop-blur-lg border-t border-white/5 z-50">
+        <div className="mx-auto w-full max-w-screen-2xl px-0 lg:px-6">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-left">
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-300">
+                Selected: {PRICING[selectedPlan].title}
+              </div>
+              <div className="text-xs text-slate-500">
+                {selectedPlan === "lifetime" ? "One-time payment • Lifetime access" : "Monthly • Cancel anytime"}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-lg font-black text-white">
+                ${PRICING[selectedPlan].price.toFixed(2)}
+                <span className="text-xs text-slate-500"> {selectedPlan === "lifetime" ? "" : PRICING[selectedPlan].cadence}</span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={startCheckout}
+            disabled={checkoutBusy}
+            className={`block w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black text-lg text-center uppercase tracking-widest transition-transform active:scale-95 ${tc.glow} disabled:opacity-60`}
+          >
+            {checkoutBusy ? "Opening…" : stickyCtaText}
+          </button>
+
+          <p className="text-center text-[10px] text-slate-500 mt-2 flex items-center justify-center gap-2 font-mono uppercase tracking-widest">
+            <span>🔒 Secure Payment</span> • <span>100% Money-Back Guarantee</span>
+          </p>
+        </div>
       </div>
-    </main>
+    </div>
+  );
+}
+
+export default function PayPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+      <PaywallContent />
+    </Suspense>
   );
 }
