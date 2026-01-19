@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { questions, type Question, type LicenseClass, type Endorsement } from "@/lib/questions";
 import { useRouter } from "next/navigation";
 
@@ -210,7 +210,7 @@ export default function DiagnosticPage() {
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT_SEC);
 
   // Analyzing animation state
-  const [analysisText, setAnalysisText] = useState("CHECKING YOUR RESULTS…");
+  const [analysisText, setAnalysisText] = useState("ANALYZING ANSWERS…");
   const [analysisPct, setAnalysisPct] = useState(0);
 
   // Preview state
@@ -396,13 +396,14 @@ export default function DiagnosticPage() {
     const stateName = STATE_NAME[userState] || userState;
     const profileLine = `CLASS ${license} • ${stateName.toUpperCase()} • ${endorsements.length ? `${endorsements.length} MODULES` : "CORE"}`;
 
+    // Faster “feels instant” sequence (no slow “saving” vibe)
     const sequence = [
-      { t: 250, pct: 12, text: "SAVING YOUR SCORE…" },
-      { t: 900, pct: 28, text: profileLine },
-      { t: 1600, pct: 46, text: "FINDING WHAT YOU MISS MOST…" },
-      { t: 2500, pct: 66, text: `WEAK TOPIC: ${weakest.toUpperCase()}…` },
-      { t: 3600, pct: 84, text: "BUILDING YOUR NEXT STEPS…" },
-      { t: 4800, pct: 100, text: "DONE." },
+      { t: 80, pct: 12, text: "ANALYZING ANSWERS…" },
+      { t: 260, pct: 32, text: `DMV PROFILE: ${profileLine}` },
+      { t: 520, pct: 54, text: "CALCULATING SCORE…" },
+      { t: 820, pct: 74, text: `WEAK TOPIC: ${weakest.toUpperCase()}…` },
+      { t: 1120, pct: 90, text: "BUILDING YOUR NEXT STEPS…" },
+      { t: 1400, pct: 100, text: "DONE." },
     ];
 
     for (const step of sequence) {
@@ -413,7 +414,7 @@ export default function DiagnosticPage() {
       timeoutsRef.current.push(id);
     }
 
-    const doneId = window.setTimeout(() => setStage("preview"), 5200);
+    const doneId = window.setTimeout(() => setStage("preview"), 1580);
     timeoutsRef.current.push(doneId);
   };
 
@@ -463,13 +464,25 @@ export default function DiagnosticPage() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-70" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
                 </span>
-                CHECKING RESULTS
+                DMV QUICK DIAGNOSTIC
               </div>
 
               <h2 className="mt-5 text-3xl font-black tracking-tight leading-none">
-                One second… <span className="text-amber-500">Saving</span>
+                <span className="text-amber-500">Analyzing</span> answers…
               </h2>
               <p className="mt-2 text-xs text-slate-400 font-mono">{headerProfile.toUpperCase()}</p>
+
+              <div className="mt-3 flex flex-wrap justify-center gap-2">
+                <span className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-200">
+                  DMV
+                </span>
+                <span className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-200">
+                  {classLabel(license)}
+                </span>
+                <span className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-200">
+                  {stateName.toUpperCase()}
+                </span>
+              </div>
             </div>
 
             <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-2xl">
@@ -483,7 +496,7 @@ export default function DiagnosticPage() {
                   className="h-full bg-amber-500"
                   initial={{ width: 0 }}
                   animate={{ width: `${analysisPct}%` }}
-                  transition={{ ease: "easeOut", duration: 0.6 }}
+                  transition={{ ease: "easeOut", duration: 0.35 }}
                 />
               </div>
 
@@ -539,20 +552,26 @@ export default function DiagnosticPage() {
       "Full Simulator of Real Exam Access",
       "All 50 States Included",
       "Works Offline (Study at rest stops)",
-      "100% Money-Back Guarantee",
+      "100% Pass Guarantee",
     ];
 
     const primaryCta = willFail ? "Get CDL Practice Tests (6,000+ Q&A) →" : "Keep Practicing Until 80%+ →";
-    const ctaSub = "All 50 States • Works Offline • Money-Back Guarantee";
+    const ctaSub = "All 50 States • Works Offline • 12,000+ drivers"";
 
     const IdCard = () => (
-      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5 relative overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5 relative overflow-hidden"
+      >
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.35),transparent_60%)]" />
         <div className="relative">
           <div className="flex items-start justify-between gap-3 mb-4">
             <div>
               <div className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Driver Study Card</div>
-              <div className="mt-1 text-sm font-black text-white">{classLabel(license)} • {stateName}</div>
+              <div className="mt-1 text-sm font-black text-white">
+                {classLabel(license)} • {stateName}
+              </div>
               <div className="mt-1 text-[11px] text-slate-400">
                 Endorsements: <span className="text-slate-200 font-bold">{formatEndorsements(endorsements)}</span>
               </div>
@@ -621,7 +640,6 @@ export default function DiagnosticPage() {
 
     return (
       <div className="min-h-screen bg-slate-950 text-white font-sans pb-32">
-        {/* Background FX */}
         <div className="fixed inset-0 pointer-events-none">
           <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:52px_52px]" />
           <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] opacity-15 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.55),transparent_65%)]" />
@@ -629,33 +647,27 @@ export default function DiagnosticPage() {
         </div>
 
         <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6 pt-10">
-          {/* Clear top explanation */}
           <div className="mb-4 text-center">
             <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[10px] font-mono tracking-widest uppercase ${tone.badge}`}>
               QUICK CHECK • 5 QUESTIONS • {headerProfile.toUpperCase()}
             </div>
 
             <h1 className="mt-4 text-3xl md:text-5xl font-black tracking-tight leading-none">
-              Your score is{" "}
-              <span className={`${tone.big}`}>{finalScore}%</span>
+              Your score is <span className={`${tone.big}`}>{finalScore}%</span>
             </h1>
 
             <p className="mt-2 text-slate-400 text-sm">
-              You need{" "}
-              <span className="font-black text-white">{PASSING_SCORE}%</span>{" "}
-              to pass in{" "}
+              You need <span className="font-black text-white">{PASSING_SCORE}%</span> to pass in{" "}
               <span className="font-black text-white">{stateName}</span>.
             </p>
 
-            {willFail && (
+            {finalScore < PASSING_SCORE ? (
               <div className="mt-4 rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 inline-block">
                 <div className="text-red-200 font-black uppercase tracking-widest text-[11px]">
                   If you take the test today, you will FAIL.
                 </div>
               </div>
-            )}
-
-            {!willFail && (
+            ) : (
               <div className="mt-4 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 inline-block">
                 <div className="text-emerald-200 font-black uppercase tracking-widest text-[11px]">
                   You’re close. Keep practicing to stay above 80%.
@@ -664,13 +676,10 @@ export default function DiagnosticPage() {
             )}
           </div>
 
-          {/* Desktop-friendly layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-            {/* LEFT */}
             <div className="space-y-4">
               <IdCard />
 
-              {/* What this means (simple) */}
               <div className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5">
                 <div className="text-xs font-black text-slate-200 uppercase tracking-widest mb-2">What this means</div>
                 <div className="text-sm text-slate-300 leading-relaxed">
@@ -701,7 +710,6 @@ export default function DiagnosticPage() {
                 </div>
               </div>
 
-              {/* NEXT: 3 steps */}
               <div className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5">
                 <div className="text-xs font-black text-slate-200 uppercase tracking-widest mb-3">What to do next</div>
 
@@ -736,11 +744,9 @@ export default function DiagnosticPage() {
                 </div>
               </div>
 
-              {/* What you unlock */}
+              {/* What you unlock (kept EXACT concept you asked for) */}
               <div className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5">
-                <div className="text-xs font-black text-slate-200 uppercase tracking-widest mb-3">
-                  Unlock includes
-                </div>
+                <div className="text-xs font-black text-slate-200 uppercase tracking-widest mb-3">Unlock includes</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {unlockBullets.map((b) => (
                     <div key={b} className="rounded-2xl border border-slate-800 bg-slate-950/30 p-3 text-sm text-slate-200">
@@ -750,20 +756,16 @@ export default function DiagnosticPage() {
                 </div>
 
                 <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200 leading-relaxed">
-                  <span className="font-black">Guarantee:</span> If you don’t pass after using the app, <span className="font-black">100% full refund.</span>
+                  <span className="font-black">Pass Guarantee: 12,000+</span> drivers passed last year using the app{" "}
                 </div>
               </div>
             </div>
 
-            {/* RIGHT */}
             <div className="space-y-4">
-              {/* Simple breakdown */}
               <div className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5">
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-xs font-black text-slate-200 uppercase tracking-widest">Your results</div>
-                  <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
-                    Correct {totalCorrect}/5
-                  </div>
+                  <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Correct {totalCorrect}/5</div>
                 </div>
 
                 <div className="space-y-2">
@@ -780,7 +782,7 @@ export default function DiagnosticPage() {
                           className={`h-full ${v.accuracy >= 80 ? "bg-emerald-500" : v.accuracy >= 60 ? "bg-amber-500" : "bg-red-500"}`}
                           initial={{ width: 0 }}
                           animate={{ width: `${clamp(v.accuracy, 0, 100)}%` }}
-                          transition={{ duration: 0.7, ease: "easeOut" }}
+                          transition={{ duration: 0.5, ease: "easeOut" }}
                         />
                       </div>
                     </div>
@@ -792,7 +794,6 @@ export default function DiagnosticPage() {
                 </div>
               </div>
 
-              {/* Missed questions preview (locked) */}
               <div className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5">
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-xs font-black text-slate-200 uppercase tracking-widest">What you missed</div>
@@ -824,7 +825,7 @@ export default function DiagnosticPage() {
           </div>
         </div>
 
-        {/* Sticky CTA */}
+        {/* Sticky CTA (direct to /pay, no modal) */}
         <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-slate-950/85 backdrop-blur-xl border-t border-white/5">
           <div className="max-w-6xl mx-auto px-0 md:px-2">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -875,14 +876,12 @@ export default function DiagnosticPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white font-sans flex flex-col">
-      {/* Background FX */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:52px_52px]" />
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] opacity-10 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.55),transparent_65%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(2,6,23,0.9)_75%)]" />
       </div>
 
-      {/* HUD Header */}
       <div className="relative z-20 px-5 py-4 border-b border-slate-800 bg-slate-950/60 backdrop-blur sticky top-0">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -908,17 +907,15 @@ export default function DiagnosticPage() {
         </div>
       </div>
 
-      {/* Progress Bar */}
       <div className="relative z-10 w-full h-1 bg-slate-900">
         <motion.div
           className="h-full bg-amber-500"
           initial={{ width: 0 }}
           animate={{ width: `${((currentQIndex + 1) / 5) * 100}%` }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
         />
       </div>
 
-      {/* Question */}
       <div className="relative z-10 flex-1 p-5 max-w-3xl mx-auto flex flex-col justify-center w-full">
         <div className="mb-5">
           <div className="flex items-center justify-between mb-3">
@@ -957,9 +954,7 @@ export default function DiagnosticPage() {
                   <div className="flex-1">
                     <div className="text-sm md:text-base font-semibold leading-relaxed">{opt}</div>
                     {active && (
-                      <div className="mt-2 text-[10px] font-mono text-amber-300 uppercase tracking-widest">
-                        selected
-                      </div>
+                      <div className="mt-2 text-[10px] font-mono text-amber-300 uppercase tracking-widest">selected</div>
                     )}
                   </div>
                 </div>
@@ -973,7 +968,6 @@ export default function DiagnosticPage() {
         </div>
       </div>
 
-      {/* Footer CTA */}
       <div className="relative z-20 p-5 border-t border-slate-800 bg-slate-950/65 backdrop-blur">
         <button
           onClick={commitAnswer}
