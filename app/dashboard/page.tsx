@@ -21,8 +21,8 @@ const CONFIG_KEY = "haulOS.config.v1";
  * IMPORTANT:
  * - Set these to your CDL Google Ads values (same pattern as your NREMT setup)
  */
-const GOOGLE_ADS_ID = "AW-17883612588";
-const GOOGLE_ADS_CONVERSION_LABEL = "eEaJCJm9oOcbEKyLyc9C"; // replace if CDL has a different label
+const GOOGLE_ADS_ID = "AW-17887232273";
+const GOOGLE_ADS_CONVERSION_LABEL = "7vqPCLWfl-gbEJGCptFC"; // replace if CDL has a different label
 
 // --- HELPERS ---
 function AnimatedNumber({ value }: { value: number }) {
