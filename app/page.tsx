@@ -2,7 +2,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 // --- CONSTANTS ---
@@ -28,6 +28,7 @@ type Endorsement = "Air Brakes" | "Hazmat" | "Tanker" | "Doubles/Triples" | "Pas
 
 // --- STORAGE ---
 const STORAGE_KEY = "haulOS.config.v1";
+const ACCESS_KEY = "haulOS.access.v1"; // "subscription" | "lifetime"
 
 type StoredConfig = {
   license: LicenseClass;
@@ -45,9 +46,30 @@ function safeParseJSON<T>(value: string | null): T | null {
   }
 }
 
+function hasPaidAccess(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const v = localStorage.getItem(ACCESS_KEY);
+    return v === "subscription" || v === "lifetime";
+  } catch {
+    return false;
+  }
+}
+
 export default function Home() {
   const router = useRouter();
   const configuratorRef = useRef<HTMLDivElement | null>(null);
+
+  // ✅ Instant redirect for paid users (no flash)
+  const [paid] = useState<boolean>(() => hasPaidAccess());
+
+  useLayoutEffect(() => {
+    if (paid) router.replace("/dashboard");
+  }, [paid, router]);
+
+  if (paid) {
+    return <main className="min-h-screen bg-slate-950 text-white font-sans" />;
+  }
 
   // --- State ---
   const [mounted, setMounted] = useState(false);
