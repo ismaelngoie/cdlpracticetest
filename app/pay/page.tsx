@@ -859,9 +859,6 @@ function PaywallContent() {
                   >
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div>
-                        <div className="text-sm md:text-base font-black text-white leading-snug">
-                          Complete payment below to unlock 6,000+ real Q&A, Full Simulator, Fast Track, All 50 states, Offline.
-                        </div>
                         <div className="text-[11px] text-slate-500 mt-1">
                           Get instant access to{" "}
                           <span className="text-white font-black">
