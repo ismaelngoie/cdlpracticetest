@@ -8,7 +8,7 @@ type Env = {
 const STRIPE_API = "https://api.stripe.com";
 
 // ✅ Put your real Price IDs here (since you removed env vars)
-const STRIPE_PRICE_MONTHLY = "price_1Sr3m7J1pnlNpGwV7Zz2TQvU";
+const STRIPE_PRICE_MONTHLY = "price_1Sr3fsR0Y5GGo7zMEtCs1lea";
 const STRIPE_PRICE_LIFETIME = "price_1Sr3m7J1pnlNpGwVHmJtC7ob";
 
 function json(body: any, status = 200) {
