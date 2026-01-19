@@ -84,7 +84,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: R
     // 2) Create portal session
     const safeReturn = returnUrl && (returnUrl.startsWith("http://") || returnUrl.startsWith("https://"))
       ? returnUrl
-      : env.STRIPE_PORTAL_RETURN_URL || "https://nremts.com/profile";
+      : env.STRIPE_PORTAL_RETURN_URL || "https://cdlpretest.com/profile";
 
     const session = await stripePOSTForm<StripePortalSession>("/v1/billing_portal/sessions", stripeKey, {
       customer: customer.id,
