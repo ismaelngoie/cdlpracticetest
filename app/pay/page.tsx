@@ -553,7 +553,7 @@ function PaywallContent() {
     const userLetter = item.selectedIndex >= 0 ? String.fromCharCode(65 + item.selectedIndex) : "-";
 
     return (
-      <div className="bg-[#0B1022] border border-white/10 rounded-2xl p-5 mb-4">
+      <div className="bg-[#0B1022] border border-white/10 rounded-2xl p-5 mb-4 shadow-xl">
         <div className="text-[10px] font-black uppercase tracking-widest text-amber-400 mb-2">
           YOU MISSED THIS • {item.category.toUpperCase()}
         </div>
@@ -573,18 +573,28 @@ function PaywallContent() {
           </div>
         </div>
 
+        {/* ✅ LOCKED ANSWER BUTTON WITH TRANSPARENT TEXT EFFECT */}
         <button 
           onClick={startCheckout}
-          className="w-full relative bg-white/5 border border-white/10 rounded-xl py-3 px-4 flex items-center justify-center gap-3 overflow-hidden group"
+          className="w-full relative overflow-hidden rounded-xl border border-white/10 bg-white/5 p-0 text-left transition-all hover:border-white/20 group"
         >
-          <div className="absolute inset-0 bg-white/5 backdrop-blur-[2px] z-0" />
-          <div className="relative z-10 flex items-center gap-2">
-            <span className="text-lg">🔒</span>
-            <div className="text-left">
-              <div className="text-[10px] font-black uppercase tracking-widest text-white">SEE FULL ANSWERS + WHY</div>
-              <div className="text-[9px] text-slate-400">Get unlimited CDL practice tests</div>
-            </div>
-          </div>
+           {/* Faint text in background to simulate "showing the answer" */}
+           <div className="absolute inset-0 p-4 text-[10px] text-slate-500 opacity-60 blur-[2px] select-none leading-relaxed">
+              The correct answer is {correctLetter} because {item.explanation.slice(0, 100)}... this is the hidden rationale content that you are paying to see...
+           </div>
+
+           {/* The foreground content */}
+           <div className="relative z-10 flex h-14 items-center justify-center gap-3 bg-black/30 backdrop-blur-[1px]">
+              <span className="text-lg">🔒</span>
+              <div className="text-left">
+                 <div className="text-[10px] font-black uppercase tracking-widest text-white drop-shadow-md">
+                    SEE FULL ANSWERS + WHY
+                 </div>
+                 <div className="text-[9px] text-slate-300 font-medium">
+                    Get unlimited CDL practice tests
+                 </div>
+              </div>
+           </div>
         </button>
       </div>
     );
