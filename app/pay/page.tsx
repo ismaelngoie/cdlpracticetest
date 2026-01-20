@@ -1,4 +1,3 @@
-// app/pay/page.tsx
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -58,6 +57,18 @@ type UserContext = {
   license: string; // "A"
   endorsements: string[];
   sessionId: string;
+};
+
+// --- TYPES FOR MISSED QUESTIONS ---
+type DiagnosticAnswer = {
+  id: number;
+  category: string;
+  selectedIndex: number;
+  correctIndex: number;
+  isCorrect: boolean;
+  text: string;
+  options: string[];
+  explanation: string;
 };
 
 function safeParseJSON<T>(value: string | null): T | null {
@@ -239,6 +250,9 @@ function PaywallContent() {
   const checkoutSectionRef = useRef<HTMLDivElement | null>(null);
   const [embedParams, setEmbedParams] = useState<{ plan: PlanKey; email?: string } | null>(null);
 
+  // Missed Question List
+  const [missedList, setMissedList] = useState<DiagnosticAnswer[]>([]);
+
   // Restore user info
   useEffect(() => {
     const s = parseInt(localStorage.getItem("diagnosticScore") || "42", 10);
@@ -277,6 +291,13 @@ function PaywallContent() {
       endorsements,
       sessionId,
     });
+
+    // Load missed questions
+    const rawAnswers = safeParseJSON<DiagnosticAnswer[]>(localStorage.getItem("haul_diagnostic_answers"));
+    if (rawAnswers && Array.isArray(rawAnswers)) {
+      const wrong = rawAnswers.filter((a) => !a.isCorrect).slice(0, 3);
+      setMissedList(wrong);
+    }
   }, []);
 
   useEffect(() => {
@@ -526,6 +547,49 @@ function PaywallContent() {
     },
   ];
 
+  // --- SUB COMPONENTS FOR MISSED ---
+  const MissedCard = ({ item }: { item: DiagnosticAnswer }) => {
+    const correctLetter = String.fromCharCode(65 + item.correctIndex);
+    const userLetter = item.selectedIndex >= 0 ? String.fromCharCode(65 + item.selectedIndex) : "-";
+
+    return (
+      <div className="bg-[#0B1022] border border-white/10 rounded-2xl p-5 mb-4">
+        <div className="text-[10px] font-black uppercase tracking-widest text-amber-400 mb-2">
+          YOU MISSED THIS • {item.category.toUpperCase()}
+        </div>
+        
+        <div className="text-sm font-bold text-white leading-relaxed mb-4">
+          {item.text}
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="bg-emerald-900/20 border border-emerald-500/20 rounded-xl p-3">
+            <div className="text-[9px] font-black uppercase tracking-widest text-emerald-400 mb-1">CORRECT</div>
+            <div className="text-2xl font-black text-emerald-300">{correctLetter}</div>
+          </div>
+          <div className="bg-red-900/20 border border-red-500/20 rounded-xl p-3">
+            <div className="text-[9px] font-black uppercase tracking-widest text-red-400 mb-1">YOU PICKED</div>
+            <div className="text-2xl font-black text-red-300">{userLetter}</div>
+          </div>
+        </div>
+
+        <button 
+          onClick={startCheckout}
+          className="w-full relative bg-white/5 border border-white/10 rounded-xl py-3 px-4 flex items-center justify-center gap-3 overflow-hidden group"
+        >
+          <div className="absolute inset-0 bg-white/5 backdrop-blur-[2px] z-0" />
+          <div className="relative z-10 flex items-center gap-2">
+            <span className="text-lg">🔒</span>
+            <div className="text-left">
+              <div className="text-[10px] font-black uppercase tracking-widest text-white">SEE FULL ANSWERS + WHY</div>
+              <div className="text-[9px] text-slate-400">Get unlimited CDL practice tests</div>
+            </div>
+          </div>
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-white font-sans pb-32 selection:bg-amber-500/20">
       {/* Background FX */}
@@ -634,6 +698,30 @@ function PaywallContent() {
                   </div>
                 </div>
               </motion.div>
+
+              {/* WHAT YOU MISSED SECTION (Replicated from Screenshot) */}
+              {missedList.length > 0 && (
+                <div className="mb-8">
+                  <div className="flex justify-between items-center mb-4 px-1">
+                    <div className="text-xs font-black uppercase tracking-widest text-white">What You Missed</div>
+                    <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">TAP TO UNLOCK</div>
+                  </div>
+                  
+                  {missedList.map((missed) => (
+                    <MissedCard key={missed.id} item={missed} />
+                  ))}
+
+                  <button 
+                    onClick={startCheckout}
+                    className="w-full py-4 rounded-xl bg-white text-black font-black text-sm uppercase tracking-widest hover:bg-slate-200 transition-colors flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(255,255,255,0.15)]"
+                  >
+                    SEE FULL ANSWERS + EXPLANATIONS <span className="text-lg">→</span>
+                  </button>
+                  <div className="mt-3 text-center text-[9px] font-black uppercase tracking-widest text-slate-500">
+                    Unlimited CDL Practice Tests • All 50 States • Works Offline • 12,000+ Drivers
+                  </div>
+                </div>
+              )}
 
               {/* Simple “How this helps” */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
