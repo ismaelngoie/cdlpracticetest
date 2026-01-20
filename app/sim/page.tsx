@@ -1,4 +1,3 @@
-// app/sim/page.tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -47,6 +46,8 @@ const STORAGE_KEYS = {
   diagnosticStartedAt: "haul_diagnostic_started_at",
   sessionId: "haul_session_id",
 };
+
+const ACCESS_KEY = "haulOS.access.v1"; // Check for paid access
 
 const PASSING_SCORE = 80;
 const TIME_LIMIT_SEC = 300; // 5 min
@@ -224,8 +225,23 @@ export default function DiagnosticPage() {
 
   const question = activeQuestions[currentQIndex];
 
-  // -------------------- INIT --------------------
+  // -------------------- INIT + TRAP LOGIC --------------------
   useEffect(() => {
+    // 1. Check Paid -> Dashboard
+    const access = safeGet(ACCESS_KEY);
+    if (access === "subscription" || access === "lifetime") {
+      router.replace("/dashboard");
+      return;
+    }
+
+    // 2. Check Taken -> Paywall (Lockout)
+    const score = safeGet(STORAGE_KEYS.diagnosticScore);
+    if (score) {
+      router.replace("/pay");
+      return;
+    }
+
+    // 3. Load config if checks pass
     const sid = safeGet(STORAGE_KEYS.sessionId);
     if (!sid) safeSet(STORAGE_KEYS.sessionId, makeSessionId());
 
@@ -265,7 +281,7 @@ export default function DiagnosticPage() {
 
     setActiveQuestions(picked.slice(0, 5));
     quizStartTsRef.current = Date.now();
-  }, []);
+  }, [router]);
 
   // -------------------- TIMER --------------------
   useEffect(() => {
@@ -415,7 +431,8 @@ export default function DiagnosticPage() {
       timeoutsRef.current.push(id);
     }
 
-    const doneId = window.setTimeout(() => setStage("preview"), 5850);
+    // 🚨 REDIRECT TO PAYWALL INSTANTLY (No Preview)
+    const doneId = window.setTimeout(() => router.push("/pay"), 5850);
     timeoutsRef.current.push(doneId);
   };
 
@@ -428,24 +445,6 @@ export default function DiagnosticPage() {
 
   const timeLabel = `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, "0")}`;
   const urgency = timeLeft <= 60 ? "high" : timeLeft <= 120 ? "med" : "low";
-
-  const goPay = (plan?: "monthly" | "lifetime") => {
-    const recommended = finalScore >= PASSING_SCORE ? "monthly" : "lifetime";
-    const p = plan || recommended;
-    router.push(`/pay?plan=${p}`);
-  };
-
-  const LockOverlay = ({ title, sub }: { title: string; sub: string }) => (
-    <div className="absolute inset-0 flex items-center justify-center">
-      <div className="bg-slate-900/90 border border-slate-700 px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
-        <span>🔒</span>
-        <div className="leading-tight">
-          <div className="text-[10px] font-black uppercase tracking-widest text-white">{title}</div>
-          <div className="text-[10px] text-slate-300">{sub}</div>
-        </div>
-      </div>
-    </div>
-  );
 
   // -------------------- VIEW: ANALYZING --------------------
   if (stage === "analyzing") {
@@ -526,345 +525,6 @@ export default function DiagnosticPage() {
               <div className="mt-5 text-center text-[10px] text-slate-500 font-mono">
                 Do not close this tab • Results are being sealed
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // -------------------- VIEW: PREVIEW --------------------
-  if (stage === "preview") {
-    const status = statusFromScore(finalScore);
-    const willFail = finalScore < PASSING_SCORE;
-    const missing = Math.max(0, PASSING_SCORE - finalScore);
-    const totalCorrect = Math.round((finalScore / 100) * 5);
-    const totalMissed = Math.max(0, 5 - totalCorrect);
-
-    const tone =
-      status.tone === "green"
-        ? {
-            badge: "bg-emerald-500/10 border-emerald-500/40 text-emerald-300",
-            big: "text-emerald-400",
-            bar: "bg-emerald-500",
-          }
-        : status.tone === "amber"
-        ? {
-            badge: "bg-amber-500/10 border-amber-500/40 text-amber-300",
-            big: "text-amber-400",
-            bar: "bg-amber-500",
-          }
-        : {
-            badge: "bg-red-500/10 border-red-500/40 text-red-300",
-            big: "text-red-400",
-            bar: "bg-red-500",
-          };
-
-    const breakdownEntries = Object.entries(finalBreakdown).sort((a, b) => a[1].accuracy - b[1].accuracy);
-
-    const unlockBullets = [
-      "Unlimited CDL Practice Tests",
-      "6,000+ Real Questions & Answers",
-      "Fast Track Mode (Save Time)",
-      "Full Simulator of Real Exam Access",
-      "All 50 States Included",
-      "Works Offline (Study at rest stops)",
-      "100% Pass Guarantee",
-    ];
-
-    const primaryCta = willFail ? "Get CDL Practice Tests (6,000+ Q&A) →" : "Keep Practicing Until 80%+ →";
-    const ctaSub = "All 50 States • Works Offline • 12,000+ drivers";
-
-    const IdCard = () => (
-      <motion.div
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5 relative overflow-hidden"
-      >
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.35),transparent_60%)]" />
-        <div className="relative">
-          <div className="flex items-start justify-between gap-3 mb-4">
-            <div>
-              <div className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Driver Study Card</div>
-              <div className="mt-1 text-sm font-black text-white">
-                {classLabel(license)} • {stateName}
-              </div>
-              <div className="mt-1 text-[11px] text-slate-400">
-                Endorsements: <span className="text-slate-200 font-bold">{formatEndorsements(endorsements)}</span>
-              </div>
-            </div>
-            <div className={`px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest ${tone.badge}`}>
-              {status.label}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/30 p-3">
-              <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Score</div>
-              <div className={`text-2xl font-black ${tone.big}`}>{finalScore}%</div>
-            </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/30 p-3">
-              <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Need</div>
-              <div className={`text-2xl font-black ${willFail ? "text-red-300" : "text-emerald-300"}`}>
-                {willFail ? `${missing}%` : "0%"}
-              </div>
-            </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/30 p-3">
-              <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Missed</div>
-              <div className="text-2xl font-black text-white">{totalMissed}/5</div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    );
-
-    const MissedPreview = ({ item }: { item: AnswerRecord }) => {
-      const correctLetter = String.fromCharCode(65 + item.correctIndex);
-      const chosenLetter = item.selectedIndex >= 0 ? String.fromCharCode(65 + item.selectedIndex) : "—";
-
-      return (
-        <button
-          onClick={() => goPay()}
-          className="w-full text-left rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5 relative overflow-hidden hover:border-slate-700 transition"
-          aria-label="Open paywall"
-        >
-          <div className="text-[10px] font-black uppercase tracking-widest text-amber-300/90 mb-2">
-            You missed this • {item.category}
-          </div>
-
-          <div className="font-black text-white text-sm leading-relaxed">{item.text}</div>
-
-          <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/30 p-3">
-              <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Correct</div>
-              <div className="text-emerald-300 font-black text-lg">{correctLetter}</div>
-            </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/30 p-3">
-              <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">You picked</div>
-              <div className={`font-black text-lg ${item.isCorrect ? "text-emerald-300" : "text-red-300"}`}>{chosenLetter}</div>
-            </div>
-          </div>
-
-          <div className="mt-3 rounded-2xl border border-slate-800 bg-slate-950/30 p-4 relative overflow-hidden">
-            <div className="filter blur-sm select-none opacity-60 text-[12px] text-slate-200 leading-relaxed">
-              Explanation: {item.explanation}
-            </div>
-            <LockOverlay title="See full answers + why" sub="Get unlimited CDL practice tests" />
-          </div>
-        </button>
-      );
-    };
-
-    return (
-      <div className="min-h-screen bg-slate-950 text-white font-sans pb-32">
-        <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:52px_52px]" />
-          <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] opacity-15 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.55),transparent_65%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(2,6,23,0.9)_75%)]" />
-        </div>
-
-        <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6 pt-10">
-          <div className="mb-4 text-center">
-            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[10px] font-mono tracking-widest uppercase ${tone.badge}`}>
-              QUICK CHECK • 5 QUESTIONS • {headerProfile.toUpperCase()}
-            </div>
-
-            <h1 className="mt-4 text-3xl md:text-5xl font-black tracking-tight leading-none">
-              Your score is <span className={`${tone.big}`}>{finalScore}%</span>
-            </h1>
-
-            <p className="mt-2 text-slate-400 text-sm">
-              You need <span className="font-black text-white">{PASSING_SCORE}%</span> to pass in{" "}
-              <span className="font-black text-white">{stateName}</span>.
-            </p>
-
-            {finalScore < PASSING_SCORE ? (
-              <div className="mt-4 rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 inline-block">
-                <div className="text-red-200 font-black uppercase tracking-widest text-[11px]">
-                  If you take the test today, you will FAIL.
-                </div>
-              </div>
-            ) : (
-              <div className="mt-4 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 inline-block">
-                <div className="text-emerald-200 font-black uppercase tracking-widest text-[11px]">
-                  You’re close. Keep practicing to stay above 80%.
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-            <div className="space-y-4">
-              <IdCard />
-
-              <div className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5">
-                <div className="text-xs font-black text-slate-200 uppercase tracking-widest mb-2">What this means</div>
-                <div className="text-sm text-slate-300 leading-relaxed">
-                  <span className="font-black text-white">Weak topic</span> = the topic you miss the most.{" "}
-                  <span className="font-black text-white">That’s what makes you fail.</span>
-                </div>
-
-                <div className="mt-3 rounded-2xl border border-slate-800 bg-slate-950/30 p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Your weak topic</div>
-                    <div className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Need</div>
-                  </div>
-                  <div className="mt-1 flex items-end justify-between gap-3">
-                    <div className="text-white font-black">{weakDomain}</div>
-                    <div className={`text-xl font-black ${willFail ? "text-red-300" : "text-emerald-300"}`}>
-                      {willFail ? `${missing}%` : "0%"}
-                    </div>
-                  </div>
-
-                  <div className="mt-3 h-2 rounded-full bg-slate-800 overflow-hidden">
-                    <motion.div
-                      className={`h-full ${tone.bar}`}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${clamp(Math.round((finalScore / PASSING_SCORE) * 100), 0, 100)}%` }}
-                      transition={{ type: "spring", stiffness: 120, damping: 18 }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5">
-                <div className="text-xs font-black text-slate-200 uppercase tracking-widest mb-3">What to do next</div>
-
-                <div className="space-y-2">
-                  {[
-                    { k: "1", t: "Get full CDL practice tests", d: "Unlimited tests so you can practice anytime." },
-                    { k: "2", t: "Use Fast Track (save time)", d: "Study only what you miss. No guessing." },
-                    { k: "3", t: `Practice until ${PASSING_SCORE}%+`, d: "Take the full simulator until you stay above 80%." },
-                  ].map((s) => (
-                    <div key={s.k} className="rounded-2xl border border-slate-800 bg-slate-950/30 p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-2xl bg-amber-500/10 border border-amber-500/20 grid place-items-center shrink-0">
-                          <span className="text-amber-300 font-black">{s.k}</span>
-                        </div>
-                        <div>
-                          <div className="font-black text-white">{s.t}</div>
-                          <div className="text-sm text-slate-400 mt-0.5 leading-relaxed">{s.d}</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => goPay()}
-                  className="mt-4 w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black uppercase tracking-widest transition-transform active:scale-95 shadow-[0_0_40px_-16px_rgba(245,158,11,0.65)]"
-                >
-                  {primaryCta}
-                </button>
-                <div className="mt-2 text-center text-[10px] text-slate-500 font-mono uppercase tracking-widest">
-                  {ctaSub}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-xs font-black text-slate-200 uppercase tracking-widest">Your results</div>
-                  <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Correct {totalCorrect}/5</div>
-                </div>
-
-                <div className="space-y-2">
-                  {breakdownEntries.slice(0, 5).map(([cat, v]) => (
-                    <div key={cat} className="rounded-2xl border border-slate-800 bg-slate-950/30 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm font-black text-white">{cat}</div>
-                        <div className="text-xs font-mono text-slate-300">
-                          {v.correct}/{v.total} • <span className="font-black text-white">{v.accuracy}%</span>
-                        </div>
-                      </div>
-                      <div className="mt-2 h-2 bg-slate-800 rounded-full overflow-hidden">
-                        <motion.div
-                          className={`h-full ${v.accuracy >= 80 ? "bg-emerald-500" : v.accuracy >= 60 ? "bg-amber-500" : "bg-red-500"}`}
-                          initial={{ width: 0 }}
-                          animate={{ width: `${clamp(v.accuracy, 0, 100)}%` }}
-                          transition={{ duration: 0.5, ease: "easeOut" }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-3 text-[11px] text-slate-400 leading-relaxed">
-                  <span className="font-black text-white">Weak topic</span> is where you miss the most. That’s what we train.
-                </div>
-              </div>
-
-              <div className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-xs font-black text-slate-200 uppercase tracking-widest">What you missed</div>
-                  <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Tap to unlock</div>
-                </div>
-
-                <div className="space-y-3">
-                  {missedList.length ? (
-                    missedList.map((m) => <MissedPreview key={m.id} item={m} />)
-                  ) : (
-                    <div className="rounded-2xl border border-slate-800 bg-slate-950/30 p-4 text-sm text-slate-300">
-                      Nice — you didn’t miss any in this quick check. Keep practicing to stay at 80%+.
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => goPay()}
-                  className="mt-4 w-full py-4 rounded-2xl bg-white text-black font-black uppercase tracking-widest transition-transform active:scale-95 hover:bg-slate-200"
-                >
-                  See full answers + explanations →
-                </button>
-
-                <div className="mt-2 text-center text-[10px] text-slate-500 font-mono uppercase tracking-widest">
-                  Unlimited CDL practice tests • {ctaSub}
-                </div>
-              </div>
-
-              {/* moved: Unlock includes (now AFTER “See full answers + explanations” section) */}
-              <div className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur p-5">
-                <div className="text-xs font-black text-slate-200 uppercase tracking-widest mb-3">Unlock includes</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {unlockBullets.map((b) => (
-                    <div key={b} className="rounded-2xl border border-slate-800 bg-slate-950/30 p-3 text-sm text-slate-200">
-                      <span className="text-emerald-400 font-black">✓</span> <span className="font-semibold">{b}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200 leading-relaxed">
-                  <span className="font-black">Pass Guarantee: 12,000+</span> drivers passed last year using the app{" "}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sticky CTA (direct to /pay, no modal) */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-slate-950/85 backdrop-blur-xl border-t border-white/5">
-          <div className="max-w-6xl mx-auto px-0 md:px-2">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-              <div className="text-center md:text-left">
-                <div className="text-[10px] font-black uppercase tracking-widest text-slate-300">
-                  {willFail ? "You are not ready yet" : "Keep practicing"}
-                </div>
-                <div className="text-xs text-slate-400">
-                  {willFail ? `Need ${missing}% more to reach ${PASSING_SCORE}%` : `Stay above ${PASSING_SCORE}% to pass`}
-                </div>
-              </div>
-
-              <button
-                onClick={() => goPay()}
-                className="w-full md:w-auto md:min-w-[420px] py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black uppercase tracking-widest shadow-lg transition-transform active:scale-95"
-              >
-                {primaryCta}
-              </button>
-            </div>
-
-            <div className="mt-2 text-center text-[10px] text-slate-500 font-mono uppercase tracking-widest">
-              {ctaSub}
             </div>
           </div>
         </div>
