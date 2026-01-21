@@ -19,7 +19,7 @@ const PRICING = {
     features: [
       "Unlimited CDL Practice Tests",
       "6,000 Real Questions & Answers",
-      "Full Simulator of Real Exam Access",
+      "Full DMV-style exam simulator Access",
       "All 50 States Included",
       "Works Offline (Study at rest stops)",
     ],
@@ -35,7 +35,7 @@ const PRICING = {
       "Unlimited CDL Practice Tests",
       "6,000+ Real Questions & Answers",
       "Fast Track Mode (Save Time)",
-      "Full Simulator of Real Exam Access",
+      "Full DMV-style exam simulator Access",
       "All 50 States Included",
       "Works Offline (Study at rest stops)",
       "100% Money-Back Guarantee",
