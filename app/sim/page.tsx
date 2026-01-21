@@ -414,13 +414,11 @@ export default function DiagnosticPage() {
 
     // Old-length analyzing sequence (matches ancient timing)
     const sequence = [
-      { t: 250, pct: 10, text: "HANDSHAKE ESTABLISHED…" },
-      { t: 900, pct: 22, text: `DMV PROFILE: ${profileLine}` },
-      { t: 1600, pct: 40, text: "LOADING DMV PATTERNS + FEDERAL CORE…" },
-      { t: 2400, pct: 58, text: `SCANNING WEAK POINTS: ${weakest.toUpperCase()}…` },
-      { t: 3300, pct: 76, text: "CALCULATING PASS PROBABILITY…" },
-      { t: 4200, pct: 90, text: "LOCKING DIAGNOSTIC RESULTS…" },
-      { t: 5200, pct: 100, text: "EXAM STOPPED." },
+      { t: 250, pct: 10, text: "CONNECTING TO [STATE] DATABASE…" },
+{ t: 900, pct: 35, text: "COMPARING ANSWERS AGAINST 2026 REQUIREMENTS…" },
+{ t: 1600, pct: 60, text: "IDENTIFYING KNOWLEDGE GAPS…" },
+{ t: 3300, pct: 85, text: "GENERATING FAILURE RISK REPORT…" },
+{ t: 4200, pct: 100, text: "REPORT READY. REDIRECTING…" },
     ];
 
     for (const step of sequence) {
