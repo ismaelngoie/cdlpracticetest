@@ -372,10 +372,10 @@ export default function Home() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="text-xs font-black text-slate-300 uppercase tracking-widest">
-                  Build your CDL diagnostic
+                  Customize your CDL practice test
                 </div>
                 <div className="text-sm text-slate-400 mt-1">
-                  Pick your class + endorsements. We’ll customize the diagnostic instantly.
+                  Pick your class + endorsements. We’ll match your questions instantly.
                 </div>
               </div>
               <div className="flex items-center gap-2">
