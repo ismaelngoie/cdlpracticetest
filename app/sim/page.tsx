@@ -414,11 +414,13 @@ export default function DiagnosticPage() {
 
     // Old-length analyzing sequence (matches ancient timing)
     const sequence = [
-      { t: 250, pct: 10, text: "CONNECTING TO [STATE] DATABASE…" },
-{ t: 900, pct: 35, text: "COMPARING ANSWERS AGAINST 2026 REQUIREMENTS…" },
-{ t: 1600, pct: 60, text: "IDENTIFYING KNOWLEDGE GAPS…" },
-{ t: 3300, pct: 85, text: "GENERATING FAILURE RISK REPORT…" },
-{ t: 4200, pct: 100, text: "REPORT READY. REDIRECTING…" },
+      { t: 250, pct: 10, text: `CONNECTING TO ${stateName.toUpperCase()} DATABASE…` },
+      { t: 900, pct: 30, text: "VERIFYING 2026 EXAM REQUIREMENTS…" },
+      { t: 1600, pct: 55, text: "ANALYZING RESPONSE PATTERNS…" },
+      { t: 2400, pct: 72, text: `DETECTED WEAKNESS: ${weakest.toUpperCase()}…` },
+      { t: 3300, pct: 88, text: "CALCULATING FAILURE PROBABILITY…" },
+      { t: 4200, pct: 96, text: "GENERATING DIAGNOSTIC REPORT…" },
+      { t: 5200, pct: 100, text: "REDIRECTING TO RESULTS…" },
     ];
 
     for (const step of sequence) {
