@@ -36,6 +36,72 @@ type StoredConfig = {
   updatedAt: number;
 };
 
+// --- HELPER COMPONENTS ---
+
+// The "Head Nod" Demo Component - Auto-plays to build confidence
+const DemoQuestionCard = () => {
+  return (
+    <div className="relative w-full max-w-md mx-auto mt-8 mb-4 pointer-events-none select-none">
+      {/* Label */}
+      <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-slate-800 border border-slate-700 rounded-full text-[10px] font-mono text-slate-400 uppercase tracking-widest z-10 whitespace-nowrap shadow-xl">
+        Preview: General Knowledge
+      </div>
+      
+      {/* Card Body */}
+      <div className="bg-slate-900/80 backdrop-blur border border-slate-700/50 rounded-2xl p-5 shadow-2xl overflow-hidden relative">
+        {/* The Question */}
+        <div className="text-sm md:text-base font-bold text-white mb-4 leading-relaxed text-left">
+          When backing a vehicle, you should:
+        </div>
+
+        {/* The Options */}
+        <div className="space-y-2">
+          {/* Option A */}
+          <div className="p-3 rounded-xl border border-slate-800 bg-slate-950/30 opacity-60">
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 rounded border border-slate-700 flex items-center justify-center text-[10px] text-slate-500 font-black">A</div>
+              <div className="text-xs text-slate-400">Back quickly to reduce time</div>
+            </div>
+          </div>
+
+          {/* Option B (The Winner) */}
+          <div className="relative p-3 rounded-xl border border-emerald-500/50 bg-emerald-500/10 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 rounded border border-emerald-500 bg-emerald-500 flex items-center justify-center text-[10px] text-black font-black">
+                ✓
+              </div>
+              <div className="text-xs font-bold text-white">Use mirrors and get out to look</div>
+            </div>
+            
+            {/* Animated Finger/Cursor */}
+            <motion.div 
+              initial={{ opacity: 0, x: 20, y: 20 }}
+              animate={{ opacity: [0, 1, 1, 0], x: [20, 0, 0, 20], y: [20, 0, 0, 20] }}
+              transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
+              className="absolute bottom-2 right-4 text-2xl z-20 drop-shadow-lg"
+            >
+              👆
+            </motion.div>
+          </div>
+
+          {/* Option C */}
+          <div className="p-3 rounded-xl border border-slate-800 bg-slate-950/30 opacity-60">
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 rounded border border-slate-700 flex items-center justify-center text-[10px] text-slate-500 font-black">C</div>
+              <div className="text-xs text-slate-400">Turn off hazard lights</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Caption */}
+      <div className="text-center mt-3 text-[10px] text-slate-500 font-mono">
+        Actual 2026 Exam Format
+      </div>
+    </div>
+  );
+};
+
 function safeParseJSON<T>(value: string | null): T | null {
   if (!value) return null;
   try {
@@ -235,6 +301,7 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            {/* UPDATED: High Conversion Button Text */}
             <button
               onClick={scrollToConfigurator}
               className="px-6 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-black uppercase tracking-widest shadow-[0_0_40px_-10px_rgba(245,158,11,0.65)] transition active:scale-[0.99]"
@@ -243,7 +310,18 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="mt-3 text-[11px] text-slate-500 font-mono">5-question quick check • Results in 60 seconds • No signup</div>
+          {/* NEW: The "Head Nod" Demo Card */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <DemoQuestionCard />
+          </motion.div>
+
+          <div className="mt-3 text-[11px] text-slate-500 font-mono">
+            5-question quick check • Results in 60 seconds • No signup
+          </div>
         </motion.div>
 
         {/* VALUE STRIP */}
@@ -543,15 +621,17 @@ export default function Home() {
                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-300">
                   CDL Practice Test
                 </div>
+                {/* UPDATED: Matches user intent */}
                 <div className="text-xs text-slate-400">
-                  5-question diagnostic • no signup
+                  Free 60-second quick check
                 </div>
               </div>
               <button
                 onClick={scrollToConfigurator}
                 className="px-4 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition"
               >
-                Start →
+                {/* UPDATED: Clearer action */}
+                Start Test →
               </button>
             </div>
           </motion.div>
