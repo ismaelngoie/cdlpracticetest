@@ -971,6 +971,12 @@ function PaywallContent() {
                             <span className="text-emerald-400 font-black">✓</span> {feat}
                           </div>
                         ))}
+
+                        {/* ✅ THE NO-TRAP GUARANTEE BOX */}
+                        <div className="mt-3 rounded-2xl bg-slate-800/50 border border-slate-700 p-3 text-xs text-slate-300 leading-relaxed">
+                           <span className="text-amber-400 font-black">Flexible:</span> You are not locked in. Study for a month, pass, and cancel.
+                        </div>
+
                         <div className="text-[11px] text-slate-400 font-black mt-3">🔒 Secure Payment • 100% Money-Back Guarantee</div>
                       </motion.div>
                     )}
