@@ -18,7 +18,7 @@ const PRICING = {
     subtitle: "Good if you want to try it first. Cancel anytime.",
     features: [
       "Unlimited CDL Practice Tests",
-      "4,000 Real Questions & Answers",
+      "6,000 Real Questions & Answers",
       "Full Simulator of Real Exam Access",
       "All 50 States Included",
       "Works Offline (Study at rest stops)",
@@ -992,7 +992,7 @@ function PaywallContent() {
                       <div>
                         <div className="text-[11px] text-slate-500 mt-1">
                           Get instant access to{" "}
-                          <span className="text-white font-black">{selectedPlan === "lifetime" ? "6,000+" : "4,000"}</span>{" "}
+                          <span className="text-white font-black">{selectedPlan === "lifetime" ? "6,000+" : "6,000"}</span>{" "}
                           real questions & answers + full simulator.
                         </div>
                         <div className="mt-2 text-[11px] text-amber-300 font-black">✅ Trusted by {DRIVERS_USED} drivers</div>
