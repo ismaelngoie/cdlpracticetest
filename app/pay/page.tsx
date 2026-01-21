@@ -292,12 +292,24 @@ function PaywallContent() {
       sessionId,
     });
 
-    // Load missed questions
-    const rawAnswers = safeParseJSON<DiagnosticAnswer[]>(localStorage.getItem("haul_diagnostic_answers"));
-    if (rawAnswers && Array.isArray(rawAnswers)) {
-      const wrong = rawAnswers.filter((a) => !a.isCorrect).slice(0, 3);
-      setMissedList(wrong);
-    }
+    // Load missed questions (With Fallback for 100% Score)
+    try {
+      const raw = localStorage.getItem("haul_diagnostic_answers");
+      if (raw) {
+        const parsed = JSON.parse(raw) as DiagnosticAnswer[];
+        if (Array.isArray(parsed) && parsed.length) {
+          // 1. Try to get wrong answers
+          let wrong = parsed.filter((a) => !a.isCorrect);
+          
+          // 2. If no wrong answers (100% score), take the first one as sample
+          if (wrong.length === 0) {
+             wrong = parsed.slice(0, 1);
+          }
+
+          setMissedList(wrong.slice(0, 3));
+        }
+      }
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -551,11 +563,12 @@ function PaywallContent() {
   const MissedCard = ({ item }: { item: DiagnosticAnswer }) => {
     const correctLetter = String.fromCharCode(65 + item.correctIndex);
     const userLetter = item.selectedIndex >= 0 ? String.fromCharCode(65 + item.selectedIndex) : "-";
+    const isCorrect = item.isCorrect;
 
     return (
       <div className="bg-[#0B1022] border border-white/10 rounded-2xl p-5 mb-4 shadow-xl">
-        <div className="text-[10px] font-black uppercase tracking-widest text-amber-400 mb-2">
-          YOU MISSED THIS • {item.category.toUpperCase()}
+        <div className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isCorrect ? "text-emerald-400" : "text-amber-400"}`}>
+          {isCorrect ? `ANALYSIS LOCKED • ${item.category.toUpperCase()}` : `YOU MISSED THIS • ${item.category.toUpperCase()}`}
         </div>
         
         <div className="text-sm font-bold text-white leading-relaxed mb-4">
@@ -567,13 +580,13 @@ function PaywallContent() {
             <div className="text-[9px] font-black uppercase tracking-widest text-emerald-400 mb-1">CORRECT</div>
             <div className="text-2xl font-black text-emerald-300">{correctLetter}</div>
           </div>
-          <div className="bg-red-900/20 border border-red-500/20 rounded-xl p-3">
-            <div className="text-[9px] font-black uppercase tracking-widest text-red-400 mb-1">YOU PICKED</div>
-            <div className="text-2xl font-black text-red-300">{userLetter}</div>
+          <div className={`border rounded-xl p-3 ${isCorrect ? "bg-emerald-900/20 border-emerald-500/20" : "bg-red-900/20 border-red-500/20"}`}>
+            <div className={`text-[9px] font-black uppercase tracking-widest mb-1 ${isCorrect ? "text-emerald-400" : "text-red-400"}`}>YOU PICKED</div>
+            <div className={`text-2xl font-black ${isCorrect ? "text-emerald-300" : "text-red-300"}`}>{userLetter}</div>
           </div>
         </div>
 
-        {/* ✅ LOCKED ANSWER BUTTON WITH TRANSPARENT TEXT EFFECT */}
+        {/* LOCKED ANSWER BUTTON WITH TRANSPARENT TEXT EFFECT */}
         <button 
           onClick={startCheckout}
           className="w-full relative overflow-hidden rounded-xl border border-white/10 bg-white/5 p-0 text-left transition-all hover:border-white/20 group"
@@ -709,7 +722,7 @@ function PaywallContent() {
                 </div>
               </motion.div>
 
-              {/* WHAT YOU MISSED SECTION (Replicated from Screenshot) */}
+              {/* WHAT YOU MISSED SECTION (FIXED: Visible for 100% scores too) */}
               {missedList.length > 0 && (
                 <div className="mb-8">
                   <div className="flex justify-between items-center mb-4 px-1">
