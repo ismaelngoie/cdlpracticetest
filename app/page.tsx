@@ -186,7 +186,7 @@ export default function Home() {
             </div>
             <div className="leading-tight">
               <div className="text-xs font-black tracking-widest uppercase">
-                HAUL<span className="text-amber-500">.OS</span>
+                CDL PRACTICE<span className="text-amber-500">TEST</span>
               </div>
               <div className="text-[10px] text-slate-400 font-mono uppercase tracking-widest">
                 Official 2026 Simulator
