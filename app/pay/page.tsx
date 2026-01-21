@@ -608,7 +608,7 @@ function PaywallContent() {
               <span className="text-lg">🔒</span>
               <div className="text-left">
                  <div className="text-[10px] font-black uppercase tracking-widest text-white drop-shadow-md">
-                    REVEAL MY MISTAKE & EXPLANATION.
+                    UNLOCK EXPLANATIONS + UNLIMITED PRACTICE →
                  </div>
                  <div className="text-[9px] text-slate-300 font-medium">
                     Get unlimited CDL practice tests
@@ -747,7 +747,7 @@ function PaywallContent() {
                     onClick={startCheckout}
                     className="w-full py-4 rounded-xl bg-white text-black font-black text-sm uppercase tracking-widest hover:bg-slate-200 transition-colors flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(255,255,255,0.15)]"
                   >
-                    REVEAL MY MISTAKE & EXPLANATION. <span className="text-lg">→</span>
+                    UNLOCK EXPLANATIONS + UNLIMITED PRACTICE <span className="text-lg">→</span>
                   </button>
                   <div className="mt-3 text-center text-[9px] font-black uppercase tracking-widest text-slate-500">
                     Unlimited CDL Practice Tests • All 50 States • Works Offline • 12,000+ Drivers
