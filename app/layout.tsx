@@ -21,14 +21,14 @@ export const viewport: Viewport = {
 // 2. THE SEO ENGINE
 export const metadata: Metadata = {
   // ⚠️ CHANGE THIS TO YOUR ACTUAL DOMAIN WHEN DEPLOYED
-  metadataBase: new URL("https://haul-os.pages.dev"),
+  metadataBase: new URL("https://cdlpretest.com"),
 
   title: {
-    default: "CDL Practice Test 2026 | Free Simulator & Diagnostic",
+    default: "CDL Practice Test 2026 | Simulator & Diagnostic",
     template: "%s | CDL Practice Test",
   },
   description:
-    "Don't just study. Simulate. Free 2026 CDL practice test for Class A, B, & C. Master Air Brakes, Hazmat, and Pre-Trip Inspection with the HAUL.OS exam simulator.",
+    "Don't just study. Simulate. 2026 CDL practice test for Class A, B, & C. Master Air Brakes, Hazmat, and Pre-Trip Inspection with our exam simulator.",
 
   keywords: [
     "CDL practice test",
@@ -42,25 +42,25 @@ export const metadata: Metadata = {
     "Commercial Driver License",
   ],
 
-  authors: [{ name: "HAUL.OS" }],
-  creator: "HAUL.OS",
-  publisher: "HAUL.OS",
+  authors: [{ name: "CDL Practice Test" }],
+  creator: "CDL Practice Test",
+  publisher: "CDL Practice Test",
 
   // 3. SOCIAL SHARES (The "Rich Link" Look)
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://haul-os.pages.dev",
+    url: "https://cdlpretest.com",
     title: "CDL Practice Test 2026 | Pass First Time",
     description:
       "Take the 60-second diagnostic. Find your weak points. Pass your CDL exam.",
-    siteName: "HAUL.OS",
+    siteName: "CDL Practice Test",
     images: [
       {
         url: "/icon.png",
         width: 512,
         height: 512,
-        alt: "HAUL.OS CDL Simulator",
+        alt: "CDL Practice Test & Simulator",
       },
     ],
   },
