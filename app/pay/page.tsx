@@ -250,8 +250,9 @@ function PaywallContent() {
   const checkoutSectionRef = useRef<HTMLDivElement | null>(null);
   const [embedParams, setEmbedParams] = useState<{ plan: PlanKey; email?: string } | null>(null);
 
-  // Missed Question List
+  // Missed Question List & Perfect Score State
   const [missedList, setMissedList] = useState<DiagnosticAnswer[]>([]);
+  const [isPerfectScore, setIsPerfectScore] = useState(false);
 
   // Restore user info
   useEffect(() => {
@@ -292,7 +293,7 @@ function PaywallContent() {
       sessionId,
     });
 
-    // Load missed questions (With Fallback for 100% Score)
+    // Load questions (With Fallback for 100% Score)
     try {
       const raw = localStorage.getItem("haul_diagnostic_answers");
       if (raw) {
@@ -301,9 +302,13 @@ function PaywallContent() {
           // 1. Try to get wrong answers
           let wrong = parsed.filter((a) => !a.isCorrect);
           
-          // 2. If no wrong answers (100% score), take the first one as sample
+          // 2. If no wrong answers (100% score)
           if (wrong.length === 0) {
-             wrong = parsed.slice(0, 1);
+             setIsPerfectScore(true);
+             // Show first 3 correct answers as samples
+             wrong = parsed.slice(0, 3);
+          } else {
+             setIsPerfectScore(false);
           }
 
           setMissedList(wrong.slice(0, 3));
@@ -567,6 +572,7 @@ function PaywallContent() {
 
     return (
       <div className="bg-[#0B1022] border border-white/10 rounded-2xl p-5 mb-4 shadow-xl">
+        {/* Dynamic Header: "ANALYSIS LOCKED" if perfect, "YOU MISSED THIS" if wrong */}
         <div className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isCorrect ? "text-emerald-400" : "text-amber-400"}`}>
           {isCorrect ? `ANALYSIS LOCKED • ${item.category.toUpperCase()}` : `YOU MISSED THIS • ${item.category.toUpperCase()}`}
         </div>
@@ -580,6 +586,7 @@ function PaywallContent() {
             <div className="text-[9px] font-black uppercase tracking-widest text-emerald-400 mb-1">CORRECT</div>
             <div className="text-2xl font-black text-emerald-300">{correctLetter}</div>
           </div>
+          {/* Dynamic Box: Green if correct, Red if wrong */}
           <div className={`border rounded-xl p-3 ${isCorrect ? "bg-emerald-900/20 border-emerald-500/20" : "bg-red-900/20 border-red-500/20"}`}>
             <div className={`text-[9px] font-black uppercase tracking-widest mb-1 ${isCorrect ? "text-emerald-400" : "text-red-400"}`}>YOU PICKED</div>
             <div className={`text-2xl font-black ${isCorrect ? "text-emerald-300" : "text-red-300"}`}>{userLetter}</div>
@@ -722,11 +729,13 @@ function PaywallContent() {
                 </div>
               </motion.div>
 
-              {/* WHAT YOU MISSED SECTION (FIXED: Visible for 100% scores too) */}
+              {/* WHAT YOU MISSED SECTION (FIXED: Dynamic Header for 100% Score) */}
               {missedList.length > 0 && (
                 <div className="mb-8">
                   <div className="flex justify-between items-center mb-4 px-1">
-                    <div className="text-xs font-black uppercase tracking-widest text-white">What You Missed</div>
+                    <div className="text-xs font-black uppercase tracking-widest text-white">
+                      {isPerfectScore ? "FULL EXAM ANALYSIS" : "What You Missed"}
+                    </div>
                     <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">TAP TO UNLOCK</div>
                   </div>
                   
