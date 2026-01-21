@@ -243,7 +243,7 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="mt-3 text-[11px] text-slate-500 font-mono">Takes ~60 seconds • No credit card • no signup</div>
+          <div className="mt-3 text-[11px] text-slate-500 font-mono">5-question quick check • Results in 60 seconds • No signup</div>
         </motion.div>
 
         {/* VALUE STRIP */}
