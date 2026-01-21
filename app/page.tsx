@@ -491,7 +491,7 @@ export default function Home() {
                           {end}
                         </div>
                         <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest mt-0.5">
-                          Included in your diagnostic
+                          Included in your practice test
                         </div>
                       </div>
                     </div>
