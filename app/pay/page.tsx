@@ -688,7 +688,7 @@ function PaywallContent() {
                       <div
                         className={`shrink-0 px-3 py-2 rounded-2xl border ${tc.pill} text-[10px] font-black uppercase tracking-widest`}
                       >
-                        {risk} RISK
+                        {risk === "READY" ? "READY" : `${risk} RISK`}
                       </div>
                     </div>
 
