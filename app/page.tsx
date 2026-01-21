@@ -77,7 +77,7 @@ const DemoQuestionCard = () => {
             <motion.div 
               initial={{ opacity: 0, x: 20, y: 20 }}
               animate={{ opacity: [0, 1, 1, 0], x: [20, 0, 0, 20], y: [20, 0, 0, 20] }}
-              transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
+              transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 0.5, ease: "easeInOut" }}
               className="absolute bottom-2 right-4 text-2xl z-20 drop-shadow-lg"
             >
               👆
