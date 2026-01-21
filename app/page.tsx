@@ -483,7 +483,7 @@ export default function Home() {
         <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
             <div className="text-xs font-black uppercase tracking-widest text-slate-300 mb-2">
-              Why 12,000+ drivers chose Haul.OS
+              Why 12,000+ drivers chose our us
             </div>
             <ul className="space-y-3 text-sm text-slate-300/90">
               <li className="flex gap-3">
