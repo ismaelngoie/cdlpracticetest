@@ -198,7 +198,7 @@ export default function Home() {
             onClick={scrollToConfigurator}
             className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-black uppercase tracking-widest transition"
           >
-            Start Free Diagnostic →
+            Start Free CDL Practice Test →
           </button>
         </div>
       </div>
@@ -239,7 +239,7 @@ export default function Home() {
               onClick={scrollToConfigurator}
               className="px-6 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-black uppercase tracking-widest shadow-[0_0_40px_-10px_rgba(245,158,11,0.65)] transition active:scale-[0.99]"
             >
-              Start Free Diagnostic →
+              Start Free CDL Practice Test →
             </button>
           </div>
 
@@ -464,7 +464,7 @@ export default function Home() {
             className="w-full py-5 bg-amber-500 hover:bg-amber-400 text-black font-black text-lg uppercase tracking-wider rounded-2xl shadow-[0_0_44px_-12px_rgba(245,158,11,0.75)] transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 group"
             aria-label="Start free diagnostic"
           >
-            <span>Start Free Diagnostic</span>
+            <span>Start Free CDL Practice Test</span>
             <span className="opacity-70 group-hover:translate-x-1 transition-transform">→</span>
           </button>
 
