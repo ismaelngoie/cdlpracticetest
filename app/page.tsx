@@ -290,8 +290,8 @@ export default function Home() {
           </h1>
 
           <p className="text-slate-300/90 text-sm md:text-lg font-medium leading-relaxed max-w-2xl mx-auto mb-6">
-            6,000+ Real Exam Questions and Answers. <span className="text-emerald-400 font-bold">100% Pass Guarantee.</span>
-          </p>
+  <span className="text-white font-bold">Identical to the real 2026 DMV Exam.</span> 6,000+ questions & answers for Class A, B, & C. <span className="text-emerald-400 font-bold">100% Pass Guarantee.</span>
+</p>
 
           <div className="flex flex-wrap justify-center gap-2 mb-8">
             {badge("Trusted by 12,000+")}
