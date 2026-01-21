@@ -13,7 +13,7 @@ const PASSING_SCORE = 80;
 const PRICING = {
   monthly: {
     price: 19.95,
-    cadence: "/mo",
+    cadence: "/month",
     title: "Monthly Access",
     subtitle: "Good if you want to try it first. Cancel anytime.",
     features: [
@@ -954,7 +954,7 @@ function PaywallContent() {
                     </div>
                     <div className="text-right shrink-0">
                       <div className="text-xl font-black text-slate-200">${PRICING.monthly.price.toFixed(2)}</div>
-                      <div className="text-xs text-slate-500 uppercase tracking-widest">/mo</div>
+                      <div className="text-xs text-slate-500 uppercase tracking-widest">/month</div>
                     </div>
                   </div>
 
