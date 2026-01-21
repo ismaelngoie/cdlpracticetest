@@ -1,4 +1,3 @@
-// app/page.tsx
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -82,7 +81,7 @@ export default function Home() {
 
   useEffect(() => setMounted(true), []);
 
-  // Restore persisted config (production-ready, resilient)
+  // Restore persisted config
   useEffect(() => {
     if (!mounted) return;
 
@@ -101,7 +100,7 @@ export default function Home() {
     if (legacyState) setUserState(legacyState);
   }, [mounted]);
 
-  // Persist on every change (so a user can bounce and come back without losing choices)
+  // Persist on every change
   useEffect(() => {
     if (!mounted) return;
     const payload: StoredConfig = {
@@ -118,12 +117,11 @@ export default function Home() {
     localStorage.setItem("userState", userState);
   }, [mounted, license, endorsements, userState]);
 
-  // Sticky CTA visibility (mobile conversion boost)
+  // Sticky CTA visibility
   useEffect(() => {
     if (!mounted) return;
 
     const onScroll = () => {
-      // Hide sticky CTA if user is already near the configurator CTA
       const el = configuratorRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
@@ -136,7 +134,7 @@ export default function Home() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [mounted]);
 
-  // --- Salary Calculator Logic (labelled as estimate) ---
+  // --- Salary Calculator Logic ---
   const estimatedSalary = useMemo(() => {
     let base = 45000;
     if (license === "A") base += 25000;
@@ -157,7 +155,6 @@ export default function Home() {
   };
 
   const startDiagnostic = () => {
-    // Storage already synced by effect; this is just a hard “commit + go”.
     router.push("/sim");
   };
 
@@ -192,7 +189,7 @@ export default function Home() {
                 HAUL<span className="text-amber-500">.OS</span>
               </div>
               <div className="text-[10px] text-slate-400 font-mono uppercase tracking-widest">
-                CDL Practice Test • Smart Diagnostic
+                Official 2026 Simulator
               </div>
             </div>
           </div>
@@ -218,25 +215,23 @@ export default function Home() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
             </span>
-            Updated for 2026 • All 50 States
+            Used by 12,000+ Drivers • Updated for 2026
           </div>
 
-          <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white leading-[0.95] mb-4">
-            CDL Practice Test that{" "}
-            <span className="text-amber-500">tells you what to fix</span>
-            <span className="text-white">.</span>
+          <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white leading-[0.95] mb-4 uppercase">
+            CDL PRACTICE TEST & <br/>
+            <span className="text-amber-500">FULL SIMULATOR 2026</span>
           </h1>
 
-          <p className="text-slate-300/90 text-sm md:text-base leading-relaxed max-w-2xl mx-auto mb-6">
-            Take a 60-second diagnostic. We identify your weakest topic, then generate your personalized Fix Plan
-            so you can pass your state exam faster.
+          <p className="text-slate-300/90 text-sm md:text-lg font-medium leading-relaxed max-w-2xl mx-auto mb-6">
+            6,000+ Real Exam Questions and Answers. <span className="text-emerald-400 font-bold">100% Pass Guarantee.</span>
           </p>
 
           <div className="flex flex-wrap justify-center gap-2 mb-8">
-            {badge("No signup required")}
-            {badge("Instant score")}
-            {badge("State-matched wording")}
-            {badge("Mobile-first")}
+            {badge("Trusted by 12,000+")}
+            {badge("6,000+ Questions")}
+            {badge("Full Simulator")}
+            {badge("All 50 States")}
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -255,19 +250,19 @@ export default function Home() {
         <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-3">
           {[
             {
-              title: "State-matched practice",
-              desc: "We use your state to match DMV rules + test wording.",
-              tag: "Customization",
+              title: "All 50 States Included",
+              desc: "We automatically load your state's specific DMV manual and laws. No generic questions.",
+              tag: "Coverage",
             },
             {
-              title: "Smart Fix Plan",
-              desc: "Stop guessing. Train the exact domain you’re failing.",
-              tag: "Efficiency",
+              title: "6,000+ Question Bank",
+              desc: "The largest database of real exam questions. If you can pass these, you can pass the real thing.",
+              tag: "Volume",
             },
             {
-              title: "Exam pressure mode",
-              desc: "Timed diagnostics so test day doesn’t surprise you.",
-              tag: "Confidence",
+              title: "Full Exam Simulator",
+              desc: "Simulate the real test environment. Timers, skipping, and scoring exactly like the DMV.",
+              tag: "Realism",
             },
           ].map((card) => (
             <div
@@ -294,7 +289,7 @@ export default function Home() {
           {/* Subtle Glow */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent opacity-50" />
 
-          {/* Panel Header (conversion copy + clarity) */}
+          {/* Panel Header */}
           <div className="mb-8">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -308,9 +303,6 @@ export default function Home() {
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-widest">
                   Saved automatically
-                </span>
-                <span className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-slate-300 text-[10px] font-black uppercase tracking-widest">
-                  ~60 sec
                 </span>
               </div>
             </div>
@@ -374,7 +366,7 @@ export default function Home() {
 
               <div className="text-right">
                 <div className="text-[10px] text-slate-400 font-bold mb-1 uppercase tracking-widest">
-                  Est. earning potential
+                  YOUR POTENTIAL SALARY
                 </div>
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -387,9 +379,6 @@ export default function Home() {
                     ${estimatedSalary}
                   </motion.div>
                 </AnimatePresence>
-                <div className="text-[10px] text-slate-600 font-mono mt-1">
-                  estimate only
-                </div>
               </div>
             </div>
 
@@ -446,7 +435,7 @@ export default function Home() {
                 Step 3: State
               </label>
               <div className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">
-                We use your state to match DMV rules + test wording.
+                We load your state's specific laws.
               </div>
             </div>
 
@@ -490,11 +479,11 @@ export default function Home() {
           </div>
         </motion.div>
 
-        {/* TRUST + FAQ (keeps users scrolling without losing CTA via sticky) */}
+        {/* TRUST + FAQ */}
         <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
             <div className="text-xs font-black uppercase tracking-widest text-slate-300 mb-2">
-              Why this converts better than random practice tests
+              Why 12,000+ drivers chose Haul.OS
             </div>
             <ul className="space-y-3 text-sm text-slate-300/90">
               <li className="flex gap-3">
@@ -525,7 +514,7 @@ export default function Home() {
             <div className="space-y-4 text-sm text-slate-300/90">
               <div>
                 <div className="font-bold text-white">Do I need to create an account?</div>
-                <div className="text-slate-400 mt-1">No. The diagnostic runs instantly. Your choices save locally on your device.</div>
+                <div className="text-slate-400 mt-1">No. The diagnostic runs instantly. Your choices save locally.</div>
               </div>
               <div>
                 <div className="font-bold text-white">How long is the diagnostic?</div>
@@ -540,7 +529,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* STICKY MOBILE CTA (conversion safety net) */}
+      {/* STICKY MOBILE CTA */}
       <AnimatePresence>
         {mounted && stickyCtaVisible && (
           <motion.div
