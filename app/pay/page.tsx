@@ -356,7 +356,7 @@ function PaywallContent() {
 
   const scaryLine = useMemo(() => {
     if (ctx.score >= PASSING_SCORE) return "You’re close. Don’t risk it. Get consistent before test day.";
-    return "If you take the test today, you will FAIL.";
+    return "If you take the test today, you’re likely to fail.";
   }, [ctx.score]);
 
   const stickyCtaText = useMemo(() => {
