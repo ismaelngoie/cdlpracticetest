@@ -592,11 +592,15 @@ export default function Home() {
             <div className="space-y-4 text-sm text-slate-300/90">
               <div>
                 <div className="font-bold text-white">Do I need to create an account?</div>
-                <div className="text-slate-400 mt-1">No. The diagnostic runs instantly. Your choices save locally.</div>
+                <div className="text-slate-400 mt-1">No. Start instantly. Your class/state choices save on this device.</div>
               </div>
               <div>
-                <div className="font-bold text-white">How long is the diagnostic?</div>
+                <div className="font-bold text-white">How long is the quick check?</div>
                 <div className="text-slate-400 mt-1">5 questions. About 60 seconds.</div>
+              </div>
+              <div>
+                <div className="font-bold text-white">Does this cover Air Brakes / Hazmat / Tanker?</div>
+                <div className="text-slate-400 mt-1">Yes—choose endorsements and we’ll match questions.</div>
               </div>
               <div>
                 <div className="font-bold text-white">Is this the official DMV test?</div>
