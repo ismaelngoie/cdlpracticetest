@@ -758,7 +758,7 @@ function PaywallContent() {
               {/* Simple “How this helps” */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
                 {[
-                  { k: "1", t: "Practice", d: "Do unlimited practice tests." },
+                  { k: "1", t: "Practice", d: "6,000+ Real exam questions and answers." },
                   { k: "2", t: "Fast Track", d: "We focus on what you miss." },
                   { k: "3", t: "Simulator", d: "Train like the real exam." },
                 ].map((s) => (
