@@ -608,7 +608,7 @@ function PaywallContent() {
               <span className="text-lg">🔒</span>
               <div className="text-left">
                  <div className="text-[10px] font-black uppercase tracking-widest text-white drop-shadow-md">
-                    SEE FULL ANSWERS + WHY
+                    REVEAL MY MISTAKE & EXPLANATION.
                  </div>
                  <div className="text-[9px] text-slate-300 font-medium">
                     Get unlimited CDL practice tests
