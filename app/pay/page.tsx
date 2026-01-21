@@ -224,7 +224,7 @@ function PaywallContent() {
 
   const stripePk = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 
-  const [selectedPlan, setSelectedPlan] = useState<PlanKey>("lifetime");
+  const [selectedPlan, setSelectedPlan] = useState<PlanKey>("monthly");
 
   const [ctx, setCtx] = useState<UserContext>({
     score: 42,
