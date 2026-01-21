@@ -641,7 +641,7 @@ function PaywallContent() {
             </div>
 
             <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-none mb-3">
-              Don’t fail your <span className="text-amber-500">CDL test</span>.
+              DON'T FAIL YOUR <span className="text-amber-500">CDL TEST</span>.
             </h1>
 
             <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-3xl mx-auto">
