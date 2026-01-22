@@ -281,7 +281,7 @@ export default function Home() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
             </span>
-            Used by 12,000+ Drivers • Updated for 2026
+            Used by 12,000+ Drivers • 2026 Edition
           </div>
 
           <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white leading-[0.95] mb-4 uppercase">
