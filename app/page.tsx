@@ -616,7 +616,7 @@ export default function Home() {
           CDLPretest.com is a private organization and is not affiliated with the Department of Transportation (DOT), the Department of Motor Vehicles (DMV), or any government agency. The material provided is for educational purposes only.
         </p>
         <p className="mt-4 text-[10px] text-slate-600">
-          Contact: contact@cdlprestest.com &bull; Miami, FL
+          Contact: contact@cdlprestest.com &bull; Tampa, FL
         </p>
       </footer>
 
