@@ -243,7 +243,7 @@ export default function Home() {
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[900px] h-[900px] opacity-10 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.25),transparent_60%)]" />
       </div>
 
-      {/* Top Nav */}
+      {/* Top Nav (COMPLIANCE: Changed "Official" to "2026 Exam Simulator") */}
       <div className="sticky top-0 z-30 bg-slate-950/70 backdrop-blur border-b border-white/5">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -255,7 +255,7 @@ export default function Home() {
                 CDL PRACTICE<span className="text-amber-500"> TEST</span>
               </div>
               <div className="text-[10px] text-slate-400 font-mono uppercase tracking-widest">
-                Official 2026 Simulator
+                2026 Exam Simulator
               </div>
             </div>
           </div>
@@ -290,8 +290,8 @@ export default function Home() {
           </h1>
 
           <p className="text-slate-300/90 text-sm md:text-lg font-medium leading-relaxed max-w-2xl mx-auto mb-6">
-  <span className="text-white font-bold">Identical to the real 2026 DMV Exam.</span> 6,000+ questions & answers for Class A, B, & C. <span className="text-emerald-400 font-bold">100% Pass Guarantee.</span>
-</p>
+            6,000+ Real Exam Questions and Answers. <span className="text-emerald-400 font-bold">100% Pass Guarantee.</span>
+          </p>
 
           <div className="flex flex-wrap justify-center gap-2 mb-8">
             {badge("Trusted by 12,000+")}
@@ -301,7 +301,6 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            {/* UPDATED: High Conversion Button Text */}
             <button
               onClick={scrollToConfigurator}
               className="px-6 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-black uppercase tracking-widest shadow-[0_0_40px_-10px_rgba(245,158,11,0.65)] transition active:scale-[0.99]"
@@ -310,7 +309,7 @@ export default function Home() {
             </button>
           </div>
 
-          {/* NEW: The "Head Nod" Demo Card */}
+          {/* Demo Card */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -324,7 +323,7 @@ export default function Home() {
           </div>
         </motion.div>
 
-        {/* VALUE STRIP */}
+        {/* VALUE STRIP (UPDATED: High Authority Text) */}
         <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-3">
           {[
             {
@@ -567,7 +566,7 @@ export default function Home() {
               <li className="flex gap-3">
                 <span className="text-emerald-400 font-black">✓</span>
                 <span>
-                  <span className="font-bold text-white">Practice the right questions::</span> DMV-style practice matched to your class + endorsements.
+                  <span className="font-bold text-white">Practice the right questions:</span> DMV-style practice matched to your class + endorsements.
                 </span>
               </li>
               <li className="flex gap-3">
@@ -611,6 +610,16 @@ export default function Home() {
         </div>
       </div>
 
+      {/* COMPLIANCE FOOTER (Critical for Google Ads) */}
+      <footer className="py-10 text-center border-t border-white/5 mt-10 px-4">
+        <p className="text-[10px] text-slate-600 max-w-2xl mx-auto leading-relaxed">
+          Haul.OS is a private organization and is not affiliated with the Department of Transportation (DOT), the Department of Motor Vehicles (DMV), or any government agency. The material provided is for educational purposes only.
+        </p>
+        <p className="mt-4 text-[10px] text-slate-600">
+          Contact: support@haulos.com &bull; Miami, FL
+        </p>
+      </footer>
+
       {/* STICKY MOBILE CTA */}
       <AnimatePresence>
         {mounted && stickyCtaVisible && (
@@ -625,7 +634,6 @@ export default function Home() {
                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-300">
                   CDL Practice Test
                 </div>
-                {/* UPDATED: Matches user intent */}
                 <div className="text-xs text-slate-400">
                   Free 60-second quick check
                 </div>
@@ -634,7 +642,6 @@ export default function Home() {
                 onClick={scrollToConfigurator}
                 className="px-4 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition"
               >
-                {/* UPDATED: Clearer action */}
                 Start Test →
               </button>
             </div>
