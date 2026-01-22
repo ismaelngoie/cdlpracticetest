@@ -613,10 +613,10 @@ export default function Home() {
       {/* COMPLIANCE FOOTER (Critical for Google Ads) */}
       <footer className="py-10 text-center border-t border-white/5 mt-10 px-4">
         <p className="text-[10px] text-slate-600 max-w-2xl mx-auto leading-relaxed">
-          Haul.OS is a private organization and is not affiliated with the Department of Transportation (DOT), the Department of Motor Vehicles (DMV), or any government agency. The material provided is for educational purposes only.
+          CDLPretest.com is a private organization and is not affiliated with the Department of Transportation (DOT), the Department of Motor Vehicles (DMV), or any government agency. The material provided is for educational purposes only.
         </p>
         <p className="mt-4 text-[10px] text-slate-600">
-          Contact: support@haulos.com &bull; Miami, FL
+          Contact: contact@cdlprestest.com &bull; Miami, FL
         </p>
       </footer>
 
