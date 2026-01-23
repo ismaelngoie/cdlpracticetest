@@ -610,13 +610,16 @@ export default function Home() {
         </div>
       </div>
 
-      {/* COMPLIANCE FOOTER (Critical for Google Ads) */}
+      {/* COMPLIANCE FOOTER (Rebranded) */}
       <footer className="py-10 text-center border-t border-white/5 mt-10 px-4">
         <p className="text-[10px] text-slate-600 max-w-2xl mx-auto leading-relaxed">
-          CDLPretest.com is a private organization and is not affiliated with the Department of Transportation (DOT), the Department of Motor Vehicles (DMV), or any government agency. The material provided is for educational purposes only.
+          CDL Prep Test is a private organization and is not affiliated with the Department of Transportation (DOT), the Department of Motor Vehicles (DMV), or any government agency. The material provided is for educational purposes only.
         </p>
-        <p className="mt-4 text-[10px] text-slate-600">
-          Contact: contact@cdlprestest.com &bull; Tampa, FL
+        <p className="mt-4 text-[10px] text-slate-600 font-mono uppercase tracking-widest">
+          Owned and Operated by WOTZEL LLC
+        </p>
+        <p className="mt-1 text-[10px] text-slate-600">
+          Contact: contact@cdlpreptest.com &bull; Tampa, FL
         </p>
       </footer>
 
